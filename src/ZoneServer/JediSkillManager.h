@@ -25,29 +25,49 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
 
-#include "ObjectController.h"
-#include "ObjectControllerOpcodes.h"
-#include "ObjectControllerCommandMap.h"
-//#include "WorldManager.h"
-//#include "DatabaseManager/Database.h"
-//#include "DatabaseManager/DataBinding.h"
-//#include "DatabaseManager/DatabaseResult.h"
-//#include "Common/MessageFactory.h"
-//#include "Common/Message.h"
-//#include "MessageLib/MessageLib.h"
-//#include "LogManager/LogManager.h"
+#pragma once //same thing as #include guards
 
+#include <vector>
+#include "Common/MessageDispatchCallback.h"
 
-//=============================================================================================================================
-//
-// sampledna
-//
+#define gJediSkillManager JediSkillManager::getSingletonPtr()
 
-void ObjectController::_handleSampleDNA(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
+class CreatureObject;
+class Database;
+class Message;
+class MessageDispatch;
+class ObjectControllerCommandMap;
+class ObjectControllerCmdProperties;
+class PlayerObject;
+
+class JediSkillManager
 {
-}
+public:
+	~JediSkillManager();
 
-//=============================================================================================================================
+	static JediSkillManager* getSingletonPtr() { return mSingleton; }
+	static JediSkillManager* Init(MessageDispatch* dispatch)
+	{
+		if(!mInsFlag)
+		{
+			mSingleton = new JediSkillManager(dispatch);
+			mInsFlag = true;
+			return mSingleton;
+		}
+		else
+			return mSingleton;
+	}
+
+	bool ForceHealSelfDamage(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int HealType);
+	bool ForceHealSelfWound(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int HealType);
+	//bool ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int HealType);
 
 
+private:
+	static JediSkillManager*	mSingleton;
+	static bool					mInsFlag;
+	MessageDispatch*			Dispatch;
 
+	JediSkillManager(MessageDispatch* dispatch);
+
+};

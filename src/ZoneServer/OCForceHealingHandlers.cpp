@@ -25,18 +25,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
 
-#include "ObjectController.h"
+#include <cstdint>
+#ifdef _MSC_VER
+#include <regex> //NOLINT
+#else
+#endif
+
+#include <boost/regex.hpp> //NOLINT
+#include "JediSkillManager.h"
 #include "ObjectControllerOpcodes.h"
 #include "ObjectControllerCommandMap.h"
+#include "PlayerObject.h"
+#include "WorldManager.h"
 #include "MessageLib/MessageLib.h"
 #include "LogManager/LogManager.h"
 #include "DatabaseManager/Database.h"
-#include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
-#include "Common/Message.h"
+#include "DatabaseManager/DatabaseResult.h"
 #include "Common/MessageFactory.h"
-
-
+#include "Common/Message.h"
 
 
 //=============================================================================================================================
@@ -46,7 +53,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 void ObjectController::_handleHealAllSelf1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 1;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfDamage(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -55,7 +67,12 @@ void ObjectController::_handleHealAllSelf1(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleHealAllSelf2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 2;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfDamage(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -64,7 +81,12 @@ void ObjectController::_handleHealAllSelf2(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleHealHealthSelf1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 3;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfDamage(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -73,7 +95,12 @@ void ObjectController::_handleHealHealthSelf1(uint64 targetId,Message* message,O
 
 void ObjectController::_handleHealHealthSelf2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 4;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfDamage(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -82,7 +109,12 @@ void ObjectController::_handleHealHealthSelf2(uint64 targetId,Message* message,O
 
 void ObjectController::_handleHealActionSelf1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 5;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfDamage(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -91,7 +123,12 @@ void ObjectController::_handleHealActionSelf1(uint64 targetId,Message* message,O
 
 void ObjectController::_handleHealActionSelf2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 6;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfDamage(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -100,7 +137,12 @@ void ObjectController::_handleHealActionSelf2(uint64 targetId,Message* message,O
 
 void ObjectController::_handleHealMindSelf1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 7;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfDamage(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -109,7 +151,12 @@ void ObjectController::_handleHealMindSelf1(uint64 targetId,Message* message,Obj
 
 void ObjectController::_handleHealMindSelf2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 8;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfDamage(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -118,7 +165,12 @@ void ObjectController::_handleHealMindSelf2(uint64 targetId,Message* message,Obj
 
 void ObjectController::_handleHealActionWoundSelf1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 3;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfWound(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -127,7 +179,12 @@ void ObjectController::_handleHealActionWoundSelf1(uint64 targetId,Message* mess
 
 void ObjectController::_handleHealActionWoundSelf2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 4;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfWound(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -136,7 +193,12 @@ void ObjectController::_handleHealActionWoundSelf2(uint64 targetId,Message* mess
 
 void ObjectController::_handleHealHealthWoundSelf1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 1;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfWound(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -145,7 +207,12 @@ void ObjectController::_handleHealHealthWoundSelf1(uint64 targetId,Message* mess
 
 void ObjectController::_handleHealHealthWoundSelf2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 2;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfWound(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -154,7 +221,12 @@ void ObjectController::_handleHealHealthWoundSelf2(uint64 targetId,Message* mess
 
 void ObjectController::_handleHealBattleFatigueSelf1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 7;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfWound(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -163,7 +235,12 @@ void ObjectController::_handleHealBattleFatigueSelf1(uint64 targetId,Message* me
 
 void ObjectController::_handleHealBattleFatigueSelf2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 8;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfWound(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -172,7 +249,12 @@ void ObjectController::_handleHealBattleFatigueSelf2(uint64 targetId,Message* me
 
 void ObjectController::_handleHealMindWoundSelf1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 5;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfWound(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -181,7 +263,12 @@ void ObjectController::_handleHealMindWoundSelf1(uint64 targetId,Message* messag
 
 void ObjectController::_handleHealMindWoundSelf2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int HealType = 6;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfWound(Jedi, cmdProperties, HealType);
+}
 
 //=============================================================================================================================
 //
@@ -190,7 +277,7 @@ void ObjectController::_handleHealMindWoundSelf2(uint64 targetId,Message* messag
 
 void ObjectController::_handleHealActionWoundOther1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -199,7 +286,7 @@ void ObjectController::_handleHealActionWoundOther1(uint64 targetId,Message* mes
 
 void ObjectController::_handleHealActionWoundOther2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -208,7 +295,7 @@ void ObjectController::_handleHealActionWoundOther2(uint64 targetId,Message* mes
 
 void ObjectController::_handleHealHealthWoundOther1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -217,7 +304,7 @@ void ObjectController::_handleHealHealthWoundOther1(uint64 targetId,Message* mes
 
 void ObjectController::_handleHealHealthWoundOther2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -226,7 +313,7 @@ void ObjectController::_handleHealHealthWoundOther2(uint64 targetId,Message* mes
 
 void ObjectController::_handleHealMindWoundOther1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -235,7 +322,7 @@ void ObjectController::_handleHealMindWoundOther1(uint64 targetId,Message* messa
 
 void ObjectController::_handleHealMindWoundOther2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -244,7 +331,7 @@ void ObjectController::_handleHealMindWoundOther2(uint64 targetId,Message* messa
 
 void ObjectController::_handleHealAllOther1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -253,7 +340,7 @@ void ObjectController::_handleHealAllOther1(uint64 targetId,Message* message,Obj
 
 void ObjectController::_handleHealAllOther2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -262,7 +349,7 @@ void ObjectController::_handleHealAllOther2(uint64 targetId,Message* message,Obj
 
 void ObjectController::_handleHealStatesOther(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -271,7 +358,7 @@ void ObjectController::_handleHealStatesOther(uint64 targetId,Message* message,O
 
 void ObjectController::_handleStopBleeding(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -280,7 +367,7 @@ void ObjectController::_handleStopBleeding(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleForceCureDisease(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -289,7 +376,7 @@ void ObjectController::_handleForceCureDisease(uint64 targetId,Message* message,
 
 void ObjectController::_handleForceCurePoison(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -298,7 +385,7 @@ void ObjectController::_handleForceCurePoison(uint64 targetId,Message* message,O
 
 void ObjectController::_handleHealStatesSelf(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -307,7 +394,7 @@ void ObjectController::_handleHealStatesSelf(uint64 targetId,Message* message,Ob
 
 void ObjectController::_handleTotalHealOther(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -316,7 +403,7 @@ void ObjectController::_handleTotalHealOther(uint64 targetId,Message* message,Ob
 
 void ObjectController::_handleTotalHealSelf(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 
