@@ -213,7 +213,7 @@ void AttackableCreature::handleObjectMenuSelect(uint8 messageType,Object* srcObj
 									if (splittedCredits == 0)
 									{
 										// To little to split.
-										// "GROUP] You split %TU credits and receive %TT credits as your share."
+										// "[GROUP] You split %TU credits and receive %TT credits as your share."
                     gMessageLib->sendSystemMessage(playerObject, L"", "group", "prose_split_coins_self", "", "", L"", 0, "", "", lootCreditsString.getUnicode16(), 0, 0, 0, "", "", lootCreditsString.getUnicode16());
 										// "There are insufficient group funds to split"
 										gMessageLib->sendSystemMessage(playerObject, L"", "error_message", "nsf_to_split");
@@ -242,7 +242,7 @@ void AttackableCreature::handleObjectMenuSelect(uint8 messageType,Object* srcObj
 										string splitedLootCreditsString(str);
 										splitedLootCreditsString.convert(BSTRType_Unicode16);
 
-										// "GROUP] You split %TU credits and receive %TT credits as your share."
+										// "[GROUP] You split %TU credits and receive %TT credits as your share."
                     gMessageLib->sendSystemMessage(playerObject, L"", "group", "prose_split_coins_self", "", "", L"", 0, "", "", splitedLootCreditsString.getUnicode16(), 0, 0, 0, "", "", lootCreditsString.getUnicode16());
 
 										// Now we need to add the credits to our own inventory.

@@ -2369,7 +2369,7 @@ void CharacterBuilderTerminal::handleObjectMenuSelect(uint8 messageType,Object* 
 	}
 	else
 	{
-		gLogger->log(LogManager::NOTICE,"TravelTerminal: Unhandled MenuSelect: %u",messageType);
+		gLogger->log(LogManager::NOTICE,"CharacterBuilderTerminal: Unhandled MenuSelect: %u",messageType);
 	}
 }
 

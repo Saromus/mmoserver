@@ -169,13 +169,13 @@ bool JediSkillManager::ForceHealSelfWound(PlayerObject* Jedi, ObjectControllerCm
 	int MindWounds = Jedi->getHam()->mMind.getWounds();
 	int BattleFatigue = Jedi->getHam()->getBattleFatigue();
 
-	if (HealthWounds == 0)
+	if (HealthWounds <= 0)
 	{
-		if (ActionWounds == 0)
+		if (ActionWounds <= 0)
 		{
-			if (MindWounds == 0)
+			if (MindWounds <= 0)
 			{
-				if (BattleFatigue == 0)
+				if (BattleFatigue <= 0)
 				{
 					gMessageLib->sendSystemMessage(Jedi, L"You have no wounds of that type to heal.");
 					return false;

@@ -691,7 +691,7 @@ class ObjectController : public DatabaseCallback, public ObjectFactoryCallback, 
 		string	handleBroadcastPlanet(string message) const;
 		string	handleBroadcastGalaxy(string message) const;
 		string	handleShutdownGalaxy(string message) const;
-		string handleCancelShutdownGalaxy(string message) const;
+		string	handleCancelShutdownGalaxy(string message) const;
 
 		// Admin
 		int32	getAdminCommandFunction(string command) const;
