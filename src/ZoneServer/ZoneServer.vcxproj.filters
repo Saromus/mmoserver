@@ -758,7 +758,7 @@
     <ClCompile Include="JediSkillManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-	<ClCompile Include="SendSystemMailMessage.cpp">
+    <ClCompile Include="SendSystemMailMessage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1474,7 +1474,13 @@
     <ClInclude Include="JediSkillManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-	<ClInclude Include="SendSystemMailMessage.h">
+    <ClInclude Include="SendSystemMailMessage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ForceRunEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ForceMeditateEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

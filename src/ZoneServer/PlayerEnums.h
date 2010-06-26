@@ -93,6 +93,7 @@ enum PlayerCustomFlag
 	PlayerCustomFlag_InjuryTreatment		=	0x00000016, //custom flag
 	PlayerCustomFlag_WoundTreatment			=	0x00000032, //custom flag
 	PlayerCustomFlag_QuickHealInjuryTreatment=  0x00000064,
+	PlayerCustomFlag_ForceRun				=	0x00000128,
 };
 
 //=============================================================================

@@ -1505,7 +1505,7 @@ void EntertainerManager::CheckDistances(PlayerObject* entertainer)
 //=======================================================================================================================
 //makes the player Object stop watching
 //=======================================================================================================================
-void EntertainerManager::stopWatching(PlayerObject* audience,bool ooRange)
+void EntertainerManager::stopWatching(PlayerObject* audience, bool ooRange)
 {
 	PlayerObject* entertainer = dynamic_cast<PlayerObject*>(gWorldManager->getObjectById(audience->getEntertainerWatchToId()));
 

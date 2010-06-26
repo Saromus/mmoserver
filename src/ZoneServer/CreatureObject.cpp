@@ -83,6 +83,8 @@ CreatureObject::CreatureObject()
 , mIncapCount(0)
 , mMoodId(0)
 , mPosture(0)
+, mMeditating(false)
+//, mForceMeditating(false)
 
 ,mReady(false)
 {
@@ -1412,5 +1414,30 @@ void CreatureObject::handleObjectMenuSelect(uint8 messageType,Object* srcObject)
 	{
 			
 	}
+}
+
+//=============================================================================
+//
+//
+void CreatureObject::setMeditateState()
+{
+	PlayerObject* Player = dynamic_cast<PlayerObject*>(this);
+
+	if (Player->checkState(CreatureState_Combat))
+	{
+		gMessageLib->sendSystemMessage(Player, L"", "jedi_spam", "not_while_in_combat"); //You cannot perform that action while in combat.
+		return;
+	}
+
+	mMeditating = true;
+	gMessageLib->sendMoodString(Player, BString("meditating"));
+	mPosture = CreaturePosture_Sitting;
+	this->toggleStateOn(CreatureState_Alert);
+
+	mHam.updateRegenRates();
+	updateMovementProperties();
+
+	gMessageLib->sendUpdateMovementProperties(Player);
+	gMessageLib->sendPostureAndStateUpdate(Player);
 }
 

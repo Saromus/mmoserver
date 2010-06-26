@@ -658,14 +658,12 @@ bool Ham::_regenForce()
 
 void Ham::updateRegenRates()
 {
-	
-
 	float regenModifier = 1.0f;
 
 	switch(mParent->getPosture())
 	{
 		case CreaturePosture_Crouched:			regenModifier = 1.25f;	break;
-		case CreaturePosture_Sitting:			regenModifier = 1.75f;	break;
+		case CreaturePosture_Sitting:			if (!mParent->isForceMeditating()) regenModifier = 1.75f;	break;
 		case CreaturePosture_Incapacitated:
 		case CreaturePosture_Dead:				regenModifier = 0.0f;	break;
 		case CreaturePosture_KnockedDown:		regenModifier = 0.75f;	break;
@@ -674,7 +672,14 @@ void Ham::updateRegenRates()
 	mHealthRegenRate	= (int32)((mConstitution.getCurrentHitPoints() / gWorldConfig->mHealthRegenDivider) * regenModifier);
 	mActionRegenRate	= (int32)((mStamina.getCurrentHitPoints() / gWorldConfig->mActionRegenDivider) * regenModifier);
 	mMindRegenRate		= (int32)((mWillpower.getCurrentHitPoints() / gWorldConfig->mMindRegenDivider) * regenModifier);
-	mForceRegenRate		= (int32)(25.0f * regenModifier);
+	//mForceRegenRate		= (int32)(25.0f * regenModifier);
+	//mForceRegenRate		= (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * regenModifier);
+	
+	if (mParent->isForceMeditating())
+		//mForceRegenRate = (int32)(25.0f * 3);
+		mForceRegenRate = mParent->getSkillModValue(SMod_jedi_force_power_regen);
+	else
+		mForceRegenRate		= (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * regenModifier);
 
 	// Test for creatures
 	if (this->getParent())
@@ -793,8 +798,6 @@ bool Ham::updateMaxForce(int32 forceDelta,bool sendUpdate)
 
 //===========================================================================
 
-
-
 int32			Ham::getHealthRegenRate()
 {
 	return mHealthRegenRate;
@@ -809,3 +812,15 @@ int32			Ham::getMindRegenRate()
 {
 	return mMindRegenRate;
 }
+
+/*int32			Ham::getForceRegenRate()
+{
+	mForceRegenRate = mParent->getSkillModValue(SMod_jedi_force_power_regen);
+	return mForceRegenRate;
+}
+
+int32			Ham::getMaxForce()
+{
+	mMaxForce = mParent->getSkillModValue(SMod_jedi_force_power_max);
+	return mMaxForce;
+}*/

@@ -24,19 +24,26 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
+#include <cstdint>
+#ifdef _MSC_VER
+#include <regex> // NOLINT
+#else
+#endif
 
+#include <boost/regex.hpp> // NOLINT
+#include "JediSkillManager.h"
 #include "ObjectController.h"
 #include "ObjectControllerOpcodes.h"
 #include "ObjectControllerCommandMap.h"
+#include "PlayerObject.h"
+#include "WorldManager.h"
 #include "MessageLib/MessageLib.h"
 #include "LogManager/LogManager.h"
 #include "DatabaseManager/Database.h"
-#include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
-#include "Common/Message.h"
+#include "DatabaseManager/DatabaseResult.h"
 #include "Common/MessageFactory.h"
-
-
+#include "Common/Message.h"
 
 
 //=============================================================================================================================
@@ -46,7 +53,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 void ObjectController::_handleForceAbsorb1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -55,7 +62,7 @@ void ObjectController::_handleForceAbsorb1(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleForceAbsorb2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -64,7 +71,7 @@ void ObjectController::_handleForceAbsorb2(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleForceSpeed1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -73,7 +80,7 @@ void ObjectController::_handleForceSpeed1(uint64 targetId,Message* message,Objec
 
 void ObjectController::_handleForceSpeed2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -82,7 +89,12 @@ void ObjectController::_handleForceSpeed2(uint64 targetId,Message* message,Objec
 
 void ObjectController::_handleForceRun1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int SkillLevel = 1;
+
+	mHandlerCompleted = gJediSkillManager->ForceRunSelfSkill(Jedi, cmdProperties, SkillLevel);
+}
 
 //=============================================================================================================================
 //
@@ -91,7 +103,12 @@ void ObjectController::_handleForceRun1(uint64 targetId,Message* message,ObjectC
 
 void ObjectController::_handleForceRun2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int SkillLevel = 2;
+
+	mHandlerCompleted = gJediSkillManager->ForceRunSelfSkill(Jedi, cmdProperties, SkillLevel);
+}
 
 //=============================================================================================================================
 //
@@ -100,7 +117,12 @@ void ObjectController::_handleForceRun2(uint64 targetId,Message* message,ObjectC
 
 void ObjectController::_handleForceRun3(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int SkillLevel = 3;
+
+	mHandlerCompleted = gJediSkillManager->ForceRunSelfSkill(Jedi, cmdProperties, SkillLevel);
+}
 
 //=============================================================================================================================
 //
@@ -109,7 +131,7 @@ void ObjectController::_handleForceRun3(uint64 targetId,Message* message,ObjectC
 
 void ObjectController::_handleForceFeedback1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -118,7 +140,7 @@ void ObjectController::_handleForceFeedback1(uint64 targetId,Message* message,Ob
 
 void ObjectController::_handleForceFeedback2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -127,7 +149,7 @@ void ObjectController::_handleForceFeedback2(uint64 targetId,Message* message,Ob
 
 void ObjectController::_handleForceArmor1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -136,7 +158,7 @@ void ObjectController::_handleForceArmor1(uint64 targetId,Message* message,Objec
 
 void ObjectController::_handleForceArmor2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -145,7 +167,7 @@ void ObjectController::_handleForceArmor2(uint64 targetId,Message* message,Objec
 
 void ObjectController::_handleForceResistBleeding(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -154,7 +176,7 @@ void ObjectController::_handleForceResistBleeding(uint64 targetId,Message* messa
 
 void ObjectController::_handleForceResistDisease(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -163,7 +185,7 @@ void ObjectController::_handleForceResistDisease(uint64 targetId,Message* messag
 
 void ObjectController::_handleForceResistPoison(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -172,7 +194,7 @@ void ObjectController::_handleForceResistPoison(uint64 targetId,Message* message
 
 void ObjectController::_handleForceResistStates(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -181,7 +203,7 @@ void ObjectController::_handleForceResistStates(uint64 targetId,Message* message
 
 void ObjectController::_handleTransferForce(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -190,7 +212,7 @@ void ObjectController::_handleTransferForce(uint64 targetId,Message* message,Obj
 
 void ObjectController::_handleChannelForce(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -199,7 +221,7 @@ void ObjectController::_handleChannelForce(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleDrainForce(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -208,7 +230,7 @@ void ObjectController::_handleDrainForce(uint64 targetId,Message* message,Object
 
 void ObjectController::_handleForceShield1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -217,7 +239,7 @@ void ObjectController::_handleForceShield1(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleForceShield2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -226,7 +248,13 @@ void ObjectController::_handleForceShield2(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleForceMeditate(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	int ForceRegen = 300; //TODO: the HamRegens should be multiplied by 3
+
+	mHandlerCompleted = gJediSkillManager->ForceMeditateSelfSkill(Jedi, cmdProperties, ForceRegen);
+}
 
 //=============================================================================================================================
 //
@@ -235,9 +263,6 @@ void ObjectController::_handleForceMeditate(uint64 targetId,Message* message,Obj
 
 void ObjectController::_handleRegainConsciousness(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
-
-
-

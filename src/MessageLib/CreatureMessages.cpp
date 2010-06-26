@@ -1911,7 +1911,7 @@ bool MessageLib::sendSkillModUpdateCreo4(PlayerObject* playerObject)
 //======================================================================================================================
 //
 // Creature Deltas Type 6
-// update: Staitionary Flag
+// update: Stationary Flag
 //
 
 void MessageLib::sendStationaryFlagUpdate(PlayerObject* playerObject)

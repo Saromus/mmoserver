@@ -179,6 +179,7 @@ void CharacterLoginHandler::handleDispatchMessage(uint32 opcode, Message* messag
 
 			playerObject->getHam()->checkForRegen();
 			playerObject->getStomach()->checkForRegen();
+
 		}
 		else
 		if(playerObject  && playerObject->isBeingDestroyed())

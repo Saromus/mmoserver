@@ -277,6 +277,12 @@ void ObjectController::_handleHealMindWoundSelf2(uint64 targetId,Message* messag
 
 void ObjectController::_handleHealActionWoundOther1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 3;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealTargetWound(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================
@@ -286,6 +292,12 @@ void ObjectController::_handleHealActionWoundOther1(uint64 targetId,Message* mes
 
 void ObjectController::_handleHealActionWoundOther2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 4;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealTargetWound(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================
@@ -295,6 +307,12 @@ void ObjectController::_handleHealActionWoundOther2(uint64 targetId,Message* mes
 
 void ObjectController::_handleHealHealthWoundOther1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 1;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealTargetWound(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================
@@ -304,6 +322,12 @@ void ObjectController::_handleHealHealthWoundOther1(uint64 targetId,Message* mes
 
 void ObjectController::_handleHealHealthWoundOther2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 2;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealTargetWound(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================
@@ -313,6 +337,12 @@ void ObjectController::_handleHealHealthWoundOther2(uint64 targetId,Message* mes
 
 void ObjectController::_handleHealMindWoundOther1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 5;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealTargetWound(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================
@@ -322,6 +352,12 @@ void ObjectController::_handleHealMindWoundOther1(uint64 targetId,Message* messa
 
 void ObjectController::_handleHealMindWoundOther2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 6;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealTargetWound(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================
@@ -331,6 +367,12 @@ void ObjectController::_handleHealMindWoundOther2(uint64 targetId,Message* messa
 
 void ObjectController::_handleHealAllOther1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 1;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealTargetDamage(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================
@@ -340,6 +382,12 @@ void ObjectController::_handleHealAllOther1(uint64 targetId,Message* message,Obj
 
 void ObjectController::_handleHealAllOther2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 2;
+
+	mHandlerCompleted = gJediSkillManager->ForceHealTargetDamage(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================

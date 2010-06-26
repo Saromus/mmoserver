@@ -122,6 +122,7 @@ class Ham
 		int32			getHealthRegenRate();
 		int32			getActionRegenRate();
 		int32			getMindRegenRate();
+		//int32			getForceRegenRate();
 
 		uint64			getTaskId(){ return mTaskId; }
 		void			setTaskId(uint64 id){ mTaskId = id; }

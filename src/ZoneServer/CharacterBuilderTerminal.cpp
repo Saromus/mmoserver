@@ -142,10 +142,10 @@ void CharacterBuilderTerminal::InitBuffs()
 {
 	mBuffMenu.push_back("+2400 Health Buffs (60secs)");
 	mBuffMenu.push_back("+2400 Action Buffs (60secs)");
-	mBuffMenu.push_back("+ 600 Mind   Buffs (60secs)");
+	mBuffMenu.push_back("+600  Mind   Buffs (60secs)");
 	mBuffMenu.push_back("+2400 Health Buffs (3hour)");
 	mBuffMenu.push_back("+2400 Action Buffs (3hour)");
-	mBuffMenu.push_back("+ 600 Mind   Buffs (3hour)");
+	mBuffMenu.push_back("+600  Mind   Buffs (3hour)");
 	mBuffMenu.push_back("Clear All Buffs");
 }
 void CharacterBuilderTerminal::InitWounds()

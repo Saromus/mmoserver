@@ -620,7 +620,6 @@ void PlayerObject::onBurstRun(const BurstRunEvent* event)
 	{
 		mObjectController.addEvent(new BurstRunEvent(event->getEndTime(),event->getCoolDown()),t-now);
 	}
-		
 }
 
 
@@ -704,5 +703,67 @@ void PlayerObject::onWoundTreatment(const WoundTreatmentEvent* event)
 	else
 	{
 		mObjectController.addEvent(new WoundTreatmentEvent(t), t-now);
+	}
+}
+
+//=============================================================================
+// this event manages forcerun.
+//
+void PlayerObject::onForceRun(const ForceRunEvent* event)
+{
+	uint64 now = gWorldManager->GetCurrentGlobalTick();
+	uint64 t = event->getEndTime();
+
+	//do we have to remove the force run??
+	if (now > t)
+	{
+		if (this->checkPlayerCustomFlag(PlayerCustomFlag_ForceRun))
+		{
+			gMessageLib->sendSystemMessage(this, L"", "cbt_spam", "forcerun_stop_single");
+			//Combat Spam
+			int8 s[256];
+			sprintf(s, "%s %s slows down.", this->getFirstName().getAnsi(), this->getLastName().getAnsi());
+			BString bs(s);
+			bs.convert(BSTRType_Unicode16);
+			gMessageLib->sendCombatSpam(this, this, 0, "", "", 0, 0, bs.getUnicode16());
+
+			this->togglePlayerCustomFlagOff(PlayerCustomFlag_ForceRun);
+
+			this->modifySkillModValue(SMod_slope_move, -50);
+			this->setCurrentRunSpeedLimit(5.75f);
+			this->setCurrentAcceleration(1.50f);
+			gMessageLib->sendUpdateMovementProperties(this);
+			//gMessageLib->sendTerrainNegotiation(this);
+		}
+	}
+	//have to call once more so we can get back here...
+	else
+	{
+		mObjectController.addEvent(new ForceRunEvent(t), t - now);
+	}
+}
+
+//=============================================================================
+// this event manages force meditate.
+// it makes sure the client effect is played in a loop.
+//
+void PlayerObject::onForceMeditate(const ForceMeditateEvent* event)
+{
+	uint64 now = gWorldManager->GetCurrentGlobalTick();
+	uint64 t = event->getEffectTime();
+
+	//do we need to play the effect again??
+	if (now > t)
+	{
+		if (this->isForceMeditating())
+		{
+			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/pl_force_meditate_self.cef", "", this);
+			mObjectController.addEvent(new ForceMeditateEvent(6000), 6000); //this makes it so the event loops thus making the client effect loop again and again...
+		}
+	}
+	//have to call once more so we can get back here...
+	else
+	{
+		mObjectController.addEvent(new ForceMeditateEvent(t), t - now);
 	}
 }

@@ -135,6 +135,8 @@ PlayerObject::PlayerObject()
 	registerEventFunction(this,&PlayerObject::onInjuryTreatment);
 	registerEventFunction(this,&PlayerObject::onWoundTreatment);
 	registerEventFunction(this,&PlayerObject::onQuickHealInjuryTreatment);
+	registerEventFunction(this,&PlayerObject::onForceRun);
+	registerEventFunction(this,&PlayerObject::onForceMeditate);
 	
 	mLots = gWorldConfig->getConfiguration<uint32>("Player_Max_Lots",(uint32)10);
 
@@ -2146,6 +2148,15 @@ void PlayerObject::setUpright()
 	if(this->isConnected())
 		gMessageLib->sendHeartBeat(this->getClient());
 
+	// see if we need to stop force meditating
+	if (this->isForceMeditating())
+	{
+		mMeditating = false;
+		this->toggleStateOff(CreatureState_Alert);
+		gMessageLib->sendMoodString(this, BString("none"));
+		gMessageLib->sendSystemMessage(this, L"You stop meditating");
+	}
+
 	// see if we need to get out of sampling mode
 	if(this->getSamplingState())
 	{
@@ -2181,6 +2192,15 @@ void PlayerObject::setProne()
 {
 	if(this->isConnected())
 		gMessageLib->sendHeartBeat(this->getClient());
+
+	// see if we need to stop force meditating
+	if (this->isForceMeditating())
+	{
+		mMeditating = false;
+		this->toggleStateOff(CreatureState_Alert);
+		gMessageLib->sendMoodString(this, BString("none"));
+		gMessageLib->sendSystemMessage(this,L"You stop meditating");
+	}
 
 	// see if we need to get out of sampling mode
 	if(this->getSamplingState())
@@ -2226,6 +2246,15 @@ void PlayerObject::setCrouched()
 	// Can not compare bitwise data with equality... the test below will only work if ALL other states = 0.
 	// bool IsSeatedOnChair = (playerObject->getState() == CreatureState_SittingOnChair);
 	bool IsSeatedOnChair = this->checkState(CreatureState_SittingOnChair);
+
+	// see if we need to stop force meditating
+	if (this->isForceMeditating())
+	{
+		mMeditating = false;
+		this->toggleStateOff(CreatureState_Alert);
+		gMessageLib->sendMoodString(this, BString("none"));
+		gMessageLib->sendSystemMessage(this, L"You stop meditating");
+	}
 
 	//make sure we end states
 	//the logoff states is an invention of mine btw 

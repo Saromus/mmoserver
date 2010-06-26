@@ -426,6 +426,8 @@
     <ClInclude Include="FireworkManager.h" />
     <ClInclude Include="Food.h" />
     <ClInclude Include="ForageManager.h" />
+    <ClInclude Include="ForceMeditateEvent.h" />
+    <ClInclude Include="ForceRunEvent.h" />
     <ClInclude Include="Furniture.h" />
     <ClInclude Include="GroupManager.h" />
     <ClInclude Include="GroupManagerCallback.h" />

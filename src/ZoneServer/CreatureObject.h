@@ -149,7 +149,6 @@ class CreatureObject : public MovingObject
 		EquipManager*		getEquipManager(){ return &mEquipManager; }
 
 		// pvp status
-
 		CreaturePvPStatus	getPvPStatus(){ return mPvPStatus; }
 		void				setPvPStatus(CreaturePvPStatus status){ mPvPStatus = status; }
 		void				togglePvPStateOn(CreaturePvPStatus state){ mPvPStatus = (CreaturePvPStatus)(mPvPStatus | state); }
@@ -272,6 +271,10 @@ class CreatureObject : public MovingObject
 		uint32				mSkillCmdUpdateCounter;
 		uint32				mSkillModUpdateCounter;
 
+		// meditation
+		void				setMeditateState();
+		bool				isMeditating() { return mMeditating; }
+		bool				isForceMeditating() { return mMeditating; /*return mForceMeditating;*/}
 
 	protected:
 
@@ -326,6 +329,10 @@ class CreatureObject : public MovingObject
 		uint8				mRaceId;
 		bool				mReady;
 		bool				mStationary;			 //sets the stationary flag in the tano3 so better move it there
+
+		bool				mMeditating;
+		//bool				mForceMeditating;
+
 		// entertaining
 
 		virtual void	handleObjectMenuSelect(uint8 messageType,Object* srcObject);

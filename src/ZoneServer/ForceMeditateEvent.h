@@ -25,28 +25,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
 
-#ifndef ANH_ZONESERVER_BURSTRUN_EVENT_H
-#define ANH_ZONESERVER_BURSTRUN_EVENT_H
+#ifndef ANH_ZONESERVER_FORCEMEDITATE_EVENT_H
+#define ANH_ZONESERVER_FORCEMEDITATE_EVENT_H
 
 #include "Utils/EventHandler.h"
 
 //======================================================================================================================
 
-class BurstRunEvent : public Anh_Utils::Event
+class ForceMeditateEvent : public Anh_Utils::Event
 {
 	public:
 
-		BurstRunEvent(uint64 time, uint64 cooldown, bool coolDown = false) : mEndTime(time), mCoolDown(cooldown), mCDExpire(coolDown){}
+		ForceMeditateEvent(uint64 time) : mEffectTime(time) {}
 		
-		uint64	getEndTime()	const { return  mEndTime; }
-		uint64	getCoolDown()	const { return  mCoolDown; }
-		bool	getCDExpired()	const { return  mCDExpire; }
+		uint64	getEffectTime()	const { return  mEffectTime; }
 
 	private:
 
-		uint64				mEndTime;
-		uint64				mCoolDown;
-		bool				mCDExpire;
+		uint64				mEffectTime;
 };
 
 //======================================================================================================================
