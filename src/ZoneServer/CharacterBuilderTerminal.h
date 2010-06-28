@@ -69,6 +69,7 @@ private:
 	void InitArmor();
 	void InitProfessions();
 	void InitWounds();
+	void InitStates();
 
 	void SendXPMenu(PlayerObject* player, uint32 action,int32 element,string inputStr,UIWindow* window);
 	void SendResourcesMenu(PlayerObject* player, uint32 action,int32 element,string inputStr,UIWindow* window);
@@ -76,6 +77,7 @@ private:
 	void _handleResourceTypes(PlayerObject* player, uint32 action,int32 element,string inputStr,UIWindow* window);
 	void _handleResourcesTypes(PlayerObject* playerObject, uint32 action,int32 element,string inputStr,UIWindow* window);
 	void _handleWoundMenu(PlayerObject* playerObject, uint32 action,int32 element,string inputStr,UIWindow* window);
+	void _handleStateMenu(PlayerObject* playerObject, uint32 action, int32 element, string inputStr, UIWindow* window);
 
 	void _handleMainMenu(PlayerObject* player, uint32 action, int32 element, string inputStr, UIWindow* window);
 	void _handleExperienceMenu(PlayerObject* player, uint32 action,int32 element,string inputStr,UIWindow* window);
@@ -148,6 +150,7 @@ private:
 	BStringVector			mItemMenu;
 	BStringVector			mResourceMenu;
 	BStringVector			mWoundMenu;
+	BStringVector			mStateMenu;
 
 	//2nd level menus
 	BStringVector			mStructureMenu;

@@ -58,13 +58,18 @@ public:
 			return mSingleton;
 	}
 
-	//ForceHealSelfSkills
+	//ForceHealSelfSkill
 	bool ForceHealSelfDamage(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int HealType);
 	bool ForceHealSelfWound(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int HealType);
+	bool ForceHealSelfState(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties);
+	bool ForceHealSelfTotal(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties);
 
-	//ForceHealTargetSkills
+	//ForceHealTargetSkill
 	bool ForceHealTargetDamage(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType);
 	bool ForceHealTargetWound(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType);
+	bool ForceHealTargetState(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
+	bool ForceCureTarget(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType);
+	bool ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
 
 	bool ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int ForceRegen);
 	bool ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int SkillLevel);

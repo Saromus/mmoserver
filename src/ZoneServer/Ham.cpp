@@ -614,7 +614,7 @@ bool Ham::_regenAction()
 
 //===========================================================================
 //
-// checks whether the hambar is ompletely regenerated
+// checks whether the hambar is completely regenerated
 // returns true in case the regeneration is complete
 //
 
@@ -663,7 +663,7 @@ void Ham::updateRegenRates()
 	switch(mParent->getPosture())
 	{
 		case CreaturePosture_Crouched:			regenModifier = 1.25f;	break;
-		case CreaturePosture_Sitting:			if (!mParent->isForceMeditating()) regenModifier = 1.75f;	break;
+		case CreaturePosture_Sitting:			if (!mParent->isForceMeditating() && !mParent->isMeditating()) regenModifier = 1.75f;	break;
 		case CreaturePosture_Incapacitated:
 		case CreaturePosture_Dead:				regenModifier = 0.0f;	break;
 		case CreaturePosture_KnockedDown:		regenModifier = 0.75f;	break;
@@ -672,14 +672,18 @@ void Ham::updateRegenRates()
 	mHealthRegenRate	= (int32)((mConstitution.getCurrentHitPoints() / gWorldConfig->mHealthRegenDivider) * regenModifier);
 	mActionRegenRate	= (int32)((mStamina.getCurrentHitPoints() / gWorldConfig->mActionRegenDivider) * regenModifier);
 	mMindRegenRate		= (int32)((mWillpower.getCurrentHitPoints() / gWorldConfig->mMindRegenDivider) * regenModifier);
-	//mForceRegenRate		= (int32)(25.0f * regenModifier);
-	//mForceRegenRate		= (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * regenModifier);
-	
+
 	if (mParent->isForceMeditating())
-		//mForceRegenRate = (int32)(25.0f * 3);
+		//mForceRegenRate = (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * 3.0f); //doesn't do nothing :(
 		mForceRegenRate = mParent->getSkillModValue(SMod_jedi_force_power_regen);
 	else
-		mForceRegenRate		= (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * regenModifier);
+		mForceRegenRate	= (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * regenModifier);
+
+	//This is to change the regen rates for when you use Teras Kasi - Meditate.
+	/*if (mParent->isMeditating())
+	{
+		//TODO:
+	}*/
 
 	// Test for creatures
 	if (this->getParent())
@@ -813,7 +817,7 @@ int32			Ham::getMindRegenRate()
 	return mMindRegenRate;
 }
 
-/*int32			Ham::getForceRegenRate()
+int32			Ham::getForceRegenRate()
 {
 	mForceRegenRate = mParent->getSkillModValue(SMod_jedi_force_power_regen);
 	return mForceRegenRate;
@@ -823,4 +827,4 @@ int32			Ham::getMaxForce()
 {
 	mMaxForce = mParent->getSkillModValue(SMod_jedi_force_power_max);
 	return mMaxForce;
-}*/
+}

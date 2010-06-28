@@ -649,9 +649,9 @@ PlayerObject* PlayerObjectFactory::_createPlayer(DatabaseResult* result)
 	//However states are saved to db -character_attributes.character_flags-
 
 	// We also have quite a lot of state possibilities that we should not let our character have at startup.
-	// We may have to take ceratin actions on these, and then this is not the best placce to do the validation etc...
+	// We may have to take ceratin actions on these, and then this is not the best place to do the validation etc...
 
-	// Todo : which states remain valid after a zone to zone transition ??? in order to transfer zone e need to be out of combat - so ... none ?
+	// Todo : which states remain valid after a zone to zone transition ??? in order to transfer zone we need to be out of combat - so ... none ?
 	playerObject->toggleStateOff((CreatureState)(
 								 CreatureState_Cover |
 								 CreatureState_Combat |

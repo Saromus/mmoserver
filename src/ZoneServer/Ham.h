@@ -86,7 +86,7 @@ class Ham
 		void			setCurrentForce(int32 amount){ mCurrentForce = amount; }
 		bool			updateCurrentForce(int32 forceDelta,bool sendUpdate = true);
 
-		int32			getMaxForce(){ return mMaxForce; }
+		int32			getMaxForce();//{ return mMaxForce; }
 		void			setMaxForce(int32 amount){ mMaxForce = amount; }
 		bool			updateMaxForce(int32 forceDelta,bool sendUpdate = true);
 
@@ -122,7 +122,9 @@ class Ham
 		int32			getHealthRegenRate();
 		int32			getActionRegenRate();
 		int32			getMindRegenRate();
-		//int32			getForceRegenRate();
+
+		int32			getForceRegenRate();
+		void			setForceRegenRate(int32 regenRate) { mForceRegenRate = regenRate; }
 
 		uint64			getTaskId(){ return mTaskId; }
 		void			setTaskId(uint64 id){ mTaskId = id; }

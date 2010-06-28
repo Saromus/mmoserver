@@ -169,7 +169,9 @@ enum ui_window_types : unsigned int
 	SUI_Window_CharacterBuilder_ListBox_HeavyMenu,
 	SUI_Window_CharacterBuilder_ListBox_PistolMenu,
 	SUI_Window_CharacterBuilder_ListBox_RifleMenu,
+
 	SUI_Window_CharacterBuilder_ListBox_WoundMenu,
+	SUI_Window_CharacterBuilder_ListBox_StateMenu,
 
 	//trade
 	SUI_Window_Trade_BankTip_ConfirmSurcharge

@@ -45,7 +45,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Common/MessageFactory.h"
 #include "Common/Message.h"
 
-
 //=============================================================================================================================
 //
 // healallself 1
@@ -397,6 +396,10 @@ void ObjectController::_handleHealAllOther2(uint64 targetId,Message* message,Obj
 
 void ObjectController::_handleHealStatesOther(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	mHandlerCompleted = gJediSkillManager->ForceHealTargetState(Jedi, Target, cmdProperties);
 }
 
 //=============================================================================================================================
@@ -406,6 +409,12 @@ void ObjectController::_handleHealStatesOther(uint64 targetId,Message* message,O
 
 void ObjectController::_handleStopBleeding(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 3;
+
+	mHandlerCompleted = gJediSkillManager->ForceCureTarget(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================
@@ -415,6 +424,12 @@ void ObjectController::_handleStopBleeding(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleForceCureDisease(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 1;
+
+	mHandlerCompleted = gJediSkillManager->ForceCureTarget(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================
@@ -424,6 +439,12 @@ void ObjectController::_handleForceCureDisease(uint64 targetId,Message* message,
 
 void ObjectController::_handleForceCurePoison(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	int HealType = 2;
+
+	mHandlerCompleted = gJediSkillManager->ForceCureTarget(Jedi, Target, cmdProperties, HealType);
 }
 
 //=============================================================================================================================
@@ -433,6 +454,9 @@ void ObjectController::_handleForceCurePoison(uint64 targetId,Message* message,O
 
 void ObjectController::_handleHealStatesSelf(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfState(Jedi, cmdProperties);
 }
 
 //=============================================================================================================================
@@ -442,6 +466,10 @@ void ObjectController::_handleHealStatesSelf(uint64 targetId,Message* message,Ob
 
 void ObjectController::_handleTotalHealOther(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	mHandlerCompleted = gJediSkillManager->ForceHealTargetTotal(Jedi, Target, cmdProperties);
 }
 
 //=============================================================================================================================
@@ -451,6 +479,9 @@ void ObjectController::_handleTotalHealOther(uint64 targetId,Message* message,Ob
 
 void ObjectController::_handleTotalHealSelf(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+
+	mHandlerCompleted = gJediSkillManager->ForceHealSelfTotal(Jedi, cmdProperties);
 }
 
 //=============================================================================================================================

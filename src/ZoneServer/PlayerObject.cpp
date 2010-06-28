@@ -2153,7 +2153,7 @@ void PlayerObject::setUpright()
 	{
 		mMeditating = false;
 		this->toggleStateOff(CreatureState_Alert);
-		gMessageLib->sendMoodString(this, BString("none"));
+		gMessageLib->sendMoodString(this, BString(""));
 		gMessageLib->sendSystemMessage(this, L"You stop meditating");
 	}
 
@@ -2198,7 +2198,7 @@ void PlayerObject::setProne()
 	{
 		mMeditating = false;
 		this->toggleStateOff(CreatureState_Alert);
-		gMessageLib->sendMoodString(this, BString("none"));
+		gMessageLib->sendMoodString(this, BString(""));
 		gMessageLib->sendSystemMessage(this,L"You stop meditating");
 	}
 
@@ -2252,7 +2252,7 @@ void PlayerObject::setCrouched()
 	{
 		mMeditating = false;
 		this->toggleStateOff(CreatureState_Alert);
-		gMessageLib->sendMoodString(this, BString("none"));
+		gMessageLib->sendMoodString(this, BString(""));
 		gMessageLib->sendSystemMessage(this, L"You stop meditating");
 	}
 

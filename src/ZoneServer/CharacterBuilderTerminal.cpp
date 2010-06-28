@@ -97,6 +97,7 @@ void CharacterBuilderTerminal::InitMenus()
 	mMainCsrMenu.push_back("Get Item by ID");
 	mMainCsrMenu.push_back("Manage Professions");
 	mMainCsrMenu.push_back("Manage Wounds");
+	mMainCsrMenu.push_back("Manage States");
 
 	InitExperience();
 	InitProfessions();
@@ -104,6 +105,7 @@ void CharacterBuilderTerminal::InitMenus()
 	InitBuffs();
 	InitItems();
 	InitWounds();
+	InitStates();
 }
 void CharacterBuilderTerminal::InitProfessions()
 {
@@ -171,6 +173,26 @@ void CharacterBuilderTerminal::InitWounds()
 	mWoundMenu.push_back("-100 Focus Wound");
 	mWoundMenu.push_back("-100 willpower Wound");
 	mWoundMenu.push_back("-100 Battle Fatigue");
+}
+void CharacterBuilderTerminal::InitStates()
+{
+	mStateMenu.push_back("Apply Stunned State");
+	mStateMenu.push_back("Apply Blinded State");
+	mStateMenu.push_back("Apply Dizzied State");
+	mStateMenu.push_back("Apply Intimidated State");
+	mStateMenu.push_back("Apply Poisoned State");
+	mStateMenu.push_back("Apply Diseased State");
+	mStateMenu.push_back("Apply On-Fire State");
+	mStateMenu.push_back("Apply Bleeding State");
+
+	mStateMenu.push_back("Remove Stunned State");
+	mStateMenu.push_back("Remove Blinded State");
+	mStateMenu.push_back("Remove Dizzied State");
+	mStateMenu.push_back("Remove Intimidated State");
+	mStateMenu.push_back("Remove Poisoned State");
+	mStateMenu.push_back("Remove Diseased State");
+	mStateMenu.push_back("Remove On-Fire State");
+	mStateMenu.push_back("Remove Bleeding State");
 }
 void CharacterBuilderTerminal::InitItems()
 {
@@ -262,7 +284,6 @@ void CharacterBuilderTerminal::InitStructures()
 	mMineralMenu.push_back("Small");
 	mMineralMenu.push_back("Medium");
 	
-
 	////Houses
 	//BStringVector			mGenericMenu;
 	mGenericMenu.push_back("Generic Large  (Style 1)");
@@ -672,28 +693,28 @@ void CharacterBuilderTerminal::_handleMainMenu(PlayerObject* playerObject, uint3
 
 	switch(element)
 	{
-	case 0://Experience
+	case 0: //Experience
 		SendXPMenu(playerObject, action, element, inputStr, window);
 		break;
-	case 1://Credits
+	case 1: //Credits
 		if(playerObject->isConnected())
 		{
 			gUIManager->createNewListBox(this,"handleCreditsMenu","Credits","Select a category.",mCreditMenu,playerObject,SUI_Window_CharacterBuilder_ListBox_CreditMenu);
 		}
 		break;
-	case 2://Buffs
+	case 2: //Buffs
 		if(playerObject->isConnected())
 		{
 			gUIManager->createNewListBox(this,"handleAttributesMenu","Attributes","Select a Buff.",mBuffMenu,playerObject,SUI_Window_CharacterBuilder_ListBox_BuffMenu);
 		}
 		break;
-	case 3://Items
+	case 3: //Items
 		if(playerObject->isConnected())
 		{
 			gUIManager->createNewListBox(this,"handleItemsMenu","Items","Select a Category.",mItemMenu,playerObject,SUI_Window_CharacterBuilder_ListBox_ItemMenu);
 		}
 		break;
-	case 4://Resources
+	case 4: //Resources
 		SendResourcesMenu(playerObject, action, element, inputStr, window);
 		break;
 	case 5: //Professions
@@ -710,31 +731,31 @@ void CharacterBuilderTerminal::_handleMainCsrMenu(PlayerObject* playerObject, ui
 {
 	switch(element)
 	{
-	case 0://Experience
+	case 0: //Experience
 		SendXPMenu(playerObject, action, element, inputStr, window);
 		break;
-	case 1://Credits
+	case 1: //Credits
 		if(playerObject->isConnected())
 		{
 			gUIManager->createNewListBox(this,"handleCreditsMenu","Credits","Select a category.",mCreditMenu,playerObject,SUI_Window_CharacterBuilder_ListBox_CreditMenu);
 		}
 		break;
-	case 2://Buffs
+	case 2: //Buffs
 		if(playerObject->isConnected())
 		{
 			gUIManager->createNewListBox(this,"handleAttributesMenu","Attributes","Select a Buff.",mBuffMenu,playerObject,SUI_Window_CharacterBuilder_ListBox_BuffMenu);
 		}
 		break;
-	case 3://Items
+	case 3: //Items
 		if(playerObject->isConnected())
 		{
 			gUIManager->createNewListBox(this,"handleItemsMenu","Items","Select a Category.",mItemMenu,playerObject,SUI_Window_CharacterBuilder_ListBox_ItemMenu);
 		}
 		break;
-	case 4://Resources
+	case 4: //Resources
 		SendResourcesMenu(playerObject, action, element, inputStr, window);
 		break;
-	case 5://Get Item by ID
+	case 5: //Get Item by ID
 		if(playerObject->isConnected())
 		{
 			BStringVector dropDowns;
@@ -751,6 +772,12 @@ void CharacterBuilderTerminal::_handleMainCsrMenu(PlayerObject* playerObject, ui
 		if(playerObject->isConnected())
 		{
 			gUIManager->createNewListBox(this,"handleWoundMenu","Wounds","Select a Wound.",mWoundMenu,playerObject,SUI_Window_CharacterBuilder_ListBox_WoundMenu);
+		}
+		break;
+	case 8: //States
+		if (playerObject->isConnected())
+		{
+			gUIManager->createNewListBox(this, "handleStateMenu", "States", "Select a State.", mStateMenu, playerObject, SUI_Window_CharacterBuilder_ListBox_StateMenu);
 		}
 		break;
 	default:
@@ -1275,8 +1302,9 @@ void CharacterBuilderTerminal::_handleResourcesTypes(PlayerObject* playerObject,
 		}
 
 		gUIManager->createNewResourceSelectListBox(this,"handleResourcesMenu","Resources","Select",resourceNameList,resourceIdList,playerObject,SUI_Window_CharacterBuilderResourcesCRCMenu_ListBox);
-	}	
+	}
 }
+
 void CharacterBuilderTerminal::_handleWoundMenu(PlayerObject* playerObject, uint32 action,int32 element,string inputStr,UIWindow* window)
 {
 	switch(element)
@@ -1343,7 +1371,238 @@ void CharacterBuilderTerminal::_handleWoundMenu(PlayerObject* playerObject, uint
 		break;
 	default:
 		break;
-	}	
+	}
+}
+
+void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint32 action, int32 element, string inputStr, UIWindow* window)
+{
+	switch(element)
+	{
+	case 0: //Stunned State
+		if (playerObject->checkState(CreatureState_Stunned))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're already stunned.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOn(CreatureState_Stunned);
+			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_stun.cef", "", playerObject);
+			gMessageLib->sendFlyText(playerObject, "combat_effects", "go_stunned", 0, 255, 0);
+			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "go_stunned_single");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 1: //Blinded State
+		if (playerObject->checkState(CreatureState_Blinded))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're already blinded.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOn(CreatureState_Blinded);
+			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_blind.cef", "", playerObject);
+			gMessageLib->sendFlyText(playerObject, "combat_effects", "go_blind", 0, 255, 0);
+			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "go_blind_single");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 2: //Dizzy State
+		if (playerObject->checkState(CreatureState_Dizzy))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're already dizzy.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOn(CreatureState_Dizzy);
+			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_dizzy.cef", "", playerObject);
+			gMessageLib->sendFlyText(playerObject, "combat_effects", "go_dizzy", 0, 255, 0);
+			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "go_dizzy_single");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 3: //Intimidated State
+		if (playerObject->checkState(CreatureState_Intimidated))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're already intimidated.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOn(CreatureState_Intimidated);
+			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_intimidate.cef", "", playerObject);
+			gMessageLib->sendFlyText(playerObject, "combat_effects", "go_intimidated", 0, 255, 0);
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 4: //Poisoned State
+		if (playerObject->checkState(CreatureState_Poisoned))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're already poisoned.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOn(CreatureState_Poisoned);
+			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_poison.cef", "", playerObject);
+			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "start_poisoned");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 5: //Diseased State
+		if (playerObject->checkState(CreatureState_Diseased))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're already diseased.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOn(CreatureState_Diseased);
+			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_disease.cef", "", playerObject);
+			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "start_diseased");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 6: //On-Fire State
+		if (playerObject->checkState(CreatureState_OnFire))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're already on fire.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOn(CreatureState_OnFire);
+			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_fire.cef", "", playerObject);
+			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "start_fire");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 7: //Bleeding State
+		if (playerObject->checkState(CreatureState_Bleeding))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're already bleeding.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOn(CreatureState_Bleeding);
+			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_bleeding.cef", "", playerObject);
+			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "start_bleeding");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 8: //Stunned State
+		if (!playerObject->checkState(CreatureState_Stunned))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're not stunned.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOff(CreatureState_Stunned);
+			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "no_stunned_single");
+			gMessageLib->sendFlyText(playerObject, "combat_effects", "no_stunned", 255, 0, 0);
+			gMessageLib->sendStateUpdate(playerObject);
+
+		}
+		break;
+	case 9: //Blinded State
+		if (!playerObject->checkState(CreatureState_Blinded))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're not blinded.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOff(CreatureState_Blinded);
+			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "no_blind_single");
+			gMessageLib->sendFlyText(playerObject, "combat_effects", "no_blind", 255, 0, 0);
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 10: //Dizzy State
+		if (!playerObject->checkState(CreatureState_Dizzy))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're not dizzy.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOff(CreatureState_Dizzy);
+			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "no_dizzy_single");
+			gMessageLib->sendFlyText(playerObject, "combat_effects", "no_dizzy", 255, 0, 0);
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 11: //Intimidated State
+		if (!playerObject->checkState(CreatureState_Intimidated))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're not intimidated.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOff(CreatureState_Intimidated);
+			gMessageLib->sendFlyText(playerObject, "combat_effects", "no_intimidated", 255, 0, 0);
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 12: //Poisoned State
+		if (!playerObject->checkState(CreatureState_Poisoned))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're not poisoned.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOff(CreatureState_Poisoned);
+			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "stop_poisoned");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 13: //Diseased State
+		if (!playerObject->checkState(CreatureState_Diseased))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're not diseased.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOff(CreatureState_Diseased);
+			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "stop_diseased");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 14: //On-Fire State
+		if (!playerObject->checkState(CreatureState_OnFire))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're not on fire.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOff(CreatureState_OnFire);
+			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "stop_fire");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+		break;
+	case 15: //Bleeding State
+		if (!playerObject->checkState(CreatureState_Bleeding))
+		{
+			gMessageLib->sendSystemMessage(playerObject, L"You're not bleeding.");
+			return;
+		}
+		else
+		{
+			playerObject->toggleStateOff(CreatureState_Bleeding);
+			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "stop_bleeding");
+			gMessageLib->sendStateUpdate(playerObject);
+		}
+	default:
+		break;
+	}
 }
 
 void CharacterBuilderTerminal::_handleStructureMenu(PlayerObject* playerObject, uint32 action,int32 element,string inputStr,UIWindow* window)
@@ -2548,6 +2807,9 @@ void  CharacterBuilderTerminal::handleUIEvent(uint32 action,int32 element,string
 			break;
 		case SUI_Window_CharacterBuilder_ListBox_WoundMenu:
 			_handleWoundMenu(playerObject, action, element, inputStr, window);
+			break;
+		case SUI_Window_CharacterBuilder_ListBox_StateMenu:
+			_handleStateMenu(playerObject, action, element, inputStr, window);
 			break;
 		case SUI_Window_CharacterBuilder_ListBox_CivicMenu:
 			_handleCivicMenu(playerObject, action, element, inputStr, window);
