@@ -360,7 +360,7 @@ bool JediSkillManager::ForceHealSelfTotal(PlayerObject* Jedi, ObjectControllerCm
 	int BattleFatigue = Jedi->getHam()->getBattleFatigue();
 
 	//Perform Checks - (this is a very long check...but for now this is the only thing that works -_-)
-	//TODO: find a more cleaner way to do this.
+	//TODO: find a cleaner way to do this.
 	if (!Jedi->checkState(CreatureState_Poisoned))
 	{
 		if (!Jedi->checkState(CreatureState_Diseased))
@@ -915,7 +915,7 @@ bool JediSkillManager::ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Ta
 	int TargetBattleFatigue = Target->getHam()->getBattleFatigue();
 
 	//Perform Checks - (this is a very long check...but for now this is the only thing that works -_-)
-	//TODO: find a more cleaner way to do this.
+	//TODO: find a cleaner way to do this.
 	if (!Target->checkState(CreatureState_Poisoned))
 	{
 		if (!Target->checkState(CreatureState_Diseased))
