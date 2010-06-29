@@ -106,10 +106,10 @@ class NpcLairEntityEx
 		float	mSpawnDirY;
 		float	mSpawnDirW;
 		uint32	mFamily;
-		string	mFaction;
-		string	mObjectString;
-		string	mStfName;
-		string	mStfFile;
+		BString	mFaction;
+		BString	mObjectString;
+		BString	mStfName;
+		BString	mStfFile;
 };
 
 //=============================================================================
@@ -331,7 +331,12 @@ void NonPersistentNpcFactory::handleDatabaseJobComplete(void* ref,DatabaseResult
 		case NonPersistentNpcQuery_NpcTemplate:
 		{
 			NPCObject* npc = _createNonPersistentNpc(result, asyncContainer->mTemplateId, asyncContainer->mId, asyncContainer->mParentObjectId);
-			assert(npc);
+			//we can't assert here, as not all npc types are implemented (yet)
+			//assert(npc);
+			if(!npc){
+				gLogger->log(LogManager::DEBUG,"NonPersistentNpcFactory::handleDatabaseJobComplete() unable to _createNonPersistentNpc, see above message.");
+				break;
+			}
 
 			// Spawn related data.
 			npc->setCellIdForSpawn(asyncContainer->mSpawnCellId);
