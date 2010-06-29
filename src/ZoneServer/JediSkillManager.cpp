@@ -1094,7 +1094,7 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 	//In Pre-CU, you couldn't force run while you were dizzy. (Thanks Shotter for reminding about about this.)
 	if (Jedi->checkState(CreatureState_Dizzy))
 	{
-		gMessageLib->sendSystemMessage(Jedi, L"You cannot Force Run while you are dizzy.");
+		gMessageLib->sendSystemMessage(Jedi, L"You are incapable of such speed right now.");
 		return false;
 	}
 
