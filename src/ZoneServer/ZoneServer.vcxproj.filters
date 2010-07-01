@@ -761,6 +761,9 @@
     <ClCompile Include="SendSystemMailMessage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Holocron.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActiveConversation.h">
@@ -1481,6 +1484,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ForceMeditateEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Holocron.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

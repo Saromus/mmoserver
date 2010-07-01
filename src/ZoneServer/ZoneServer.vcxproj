@@ -173,6 +173,7 @@
     <ClCompile Include="HarvesterFactory.cpp" />
     <ClCompile Include="HarvesterObject.cpp" />
     <ClCompile Include="Heightmap.cpp" />
+    <ClCompile Include="Holocron.cpp" />
     <ClCompile Include="HouseFactory.cpp" />
     <ClCompile Include="HouseObject.cpp" />
     <ClCompile Include="ImageDesignManager.cpp" />
@@ -441,6 +442,7 @@
     <ClInclude Include="Heightmap.h" />
     <ClInclude Include="HeightmapAsyncContainer.h" />
     <ClInclude Include="HeightMapCallback.h" />
+    <ClInclude Include="Holocron.h" />
     <ClInclude Include="HouseFactory.h" />
     <ClInclude Include="HouseObject.h" />
     <ClInclude Include="IncapRecoveryEvent.h" />

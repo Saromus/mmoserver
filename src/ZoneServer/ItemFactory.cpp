@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "ItemFactory.h"
 
+#include "Holocron.h"
 #include "CraftingTool.h"
 #include "CraftingStation.h"
 #include "Deed.h"
@@ -299,6 +300,16 @@ Item* ItemFactory::_createItem(DatabaseResult* result)
 		case ItemFamily_FactoryCrate:			item	= new FactoryCrate();				break;
 		case ItemFamily_Hopper:					item	= new Item();						break;
 		case ItemFamily_BugJar:					item	= new BugJar();						break;
+		case ItemFamily_Holocron:
+		{
+			switch(itemIdentifier.mTypeId)
+			{
+				case ItemType_Holocron_Light:	item	= new Holocron();					break;
+				case ItemType_Holocron_Dark:	item	= new Holocron();					break;
+				default:						item	= new Item();						break;
+			}
+		}
+		break;
 		default:
 		{
 			item = new Item();

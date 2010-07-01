@@ -53,7 +53,8 @@ enum ItemFamily
 	ItemFamily_Powerup					= 24,
 	ItemFamily_Scout					= 25,
 	ItemFamily_Hopper					= 29,
-	ItemFamily_FactoryCrate				= 30
+	ItemFamily_FactoryCrate				= 30,
+	ItemFamily_Holocron					= 31
 };
 
 //=============================================================================
@@ -275,7 +276,11 @@ enum ItemType
 	ItemType_Firework_Show				= 1762,
 
 	// cubes
-	ItemType_Generic_ChanceCube			= 1739
+	ItemType_Generic_ChanceCube			= 1739,
+
+	// holocrons
+	ItemType_Holocron_Light				= 2789,
+	ItemType_Holocron_Dark				= 2790
 };
 
 //=============================================================================
