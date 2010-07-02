@@ -310,10 +310,11 @@ Item* ItemFactory::_createItem(DatabaseResult* result)
 			}
 		}
 		break;
+		case ItemFamily_Component:				item	= new Item();						break;
 		default:
 		{
 			item = new Item();
-			gLogger->log(LogManager::NOTICE,"ItemFactory::createItem unknown Family %u",itemIdentifier.mFamilyId);
+			gLogger->log(LogManager::NOTICE,"ItemFactory::createItem (itemType: %u) with unknown Family %u",itemIdentifier.mTypeId, itemIdentifier.mFamilyId);
 		}
 		break;
 	}

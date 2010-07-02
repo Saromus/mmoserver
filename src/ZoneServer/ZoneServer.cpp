@@ -90,6 +90,7 @@ mZoneName(zoneName),
 mNetworkManager(0),
 mDatabaseManager(0),
 mRouterService(0),
+mLastHeartbeat(0),
 mDatabase(0)
 {
 	Anh_Utils::Clock::Init();
@@ -276,6 +277,13 @@ void ZoneServer::Process(void)
 	//  Process our core services
 	mDatabaseManager->Process();
 	mNetworkManager->Process();
+
+	// Heartbeat once in awhile
+	if (Anh_Utils::Clock::getSingleton()->getLocalTime() - mLastHeartbeat > 180000)
+	{
+		mLastHeartbeat = static_cast<uint32>(Anh_Utils::Clock::getSingleton()->getLocalTime());
+		gLogger->log(LogManager::NOTICE,"ZoneServer (%s) Heartbeat. Current Tick: %u", gZoneServer->getZoneName(), gWorldManager->GetCurrentGlobalTick());
+	}
 }
 
 //======================================================================================================================
