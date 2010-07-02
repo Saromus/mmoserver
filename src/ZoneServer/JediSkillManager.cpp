@@ -195,62 +195,62 @@ bool JediSkillManager::ForceHealSelfWound(PlayerObject* Jedi, ObjectControllerCm
 			{
 				if (BattleFatigue <= 0)
 				{
-					gMessageLib->sendSystemMessage(Jedi, L"You have no wounds of that type to heal.");
+					gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "no_damage_heal_self");
 					return false;
 				}
 			}
 		}
 	}
 
-	//The following all have temporary force costs (50 & 100) until the actual values are found.
-	int costHW1 = min(HealthWounds, 50);
-	int costHW2 = min(HealthWounds, 100);
-	int costAW1 = min(ActionWounds, 50);
-	int costAW2 = min(ActionWounds, 100);
-	int costMW1 = min(MindWounds, 50);
-	int costMW2 = min(MindWounds, 100);
-	int costBF1 = min(BattleFatigue, 50);
-	int costBF2 = min(BattleFatigue, 100);
+	//TODO: The force cost of these abilities increases based on the number of wounds healed.
+	int costHW1 = min(HealthWounds, 15);
+	int costHW2 = min(HealthWounds, 25);
+	int costAW1 = min(ActionWounds, 15);
+	int costAW2 = min(ActionWounds, 25);
+	int costMW1 = min(MindWounds, 15);
+	int costMW2 = min(MindWounds, 25);
+	int costBF1 = min(BattleFatigue, 75);
+	int costBF2 = min(BattleFatigue, 150);
 
 	switch (HealType)
 	{
 	case 1: //Heal Health Wound Self 1
-		Jedi->getHam()->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -50); //250
+		Jedi->getHam()->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -250); 
 		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "health_wounds", L"", -HealthWounds);
 		Jedi->getHam()->updateCurrentForce(-costHW1);
 		break;
 	case 2: //Heal Health Wound Self 2
-		Jedi->getHam()->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -100); //don't know actual value
+		Jedi->getHam()->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -500);
 		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "health_wounds", L"", -HealthWounds);
 		Jedi->getHam()->updateCurrentForce(-costHW2);
 		break;
 	case 3: //Heal Action Wound Self 1
-		Jedi->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -50); //250
+		Jedi->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -250);
 		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "action_wounds", L"", -ActionWounds);
 		Jedi->getHam()->updateCurrentForce(-costAW1);
 		break;
 	case 4: //Heal Action Wound Self 2
-		Jedi->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -100); //don't know actual value
+		Jedi->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -500);
 		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "action_wounds", L"", -ActionWounds);
 		Jedi->getHam()->updateCurrentForce(-costAW2);
 		break;
 	case 5: //Heal Mind Wound Self 1
-		Jedi->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -50); //250
+		Jedi->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -250);
 		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "mind_wounds", L"", -MindWounds);
 		Jedi->getHam()->updateCurrentForce(-costMW1);
 		break;
 	case 6: //Heal Mind Wound Self 2
-		Jedi->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -100); //don't know actual value
+		Jedi->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -500);
 		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "mind_wounds", L"", -MindWounds);
 		Jedi->getHam()->updateCurrentForce(-costMW2);
 		break;
 	case 7: //Heal Battle Fatigue Self 1
-		Jedi->getHam()->updateBattleFatigue(-50); //-150
+		Jedi->getHam()->updateBattleFatigue(-150);
 		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "battle_fatigue", L"", -BattleFatigue);
 		Jedi->getHam()->updateCurrentForce(-costBF1);
 		break;
 	case 8: //Heal Battle Fatigue Self 2
-		Jedi->getHam()->updateBattleFatigue(-100); //don't know actual value
+		Jedi->getHam()->updateBattleFatigue(-300);
 		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "battle_fatigue", L"", -BattleFatigue);
 		Jedi->getHam()->updateCurrentForce(-costBF2);
 		break;
@@ -267,6 +267,7 @@ bool JediSkillManager::ForceHealSelfWound(PlayerObject* Jedi, ObjectControllerCm
 bool JediSkillManager::ForceHealSelfState(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties)
 {
 	int forceCost = 50;
+	int NumberOfStatesCured = 0;
 
 	//Perform Checks
 	if (Jedi->checkIfMounted())
@@ -302,34 +303,42 @@ bool JediSkillManager::ForceHealSelfState(PlayerObject* Jedi, ObjectControllerCm
 		Jedi->toggleStateOff(CreatureState_Stunned);
 		gMessageLib->sendSystemMessage(Jedi, L"", "cbt_spam", "no_stunned_single");
 		gMessageLib->sendFlyText(Jedi, "combat_effects", "no_stunned", 255, 0, 0);
+		NumberOfStatesCured++;
 	}
 	if (Jedi->checkState(CreatureState_Blinded))
 	{
 		Jedi->toggleStateOff(CreatureState_Blinded);
 		gMessageLib->sendSystemMessage(Jedi, L"", "cbt_spam", "no_blind_single");
 		gMessageLib->sendFlyText(Jedi, "combat_effects", "no_blind", 255, 0, 0);
+		NumberOfStatesCured++;
 	}
 	if (Jedi->checkState(CreatureState_Dizzy))
 	{
 		Jedi->toggleStateOff(CreatureState_Dizzy);
 		gMessageLib->sendSystemMessage(Jedi, L"", "cbt_spam", "no_dizzy_single");
 		gMessageLib->sendFlyText(Jedi, "combat_effects", "no_dizzy", 255, 0, 0);
+		NumberOfStatesCured++;
 	}
 	if (Jedi->checkState(CreatureState_Intimidated))
 	{
 		Jedi->toggleStateOff(CreatureState_Intimidated);
 		gMessageLib->sendFlyText(Jedi, "combat_effects", "no_intimidated", 255, 0, 0);
+		NumberOfStatesCured++;
 	}
 	
 	gMessageLib->sendStateUpdate(Jedi);
 
-	Jedi->getHam()->updateCurrentForce(-forceCost);
+	//The base force cost (50) of this ability is multiplied by the number of states that are healed.
+	//In this case, it is 50 base force times the number of states on the player.
+	//[Equation (when force cost = 50)]: ModifiedForceCost = ForceCost x NumberOfStatesCured
+	int ModifiedForceCost = forceCost * NumberOfStatesCured;
+	Jedi->getHam()->updateCurrentForce(-ModifiedForceCost);
 
 	gMessageLib->sendSystemMessage(Jedi, L"You cure all negative states on yourself.");
 	return true;
 }
 
-//This heals damage and wounds on the player
+//This heals states (only DOTs tho), wounds, and damage on the player.
 bool JediSkillManager::ForceHealSelfTotal(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties)
 {
 	int forceCost = 400;
@@ -488,7 +497,6 @@ bool JediSkillManager::ForceHealSelfTotal(PlayerObject* Jedi, ObjectControllerCm
 
 }
 
-//TODO: Find the actual values for the forcecost and heal amount for each ForceHealTargetDamage skill.
 bool JediSkillManager::ForceHealTargetDamage(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType)
 {
 	//Perform Checks
@@ -538,15 +546,11 @@ bool JediSkillManager::ForceHealTargetDamage(PlayerObject* Jedi, PlayerObject* T
 	int H = TargetHealth - TargetMaxHealth;
 	int A = TargetAction - TargetMaxAction;
 	int M = TargetMind - TargetMaxMind;
-	//healAllOther 1 & 2 - don't know actual value for ForceCost; Need to find this out.
-	//just going to use a temporary forcecost for now...
-	//the temp cost can be increased if anyone feels its too low :)
-	int cost1 = min((H + A + M / 3), 200);
-	int cost2 = min((H + A + M / 3), 400);
 
-	//Don't know the actual value for how much is healed for any of the HealTypes.
-	//just going to use a temporary heal amount. (which are the same values from the ForceHealSelfDamage)
-	//the temp amount can be increased if anyone feels its too low :)
+	//TODO: The force cost of these abilities increases based on the number of wounds healed.
+	int cost1 = min((H + A + M / 3), 680);
+	int cost2 = min((H + A + M / 3), 940);
+
 	switch (HealType)
 	{
 	case 1:	//Heal All Other 1
@@ -555,12 +559,12 @@ bool JediSkillManager::ForceHealTargetDamage(PlayerObject* Jedi, PlayerObject* T
 			gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "no_force_power");
 			return false;
 		}
-		Target->getHam()->updatePropertyValue(HamBar_Health, HamProperty_CurrentHitpoints, 500);
-		Target->getHam()->updatePropertyValue(HamBar_Action, HamProperty_CurrentHitpoints, 500);
-		Target->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_CurrentHitpoints, 500);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "health_damage", L"", -H, "", "", L"", Target->getId());
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "action_damage", L"", -A, "", "", L"", Target->getId());
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "mind_damage", L"", -M, "", "", L"", Target->getId());
+		Target->getHam()->updatePropertyValue(HamBar_Health, HamProperty_CurrentHitpoints, 250);
+		Target->getHam()->updatePropertyValue(HamBar_Action, HamProperty_CurrentHitpoints, 250);
+		Target->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_CurrentHitpoints, 250);
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "health_damage", L"", -H, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "action_damage", L"", -A, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "mind_damage", L"", -M, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "health_damage", L"", -H, "", "", L"", 0, Jedi->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "action_damage", L"", -A, "", "", L"", 0, Jedi->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "mind_damage", L"", -M, "", "", L"", 0, Jedi->getId());
@@ -572,12 +576,12 @@ bool JediSkillManager::ForceHealTargetDamage(PlayerObject* Jedi, PlayerObject* T
 			gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "no_force_power");
 			return false;
 		}
-		Target->getHam()->updatePropertyValue(HamBar_Health, HamProperty_CurrentHitpoints, 1500);
-		Target->getHam()->updatePropertyValue(HamBar_Action, HamProperty_CurrentHitpoints, 1500);
-		Target->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_CurrentHitpoints, 1500);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "health_damage", L"", -H, "", "", L"", Target->getId());
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "action_damage", L"", -A, "", "", L"", Target->getId());
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "mind_damage", L"", -M, "", "", L"", Target->getId());
+		Target->getHam()->updatePropertyValue(HamBar_Health, HamProperty_CurrentHitpoints, 750);
+		Target->getHam()->updatePropertyValue(HamBar_Action, HamProperty_CurrentHitpoints, 750);
+		Target->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_CurrentHitpoints, 750);
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "health_damage", L"", -H, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "action_damage", L"", -A, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "mind_damage", L"", -M, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "health_damage", L"", -H, "", "", L"", 0, Jedi->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "action_damage", L"", -A, "", "", L"", 0, Jedi->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "mind_damage", L"", -M, "", "", L"", 0, Jedi->getId());
@@ -593,7 +597,6 @@ bool JediSkillManager::ForceHealTargetDamage(PlayerObject* Jedi, PlayerObject* T
 	return true;
 }
 
-//TODO: Find the actual values for the forcecost and heal amount for each ForceHealTargetWound skill.
 bool JediSkillManager::ForceHealTargetWound(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType)
 {
 	//Perform Checks
@@ -622,6 +625,7 @@ bool JediSkillManager::ForceHealTargetWound(PlayerObject* Jedi, PlayerObject* Ta
 	int TargetHealthWounds = Target->getHam()->mHealth.getWounds();
 	int TargetActionWounds = Target->getHam()->mAction.getWounds();
 	int TargetMindWounds = Target->getHam()->mMind.getWounds();
+	int TargetBattleFatigue = Target->getHam()->getBattleFatigue();
 
 	if (TargetHealthWounds <= 0)
 	{
@@ -629,58 +633,74 @@ bool JediSkillManager::ForceHealTargetWound(PlayerObject* Jedi, PlayerObject* Ta
 		{
 			if (TargetMindWounds <= 0)
 			{
-				gMessageLib->sendSystemMessage(Jedi, L"Your target has no wounds of that type to heal.");
-				return false;
+				if (TargetBattleFatigue <= 0)
+				{
+					gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "no_damage_heal_other");
+					return false;
+				}
 			}
 		}
 	}
 
-	//The following all have temporary force costs (45 & 96) until the actual values are found.
-	int costHW1 = min(TargetHealthWounds, 45);
-	int costHW2 = min(TargetHealthWounds, 96);
-	int costAW1 = min(TargetActionWounds, 45);
-	int costAW2 = min(TargetActionWounds, 96);
-	int costMW1 = min(TargetMindWounds, 45);
-	int costMW2 = min(TargetMindWounds, 96);
+	//TODO: The force cost of these abilities increases based on the number of wounds healed.
+	int costHW1 = min(TargetHealthWounds, 25);
+	int costHW2 = min(TargetHealthWounds, 75);
+	int costAW1 = min(TargetActionWounds, 25);
+	int costAW2 = min(TargetActionWounds, 75);
+	int costMW1 = min(TargetMindWounds, 25);
+	int costMW2 = min(TargetMindWounds, 75);
+	int costBF1 = min(TargetBattleFatigue, 150);
+	int costBF2 = min(TargetBattleFatigue, 300);
 
-	//The healWound amount is temporary until the actual values are found. For now I'm just using the same values as ForceHealSelfWound
 	switch (HealType)
 	{
 	case 1: //Heal Health Wound Other 1
-		Target->getHam()->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -50);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "health_wounds", L"", -TargetHealthWounds, "", "", L"", Target->getId());
+		Target->getHam()->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -100);
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "health_wounds", L"", -TargetHealthWounds, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "health_wounds", L"", -TargetHealthWounds, "", "", L"", 0, Jedi->getId());
 		Jedi->getHam()->updateCurrentForce(-costHW1);
 		break;
 	case 2: //Heal Health Wound Other 2
-		Target->getHam()->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -100);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "health_wounds", L"", -TargetHealthWounds, "", "", L"", Target->getId());
+		Target->getHam()->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -200);
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "health_wounds", L"", -TargetHealthWounds, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "health_wounds", L"", -TargetHealthWounds, "", "", L"", 0, Jedi->getId());
 		Jedi->getHam()->updateCurrentForce(-costHW2);
 		break;
 	case 3: //Heal Action Wound Other 1
-		Target->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -50);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "action_wounds", L"", -TargetActionWounds, "", "", L"", Target->getId());
+		Target->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -100);
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "action_wounds", L"", -TargetActionWounds, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "action_wounds", L"", -TargetActionWounds, "", "", L"", 0, Jedi->getId());
 		Jedi->getHam()->updateCurrentForce(-costAW1);
 		break;
 	case 4: //Heal Action Wound Other 2
-		Target->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -100);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "action_wounds", L"", -TargetActionWounds, "", "", L"", Target->getId());
+		Target->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -200);
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "action_wounds", L"", -TargetActionWounds, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "action_wounds", L"", -TargetActionWounds, "", "", L"", 0, Jedi->getId());
 		Jedi->getHam()->updateCurrentForce(-costAW2);
 		break;
 	case 5: //Heal Mind Wound Other 1
-		Target->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -50);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "mind_wounds", L"", -TargetMindWounds, "", "", L"", Target->getId());
+		Target->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -100);
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "mind_wounds", L"", -TargetMindWounds, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "mind_wounds", L"", -TargetMindWounds, "", "", L"", 0, Jedi->getId());
 		Jedi->getHam()->updateCurrentForce(-costMW1);
 		break;
 	case 6: //Heal Mind Wound Other 2
-		Target->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -100);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "mind_wounds", L"", -TargetMindWounds, "", "", L"", Target->getId());
+		Target->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -200);
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "mind_wounds", L"", -TargetMindWounds, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "mind_wounds", L"", -TargetMindWounds, "", "", L"", 0, Jedi->getId());
 		Jedi->getHam()->updateCurrentForce(-costMW2);
+		break;
+	case 7: //Heal Battle Fatigue Other 1
+		Target->getHam()->updateBattleFatigue(-60);
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "battle_fatigue", L"", -TargetBattleFatigue, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "battle_fatigue", L"", -TargetBattleFatigue, "", "", L"", 0, Jedi->getId());
+		Jedi->getHam()->updateCurrentForce(-costBF1);
+		break;
+	case 8: //Heal Battle Fatigue Other 2
+		Target->getHam()->updateBattleFatigue(-120);
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "battle_fatigue", L"", -TargetBattleFatigue, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "battle_fatigue", L"", -TargetBattleFatigue, "", "", L"", 0, Jedi->getId());
+		Jedi->getHam()->updateCurrentForce(-costBF2);
 		break;
 	default:
 		break;
@@ -695,6 +715,7 @@ bool JediSkillManager::ForceHealTargetWound(PlayerObject* Jedi, PlayerObject* Ta
 bool JediSkillManager::ForceHealTargetState(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties)
 {
 	int forceCost = 50;
+	int NumberOfStatesCured = 0;
 
 	//Perform Checks
 	if (Jedi->checkIfMounted())
@@ -746,28 +767,36 @@ bool JediSkillManager::ForceHealTargetState(PlayerObject* Jedi, PlayerObject* Ta
 		Target->toggleStateOff(CreatureState_Stunned);
 		gMessageLib->sendSystemMessage(Target, L"", "cbt_spam", "no_stunned_single");
 		gMessageLib->sendFlyText(Target, "combat_effects", "no_stunned", 255, 0, 0);
+		NumberOfStatesCured++;
 	}
 	if (Target->checkState(CreatureState_Blinded))
 	{
 		Target->toggleStateOff(CreatureState_Blinded);
 		gMessageLib->sendSystemMessage(Target, L"", "cbt_spam", "no_blind_single");
 		gMessageLib->sendFlyText(Target, "combat_effects", "no_blind", 255, 0, 0);
+		NumberOfStatesCured++;
 	}
 	if (Target->checkState(CreatureState_Dizzy))
 	{
 		Target->toggleStateOff(CreatureState_Dizzy);
 		gMessageLib->sendSystemMessage(Target, L"", "cbt_spam", "no_dizzy_single");
 		gMessageLib->sendFlyText(Target, "combat_effects", "no_dizzy", 255, 0, 0);
+		NumberOfStatesCured++;
 	}
 	if (Target->checkState(CreatureState_Intimidated))
 	{
 		Target->toggleStateOff(CreatureState_Intimidated);
 		gMessageLib->sendFlyText(Target, "combat_effects", "no_intimidated", 255, 0, 0);
+		NumberOfStatesCured++;
 	}
 
 	gMessageLib->sendStateUpdate(Target);
 
-	Jedi->getHam()->updateCurrentForce(-forceCost);
+	//The base force cost (50) of this ability is multiplied by the number of states that are healed.
+	//In this case, it is 50 base force times the number of states on the player's target.
+	//[Equation (when force cost = 50)]: ModifiedForceCost = ForceCost x NumberOfStatesCured
+	int ModifiedForceCost = forceCost * NumberOfStatesCured;
+	Jedi->getHam()->updateCurrentForce(-ModifiedForceCost);
 
 	//Animation
 	gMessageLib->sendCreatureAnimation(Jedi, BString("force_healing_1"));
@@ -867,7 +896,7 @@ bool JediSkillManager::ForceCureTarget(PlayerObject* Jedi, PlayerObject* Target,
 	return true;
 }
 
-//This heals damage and wounds on the player
+//This heals states (only DOTs tho), wounds, and damage on the player's target.
 bool JediSkillManager::ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties)
 {
 	int forceCost = 1000;
@@ -997,25 +1026,25 @@ bool JediSkillManager::ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Ta
 	if (TargetHealthWounds > 0)
 	{
 		Target->getHam()->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -TargetHealthWounds);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "health_wounds", L"", -TargetHealthWounds, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "health_wounds", L"", -TargetHealthWounds, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "health_wounds", L"", -TargetHealthWounds, "", "", L"", 0, Jedi->getId());
 	}
 	if (TargetActionWounds > 0)
 	{
 		Target->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -TargetActionWounds);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "action_wounds", L"", -TargetActionWounds, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "action_wounds", L"", -TargetActionWounds, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "action_wounds", L"", -TargetActionWounds, "", "", L"", 0, Jedi->getId());
 	}
 	if (TargetMindWounds > 0)
 	{
 		Target->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -TargetMindWounds);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "mind_wounds", L"", -TargetMindWounds, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "mind_wounds", L"", -TargetMindWounds, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "mind_wounds", L"", -TargetMindWounds, "", "", L"", 0, Jedi->getId());
 	}
 	if (TargetBattleFatigue > 0)
 	{
 		Target->getHam()->updateBattleFatigue(-TargetBattleFatigue);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "battle_fatigue", L"", -TargetBattleFatigue, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "battle_fatigue", L"", -TargetBattleFatigue, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "battle_fatigue", L"", -TargetBattleFatigue, "", "", L"", 0, Jedi->getId());
 	}
 
@@ -1027,19 +1056,19 @@ bool JediSkillManager::ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Ta
 	if (TargetHealth != TargetMaxHealth)
 	{
 		Target->getHam()->updatePropertyValue(HamBar_Health, HamProperty_CurrentHitpoints, H);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "health_damage", L"", -H, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "health_damage", L"", -H, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "health_damage", L"", -H, "", "", L"", 0, Jedi->getId());
 	}
 	if (TargetAction != TargetMaxAction)
 	{
 		Target->getHam()->updatePropertyValue(HamBar_Action, HamProperty_CurrentHitpoints, A);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "action_damage", L"", -A, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "action_damage", L"", -A, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "action_damage", L"", -A, "", "", L"", 0, Jedi->getId());
 	}
 	if (TargetMind != TargetMaxMind)
 	{
 		Target->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_CurrentHitpoints, M);
-		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_self", "jedi_spam", "mind_damage", L"", -M, "", "", L"", Target->getId());
+		gMessageLib->sendSystemMessage(Jedi, L"", "jedi_spam", "heal_other_self", "jedi_spam", "mind_damage", L"", -M, "", "", L"", Target->getId());
 		gMessageLib->sendSystemMessage(Target, L"", "jedi_spam", "heal_other_other", "jedi_spam", "mind_damage", L"", -M, "", "", L"", 0, Jedi->getId());
 	}
 
