@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once //same thing as #include guards
 
 #include <vector>
-#include "Common/MessageDispatchCallback.h"
+
 
 #define gJediSkillManager JediSkillManager::getSingletonPtr()
 

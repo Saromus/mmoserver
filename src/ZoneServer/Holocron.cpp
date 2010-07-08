@@ -63,11 +63,8 @@ void Holocron::handleObjectMenuSelect(uint8 messageType, Object* srcObject)
 				}
 				else
 				{
-					//NOTE: I don't remember whether holocrons replenished a certain amount of force or if it replenished all of it.
-					//So for now, I'm just going to make it replenish all of your force.
-					//Subtract Max Force from Current Force in order to get the amount of force that needs to be replenished in order to achieve max force again.
-
 					//Replenish Force Power
+					//Subtract Max Force from Current Force in order to get the amount of force that needs to be replenished in order to achieve max force again.
 					int fp = player->getHam()->getMaxForce() - player->getHam()->getCurrentForce();
 					player->getHam()->updateCurrentForce(fp);
 

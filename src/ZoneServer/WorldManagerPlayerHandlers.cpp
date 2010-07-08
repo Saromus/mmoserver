@@ -187,7 +187,7 @@ void WorldManager::savePlayerSync(uint32 accId,bool remove)
 	mDatabase->DestroyResult(mDatabase->ExecuteSynchSql("UPDATE character_attributes SET health_current=%u,action_current=%u,mind_current=%u"
 								",health_wounds=%u,strength_wounds=%u,constitution_wounds=%u,action_wounds=%u,quickness_wounds=%u"
 								",stamina_wounds=%u,mind_wounds=%u,focus_wounds=%u,willpower_wounds=%u,battlefatigue=%u,posture=%u,moodId=%u,title=\'%s\'"
-								",character_flags=%u,states=%"PRIu64",language=%u, group_id=%"PRIu64" WHERE character_id=%"PRIu64"",
+								",character_flags=%u,states=%"PRIu64",language=%u, group_id=%"PRIu64",force_current=%u,force_max=%u WHERE character_id=%"PRIu64"",
 								ham->mHealth.getCurrentHitPoints() - ham->mHealth.getModifier(), //Llloydyboy Added the -Modifier so that when buffs are reinitialised, it doesn't screw up HAM
 								ham->mAction.getCurrentHitPoints() - ham->mAction.getModifier(), //Llloydyboy Added the -Modifier so that when buffs are reinitialised, it doesn't screw up HAM
 								ham->mMind.getCurrentHitPoints() - ham->mMind.getModifier(),	 //Llloydyboy Added the -Modifier so that when buffs are reinitialised, it doesn't screw up HAM
@@ -208,6 +208,8 @@ void WorldManager::savePlayerSync(uint32 accId,bool remove)
 								playerObject->getState(),
 								playerObject->getLanguage(),
 								playerObject->getGroupId(),
+								ham->getCurrentForce(),
+								ham->getMaxForce(),
 								playerObject->getId()));
 
 

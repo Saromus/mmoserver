@@ -1107,7 +1107,9 @@ bool JediSkillManager::ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControll
 	return true;
 }
 
-//BUG: While force running, if you /kneel or /sit, it will kill the force run. I'll fix this another day...
+//BUG: While force running, if you /kneel, /sit, or /prone then stand up, it will kill the force run,
+//however the client effect will remain as if you are still force running but it will eventually stop when the force run timer stops.
+//So you are still force running, but without the speed lol. I'll fix this another day...
 bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int SkillLevel)
 // Force Run Skill Level
 // 1 - Force Run 1 [force run +1, terrain neg. +33]

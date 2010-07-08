@@ -674,8 +674,7 @@ void Ham::updateRegenRates()
 	mMindRegenRate		= (int32)((mWillpower.getCurrentHitPoints() / gWorldConfig->mMindRegenDivider) * regenModifier);
 
 	if (mParent->isForceMeditating())
-		//mForceRegenRate = (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * 3.0f); //doesn't do nothing :(
-		mForceRegenRate = mParent->getSkillModValue(SMod_jedi_force_power_regen);
+		mForceRegenRate = (int32)mParent->getSkillModValue(SMod_jedi_force_power_regen);
 	else
 		mForceRegenRate	= (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * regenModifier);
 
