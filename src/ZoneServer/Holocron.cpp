@@ -58,7 +58,7 @@ void Holocron::handleObjectMenuSelect(uint8 messageType, Object* srcObject)
 				//Check if player already has a full force bar.
 				if (player->getHam()->getCurrentForce() == player->getHam()->getMaxForce())
 				{
-					gMessageLib->sendSystemMessage(player, L"", "jedi_spam", "holocron_force_max");
+					gMessageLib->SendSystemMessage(::common::OutOfBand("jedi_spam", "holocron_force_max"), player);
 					return;
 				}
 				else
@@ -69,7 +69,7 @@ void Holocron::handleObjectMenuSelect(uint8 messageType, Object* srcObject)
 					player->getHam()->updateCurrentForce(fp);
 
 					//Send Client Message
-					gMessageLib->sendSystemMessage(player, L"", "jedi_spam", "holocron_force_replenish");
+					gMessageLib->SendSystemMessage(::common::OutOfBand("jedi_spam", "holocron_force_replenish"), player);
 
 					//Now that we have used the holocron, we need to delete it from the inventory since you can't use the same holocron twice.
 					Inventory* inventory = dynamic_cast<Inventory*>(player->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));

@@ -721,7 +721,7 @@ void PlayerObject::onForceRun(const ForceRunEvent* event)
 	{
 		if (this->checkPlayerCustomFlag(PlayerCustomFlag_ForceRun))
 		{
-			gMessageLib->sendSystemMessage(this, L"", "cbt_spam", "forcerun_stop_single");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "forcerun_stop_single"), this);
 			//Combat Spam
 			int8 s[256];
 			sprintf(s, "%s %s slows down.", this->getFirstName().getAnsi(), this->getLastName().getAnsi());

@@ -1385,7 +1385,7 @@ void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint
 	case 0: //Stunned State
 		if (playerObject->checkState(CreatureState_Stunned))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're already stunned.");
+			gMessageLib->SendSystemMessage(L"You're already stunned.", playerObject);
 			return;
 		}
 		else
@@ -1393,14 +1393,14 @@ void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint
 			playerObject->toggleStateOn(CreatureState_Stunned);
 			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_stun.cef", "", playerObject);
 			gMessageLib->sendFlyText(playerObject, "combat_effects", "go_stunned", 0, 255, 0);
-			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "go_stunned_single");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "go_stunned_single"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 		break;
 	case 1: //Blinded State
 		if (playerObject->checkState(CreatureState_Blinded))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're already blinded.");
+			gMessageLib->SendSystemMessage(L"You're already blinded.", playerObject);
 			return;
 		}
 		else
@@ -1408,14 +1408,14 @@ void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint
 			playerObject->toggleStateOn(CreatureState_Blinded);
 			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_blind.cef", "", playerObject);
 			gMessageLib->sendFlyText(playerObject, "combat_effects", "go_blind", 0, 255, 0);
-			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "go_blind_single");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "go_blind_single"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 		break;
 	case 2: //Dizzy State
 		if (playerObject->checkState(CreatureState_Dizzy))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're already dizzy.");
+			gMessageLib->SendSystemMessage(L"You're already dizzy.", playerObject);
 			return;
 		}
 		else
@@ -1423,14 +1423,14 @@ void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint
 			playerObject->toggleStateOn(CreatureState_Dizzy);
 			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_dizzy.cef", "", playerObject);
 			gMessageLib->sendFlyText(playerObject, "combat_effects", "go_dizzy", 0, 255, 0);
-			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "go_dizzy_single");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "go_dizzy_single"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 		break;
 	case 3: //Intimidated State
 		if (playerObject->checkState(CreatureState_Intimidated))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're already intimidated.");
+			gMessageLib->SendSystemMessage(L"You're already intimidated.", playerObject);
 			return;
 		}
 		else
@@ -1444,69 +1444,69 @@ void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint
 	case 4: //Poisoned State
 		if (playerObject->checkState(CreatureState_Poisoned))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're already poisoned.");
+			gMessageLib->SendSystemMessage(L"You're already poisoned.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOn(CreatureState_Poisoned);
 			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_poison.cef", "", playerObject);
-			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "start_poisoned");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "start_poisoned"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 		break;
 	case 5: //Diseased State
 		if (playerObject->checkState(CreatureState_Diseased))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're already diseased.");
+			gMessageLib->SendSystemMessage(L"You're already diseased.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOn(CreatureState_Diseased);
 			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_disease.cef", "", playerObject);
-			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "start_diseased");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "start_diseased"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 		break;
 	case 6: //On-Fire State
 		if (playerObject->checkState(CreatureState_OnFire))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're already on fire.");
+			gMessageLib->SendSystemMessage(L"You're already on fire.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOn(CreatureState_OnFire);
 			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_fire.cef", "", playerObject);
-			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "start_fire");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "start_fire"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 		break;
 	case 7: //Bleeding State
 		if (playerObject->checkState(CreatureState_Bleeding))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're already bleeding.");
+			gMessageLib->SendSystemMessage(L"You're already bleeding.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOn(CreatureState_Bleeding);
 			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_bleeding.cef", "", playerObject);
-			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "start_bleeding");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "start_bleeding"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 		break;
 	case 8: //Stunned State
 		if (!playerObject->checkState(CreatureState_Stunned))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're not stunned.");
+			gMessageLib->SendSystemMessage(L"You're not stunned.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOff(CreatureState_Stunned);
-			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "no_stunned_single");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "no_stunned_single"), playerObject);
 			gMessageLib->sendFlyText(playerObject, "combat_effects", "no_stunned", 255, 0, 0);
 			gMessageLib->sendStateUpdate(playerObject);
 
@@ -1515,13 +1515,13 @@ void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint
 	case 9: //Blinded State
 		if (!playerObject->checkState(CreatureState_Blinded))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're not blinded.");
+			gMessageLib->SendSystemMessage(L"You're not blinded.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOff(CreatureState_Blinded);
-			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "no_blind_single");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "no_blind_single"), playerObject);
 			gMessageLib->sendFlyText(playerObject, "combat_effects", "no_blind", 255, 0, 0);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
@@ -1529,13 +1529,13 @@ void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint
 	case 10: //Dizzy State
 		if (!playerObject->checkState(CreatureState_Dizzy))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're not dizzy.");
+			gMessageLib->SendSystemMessage(L"You're not dizzy.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOff(CreatureState_Dizzy);
-			gMessageLib->sendSystemMessage(playerObject, L"", "cbt_spam", "no_dizzy_single");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "no_dizzy_single"), playerObject);
 			gMessageLib->sendFlyText(playerObject, "combat_effects", "no_dizzy", 255, 0, 0);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
@@ -1543,7 +1543,7 @@ void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint
 	case 11: //Intimidated State
 		if (!playerObject->checkState(CreatureState_Intimidated))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're not intimidated.");
+			gMessageLib->SendSystemMessage(L"You're not intimidated.", playerObject);
 			return;
 		}
 		else
@@ -1556,52 +1556,52 @@ void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint
 	case 12: //Poisoned State
 		if (!playerObject->checkState(CreatureState_Poisoned))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're not poisoned.");
+			gMessageLib->SendSystemMessage(L"You're not poisoned.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOff(CreatureState_Poisoned);
-			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "stop_poisoned");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "stop_poisoned"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 		break;
 	case 13: //Diseased State
 		if (!playerObject->checkState(CreatureState_Diseased))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're not diseased.");
+			gMessageLib->SendSystemMessage(L"You're not diseased.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOff(CreatureState_Diseased);
-			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "stop_diseased");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "stop_diseased"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 		break;
 	case 14: //On-Fire State
 		if (!playerObject->checkState(CreatureState_OnFire))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're not on fire.");
+			gMessageLib->SendSystemMessage(L"You're not on fire.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOff(CreatureState_OnFire);
-			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "stop_fire");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "stop_fire"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 		break;
 	case 15: //Bleeding State
 		if (!playerObject->checkState(CreatureState_Bleeding))
 		{
-			gMessageLib->sendSystemMessage(playerObject, L"You're not bleeding.");
+			gMessageLib->SendSystemMessage(L"You're not bleeding.", playerObject);
 			return;
 		}
 		else
 		{
 			playerObject->toggleStateOff(CreatureState_Bleeding);
-			gMessageLib->sendSystemMessage(playerObject, L"", "dot_message", "stop_bleeding");
+			gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "stop_bleeding"), playerObject);
 			gMessageLib->sendStateUpdate(playerObject);
 		}
 	default:

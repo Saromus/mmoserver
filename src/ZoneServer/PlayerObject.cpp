@@ -2160,7 +2160,7 @@ void PlayerObject::setUpright()
 		mMeditating = false;
 		this->toggleStateOff(CreatureState_Alert);
 		gMessageLib->sendMoodString(this, BString(""));
-		gMessageLib->sendSystemMessage(this, L"You stop meditating");
+		gMessageLib->SendSystemMessage(L"You stop meditating", this);
 	}
 
 	// see if we need to get out of sampling mode
@@ -2205,7 +2205,7 @@ void PlayerObject::setProne()
 		mMeditating = false;
 		this->toggleStateOff(CreatureState_Alert);
 		gMessageLib->sendMoodString(this, BString(""));
-		gMessageLib->sendSystemMessage(this,L"You stop meditating");
+		gMessageLib->SendSystemMessage(L"You stop meditating", this);
 	}
 
 	// see if we need to get out of sampling mode
@@ -2259,7 +2259,7 @@ void PlayerObject::setCrouched()
 		mMeditating = false;
 		this->toggleStateOff(CreatureState_Alert);
 		gMessageLib->sendMoodString(this, BString(""));
-		gMessageLib->sendSystemMessage(this, L"You stop meditating");
+		gMessageLib->SendSystemMessage(L"You stop meditating", this);
 	}
 
 	//make sure we end states

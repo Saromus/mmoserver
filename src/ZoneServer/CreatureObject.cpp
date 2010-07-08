@@ -1425,7 +1425,7 @@ void CreatureObject::setMeditateState()
 
 	if (Player->checkState(CreatureState_Combat))
 	{
-		gMessageLib->sendSystemMessage(Player, L"", "jedi_spam", "not_while_in_combat"); //You cannot perform that action while in combat.
+		gMessageLib->SendSystemMessage(::common::OutOfBand("jedi_spam", "not_while_in_combat"), Player); //You cannot perform that action while in combat.
 		return;
 	}
 
