@@ -491,12 +491,12 @@ Object* ObjectContainer::getObjectMainParent(Object* object)
 		return player;
 	}
 
-	//the object is in the inventory - the mainparent is the inventory
-	Inventory* inventory = dynamic_cast<Inventory*>(ob);
-	if(inventory)
-	{
-		return inventory;
-	}
+	//the object is in the inventory - the mainparent is the inventory - NO ITS THE PLAYER
+	//Inventory* inventory = dynamic_cast<Inventory*>(ob);
+	//if(inventory)
+	//{
+		//return inventory;
+	//}
 
 	//the object is in the cell - the mainparent is the structure
 	CellObject* cell = dynamic_cast<CellObject*>(ob);
@@ -662,7 +662,7 @@ bool ObjectContainer::checkCapacity(uint8 amount, PlayerObject* player)
 	uint16 contentCount = getHeadCount();
 	if(player&&(mCapacity-contentCount < amount))
 	{
-		gMessageLib->sendSystemMessage(player,L"","container_error_message","container3");
+        gMessageLib->SendSystemMessage(::common::OutOfBand("container_error_message", "container3"), player);
 	}
 
 	return((mCapacity-contentCount) >= amount);

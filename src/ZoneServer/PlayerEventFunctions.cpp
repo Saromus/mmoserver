@@ -43,12 +43,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Utils/clock.h"
 #include "MessageLib/MessageLib.h"
 #include "LogManager/LogManager.h"
+#include "Common/OutOfBand.h"
 #include "Common/Message.h"
 #include "Common/MessageFactory.h"
 
 #include "utils/rand.h"
 
 #include <algorithm>
+
+using ::common::OutOfBand;
 
 //=============================================================================
 //
@@ -76,11 +79,11 @@ void PlayerObject::onSurvey(const SurveyEvent* event)
 			//return message for sampling cancel based on HAM
 			if(myMind < (int32)mindCost)
 			{
-				gMessageLib->sendSystemMessage(this,L"","error_message","sample_mind");
+                gMessageLib->SendSystemMessage(::common::OutOfBand("error_message", "sample_mind"), this);
 			}
 
 			//message for stop sampling
-			gMessageLib->sendSystemMessage(this,L"","survey","sample_cancel");
+            gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "sample_cancel"), this);
 
 			getSampleData()->mPendingSurvey = false;
 
@@ -108,7 +111,7 @@ void PlayerObject::onSurvey(const SurveyEvent* event)
 				// create a new one
 				if(datapad->getCapacity())
 				{
-					gMessageLib->sendSysMsg(this,"survey","survey_waypoint");
+                    gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "survey_waypoint"), this);
 					//gMessageLib->sendSystemMessage(this,L"","survey","survey_waypoint");
 				}
 				//the datapad automatically checks if there is room and gives the relevant error message
@@ -145,20 +148,20 @@ void PlayerObject::onSample(const SampleEvent* event)
 	Inventory* inventory = dynamic_cast<Inventory*>(this->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
 	if(!inventory)
 	{
-		gMessageLib->sendSystemMessage(this,L"","error_message","sample_gone");
+        gMessageLib->SendSystemMessage(::common::OutOfBand("error_message", "sample_gone"), this);
 		return;
 	}
 
 	tool		= dynamic_cast<SurveyTool*>(inventory->getObjectById(tool->getId()));
 	if(!tool)
 	{
-		gMessageLib->sendSystemMessage(this,L"","error_message","sample_gone");
+        gMessageLib->SendSystemMessage(::common::OutOfBand("error_message", "sample_gone"), this);
 		return;
 	}
 
 	if(this->checkIfMounted())
 	{
-		gMessageLib->sendSystemMessage(this,L"You cannot take resource samples while mounted.");
+		gMessageLib->SendSystemMessage(L"You cannot take resource samples while mounted.", this);
 		return;
 	}
 
@@ -173,11 +176,11 @@ void PlayerObject::onSample(const SampleEvent* event)
 		//return message for sampling cancel based on HAM
 		if(myAction < (int32)actionCost)
 		{
-			gMessageLib->sendSystemMessage(this,L"","error_message","sample_mind");
+            gMessageLib->SendSystemMessage(::common::OutOfBand("error_message", "sample_mind"), this);
 		}
 
 		//message for stop sampling
-		gMessageLib->sendSystemMessage(this,L"","survey","sample_cancel");
+        gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "sample_cancel"), this);
 
 
 		getSampleData()->mPendingSample	= false;
@@ -230,8 +233,6 @@ void PlayerObject::onSample(const SampleEvent* event)
 		
 		uint32 playerBF = mHam.getBattleFatigue();
 		
-		//TODO
-		//please note that bf alterations should be calculated by the ham object!!!!!!
 		uint32 woundDmg = 50*(1 + (playerBF/100)) + (50*(1 + (resPE/1000)));
 		uint32 bfDmg    = static_cast<uint32>(0.075*resPE);
 		uint32 hamReduc = 100*(2+ (resPE/1000));
@@ -291,7 +292,7 @@ void PlayerObject::onSample(const SampleEvent* event)
 		}
 		else
 		{
-			gMessageLib->sendSystemMessage(this,L"","survey","node_not_close");
+            gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "node_not_close"), this);
 			getSampleData()->mPendingSample		= false;
 			getSampleData()->mSampleNodeFlag	= false;
 			getSampleData()->mSampleNodeRecovery= false;
@@ -301,7 +302,7 @@ void PlayerObject::onSample(const SampleEvent* event)
 
 	if(ratio <= 0.0f)
 	{
-    gMessageLib->sendSystemMessage(this,L"","survey","density_below_threshold","","",resName.getUnicode16());
+        gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "density_below_threshold", L"", L"", resName.getUnicode16()), this);
 		getSampleData()->mPendingSample = false;
 		return;
 
@@ -327,10 +328,10 @@ void PlayerObject::onSample(const SampleEvent* event)
 			// FAILED ATTEMPT
 			sampleAmount = 0;
 			successSample =false;
-      gMessageLib->sendSystemMessage(this,L"","survey","sample_failed","","",resName.getUnicode16());
+            gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "sample_failed", L"", L"", resName.getUnicode16()), this);
 		}
 
-		else if((dieRoll > 91)&&(dieRoll < 96))
+		else if((dieRoll == 98))
 		{
 			//EVENT WINDOW CASE
 			int32 eventRoll = int(gRandom->getRand()%2)+1;
@@ -383,18 +384,19 @@ void PlayerObject::onSample(const SampleEvent* event)
 			{
 				sampleAmount = (static_cast<uint32>(3*maxSample));
                 sampleAmount = std::max(sampleAmount,static_cast<uint>(1));
-				gMessageLib->sendSystemMessage(this,L"","survey","node_recovery");
+                gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "node_recovery"), this);
 				getSampleData()->mSampleEventFlag = false;
 				getSampleData()->mSampleNodeFlag = false;
 			}
 			else
-			if(dieRoll >= 96) 
+			if(dieRoll == 100) 
 			{
 				if(getSampleData()->mSampleGambleFlag)
 				{
-					gMessageLib->sendSystemMessage(this,L"","survey","gamble_success");
+                    gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "gamble_success"), this);
 					sampleAmount = (static_cast<uint32>(3*maxSample));
                     sampleAmount = std::max(sampleAmount, static_cast<uint>(1));
+                    gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "sample_located", L"", L"", resName.getUnicode16(), sampleAmount), this);
 					getSampleData()->mSampleGambleFlag = false;
 					getSampleData()->mSampleEventFlag = false;
 				}
@@ -403,7 +405,8 @@ void PlayerObject::onSample(const SampleEvent* event)
 				//CRITICAL SUCCESS
 					sampleAmount = (static_cast<uint32>(2*maxSample));
                     sampleAmount = std::max(sampleAmount, static_cast<uint>(1));
-                    gMessageLib->sendSystemMessage(this,L"","survey","critical_success","","",resName.getUnicode16());
+                    gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "critical_success", L"", L"", resName.getUnicode16()), this);
+                    gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "sample_located", L"", L"", resName.getUnicode16(), sampleAmount), this);
 				}
 			} 
 			else 
@@ -411,13 +414,13 @@ void PlayerObject::onSample(const SampleEvent* event)
 				//NORMAL SUCCESS
 				sampleAmount = (static_cast<uint32>(floor(static_cast<float>((maxSample-minSample)*(dieRoll-failureChance)/(90-failureChance)+minSample))));         // floor == round down, so 9.9 == 9
                 sampleAmount = std::max(sampleAmount, static_cast<uint>(1));
-                gMessageLib->sendSystemMessage(this,L"","survey","sample_located","","",resName.getUnicode16(),sampleAmount);
+                gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "sample_located", L"", L"", resName.getUnicode16(), sampleAmount), this);
 			}
 		}
 	}
 	else
 	{
-    gMessageLib->sendSystemMessage(this,L"","survey","density_below_threshold","","",resName.getUnicode16());
+        gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "density_below_threshold", L"", L"", resName.getUnicode16()), this);
 		successSample = false;
 		resAvailable = false;
 	}
@@ -524,11 +527,11 @@ void PlayerObject::onSample(const SampleEvent* event)
 		//return message for sampling cancel based on HAM
 		if(myAction < (int32)actionCost)
 		{
-			gMessageLib->sendSystemMessage(this,L"","error_message","sample_mind");
+            gMessageLib->SendSystemMessage(::common::OutOfBand("error_message", "sample_mind"), this);
 		}
 
 		//message for stop sampling
-		gMessageLib->sendSystemMessage(this,L"","survey","sample_cancel");
+        gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "sample_cancel"), this);
 
 
 		getSampleData()->mPendingSample	= false;
@@ -560,10 +563,11 @@ void PlayerObject::onLogout(const LogOutEvent* event)
 		//tell the time and dust off
 		mObjectController.addEvent(new LogOutEvent(event->getLogOutTime(),event->getLogOutSpacer()),event->getLogOutSpacer());
 		uint32 timeLeft = (uint32)(event->getLogOutTime()- Anh_Utils::Clock::getSingleton()->getLocalTime())/1000;
-		gMessageLib->sendSysMsg(this,"logout","time_left",NULL,NULL,NULL,timeLeft);
+        gMessageLib->SendSystemMessage(OutOfBand("logout", "time_left", 0, 0, 0, timeLeft), this);
 		return;
 	}
-	gMessageLib->sendSysMsg(this,"logout","safe_to_log_out");
+            
+    gMessageLib->SendSystemMessage(OutOfBand("logout", "safe_to_log_out"), this);
 	
 	gMessageLib->sendLogout(this);
 	this->togglePlayerCustomFlagOff(PlayerCustomFlag_LogOut);	
@@ -585,9 +589,8 @@ void PlayerObject::onBurstRun(const BurstRunEvent* event)
 	{
 		if(this->checkPlayerCustomFlag(PlayerCustomFlag_BurstRunCD))
 		{
-			gMessageLib->sendSysMsg(this,"combat_effects","burst_run_not_tired");
+            gMessageLib->SendSystemMessage(::common::OutOfBand("combat_effects", "burst_run_not_tired"), this);
 			this->togglePlayerCustomFlagOff(PlayerCustomFlag_BurstRunCD);	
-
 		}
 	}
 
@@ -596,15 +599,14 @@ void PlayerObject::onBurstRun(const BurstRunEvent* event)
 	{
 		if(this->checkPlayerCustomFlag(PlayerCustomFlag_BurstRun))
 		{
-			gMessageLib->sendSystemMessage(this,L"You slow down.");
+			gMessageLib->SendSystemMessage(L"You slow down.", this);
 			int8 s[256];
 			sprintf(s,"%s %s slows down.",this->getFirstName().getAnsi(),this->getLastName().getAnsi());
 			BString bs(s);
 			bs.convert(BSTRType_Unicode16);
 			gMessageLib->sendCombatSpam(this,this,0,"","",0,0,bs.getUnicode16());
-
-
-			gMessageLib->sendSysMsg(this,"combat_effects","burst_run_tired");
+            
+            gMessageLib->SendSystemMessage(OutOfBand("combat_effects", "burst_run_tired"), this);
 			this->togglePlayerCustomFlagOff(PlayerCustomFlag_BurstRun);	
 
 			this->setCurrentSpeedModifier(this->getBaseSpeedModifier());
@@ -655,7 +657,7 @@ void PlayerObject::onInjuryTreatment(const InjuryTreatmentEvent* event)
 	if(now > t)
 	{
 		this->togglePlayerCustomFlagOff(PlayerCustomFlag_InjuryTreatment);
-		gMessageLib->sendSystemMessage(this, L"", "healing_response", "healing_response_58");
+        gMessageLib->SendSystemMessage(::common::OutOfBand("healing_response", "healing_response_58"), this);
 	}
 	
 	//have to call once more so we can get back here...
@@ -675,7 +677,7 @@ void PlayerObject::onQuickHealInjuryTreatment(const QuickHealInjuryTreatmentEven
 	if(now > t)
 	{
 		this->togglePlayerCustomFlagOff(PlayerCustomFlag_QuickHealInjuryTreatment);
-		gMessageLib->sendSystemMessage(this, L"", "healing_response", "healing_response_58");
+        gMessageLib->SendSystemMessage(::common::OutOfBand("healing_response", "healing_response_58"), this);
 	}
 	
 	//have to call once more so we can get back here...
@@ -696,7 +698,8 @@ void PlayerObject::onWoundTreatment(const WoundTreatmentEvent* event)
 	if(now >  t)
 	{
 		this->togglePlayerCustomFlagOff(PlayerCustomFlag_WoundTreatment);
-		gMessageLib->sendSystemMessage(this, L"", "healing_response", "healing_response_59");
+        
+        gMessageLib->SendSystemMessage(::common::OutOfBand("healing_response", "healing_response_59"), this);
 	}
 	//have to call once more so we can get back here...
 	else

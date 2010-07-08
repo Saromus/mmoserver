@@ -114,7 +114,7 @@ void CharacterLoginHandler::_processCmdSceneReady(Message* message, DispatchClie
 		if(player && !(player->getMotdReceived()) && moT.getLength())
 		{
 			player->setMotdReceived(true);
-			gMessageLib->sendSystemMessage(player,moT.getUnicode16());
+			gMessageLib->SendSystemMessage(moT.getUnicode16(), player);
 		}
 
 		// Send newbie info.
@@ -150,7 +150,7 @@ void CharacterLoginHandler::_processCmdSceneReady(Message* message, DispatchClie
 
 		BString buildString(rawData);
 		buildString.convert(BSTRType_Unicode16);
-		gMessageLib->sendSystemMessage(player,buildString.getUnicode16());
+		gMessageLib->SendSystemMessage(buildString.getUnicode16(), player);
 
 		// Temp fix for testing instances at normal planets (Corellia).
 		/*
@@ -457,6 +457,6 @@ void CharacterLoginHandler::_processClusterZoneTransferDenied(Message* message, 
 	// put it to the disconnected list
 	if((playerObject = gWorldManager->getPlayerByAccId(message->getAccountId())) != NULL)
 	{
-		gMessageLib->sendSystemMessage(playerObject,L"The Emperor has restricted travel to this planet at this time.");
+		gMessageLib->SendSystemMessage(L"The Emperor has restricted travel to this planet at this time.", playerObject);
 	}
 }

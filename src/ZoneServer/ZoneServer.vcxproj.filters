@@ -440,9 +440,6 @@
     <ClCompile Include="OCGroupHandlers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OCHeightmapCallback.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="OCMarksmanHandlers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1487,6 +1484,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Holocron.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+	<ClInclude Include="SocialChatTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+	<ClInclude Include="MoodTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

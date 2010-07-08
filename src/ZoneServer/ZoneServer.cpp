@@ -26,31 +26,35 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "ZoneServer.h"
-#include "AdminManager.h"
-#include "BuffManager.h"
 #include "CharacterLoginHandler.h"
 #include "CharSheetManager.h"
+//	Managers
+#include "CraftingManager.h"
+#include "AdminManager.h"
+#include "ArtisanManager.h"
+#include "BuffManager.h"
 #include "CombatManager.h"
 #include "EntertainerManager.h"
-#include "Food.h"
 #include "ForageManager.h"
 #include "GroupManager.h"
 #include "JediSkillManager.h"
 #include "MedicManager.h"
-#include "NonPersistentItemFactory.h"
-#include "NonPersistentNpcFactory.h"
-#include "nonPersistantObjectFactory.h"
 #include "NpcManager.h"
-#include "ObjectControllerCommandMap.h"
-#include "ObjectControllerDispatch.h"
-#include "ObjectFactory.h"
 #include "ScoutManager.h"
 #include "SkillManager.h"
 #include "StructureManager.h"
 #include "TradeManager.h"
-#include "TravelMapHandler.h"
 #include "UIManager.h"
 #include "WorldManager.h"
+
+#include "Food.h"
+#include "NonPersistentItemFactory.h"
+#include "NonPersistentNpcFactory.h"
+#include "nonPersistantObjectFactory.h"
+#include "ObjectControllerCommandMap.h"
+#include "ObjectControllerDispatch.h"
+#include "ObjectFactory.h"
+#include "TravelMapHandler.h"
 #include "WorldConfig.h"
 
 // External references
@@ -169,6 +173,10 @@ mDatabase(0)
 	(void)ScoutManager::Instance();
 	(void)NonPersistantObjectFactory::Instance();
 
+	//ArtisanManager callback
+	ArtisanManager::Init();
+	CraftingManager::Init(mDatabase);
+
 	UIManager::Init(mDatabase,mMessageDispatch);
 	CombatManager::Init(mDatabase);
 	TravelMapHandler::Init(mDatabase,mMessageDispatch,zoneId);
@@ -232,7 +240,8 @@ ZoneServer::~ZoneServer(void)
 	delete mNetworkManager;
 
 	delete mDatabaseManager;
-
+	delete gCraftingManager->getSingletonPtr();
+	delete gArtisanManager->getSingletonPtr();
 	delete gSkillManager->getSingletonPtr();
 	delete gMedicManager->getSingletonPtr();
 	delete gJediSkillManager->getSingletonPtr();
@@ -282,7 +291,7 @@ void ZoneServer::Process(void)
 	if (Anh_Utils::Clock::getSingleton()->getLocalTime() - mLastHeartbeat > 180000)
 	{
 		mLastHeartbeat = static_cast<uint32>(Anh_Utils::Clock::getSingleton()->getLocalTime());
-		gLogger->log(LogManager::NOTICE,"ZoneServer (%s) Heartbeat. Current Tick: %u", gZoneServer->getZoneName(), gWorldManager->GetCurrentGlobalTick());
+		gLogger->log(LogManager::NOTICE,"ZoneServer (%s) Heartbeat. Total  Players on zone : %i",gZoneServer->getZoneName().getAnsi(),(gWorldManager->getPlayerAccMap())->size());
 	}
 }
 
@@ -398,9 +407,14 @@ int main(int argc, char* argv[])
 		}
 		else if (Anh_Utils::kbhit())
 		{
-			if(std::cin.get() == 'q')
+			char input = std::cin.get();
+			if(input == 'q')
 			{
 				break;
+			}else if(input == 'm'){
+				char message[256];
+				std::cin.getline(message,256);
+				gWorldManager->zoneSystemMessage(message);
 			}
 		}
 

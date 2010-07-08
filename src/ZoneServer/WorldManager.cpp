@@ -656,8 +656,8 @@ bool WorldManager::_handleCraftToolTimers(uint64 callTime,void* ref)
 					gWorldManager->addObject(item,true);
 
 					gMessageLib->sendCreateTangible(item,player);
-
-					gMessageLib->sendSystemMessage(player,L"","system_msg","prototype_transferred");
+                    
+                    gMessageLib->SendSystemMessage(::common::OutOfBand("system_msg", "prototype_transferred"), player);
 
 					tool->setCurrentItem(NULL);
 				}
@@ -915,6 +915,9 @@ void WorldManager::_handleLoadComplete()
 	//is this really necessary ?
 	//whenever someone creates something near us were updated on it anyway ... ?
 	mSubsystemScheduler->addTask(fastdelegate::MakeDelegate(this,&WorldManager::_handlePlayerMovementUpdateTimers),4,5000,NULL);
+	
+	//save player
+	setSaveTaskId(mSubsystemScheduler->addTask(fastdelegate::MakeDelegate(this,&WorldManager::_handlePlayerSaveTimers), 4, 120000, NULL));
 	
 	mSubsystemScheduler->addTask(fastdelegate::MakeDelegate(this,&WorldManager::_handleGeneralObjectTimers),5,2000,NULL);
 	mSubsystemScheduler->addTask(fastdelegate::MakeDelegate(this,&WorldManager::_handleGroupObjectTimers),5,gWorldConfig->getGroupMissionUpdateTime(),NULL);
@@ -1255,8 +1258,8 @@ void WorldManager::	zoneSystemMessage(std::string message)
 
 		if(player->isConnected())
 		{
-      std::wstring msg(message.begin(), message.end());
-			gMessageLib->sendSystemMessage((PlayerObject*)player,msg);
+            std::wstring msg(message.begin(), message.end());
+            gMessageLib->SendSystemMessage(msg, player);
 		}
 
 		++it;
