@@ -25,32 +25,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
 
-#include "PVState.h"
-#include "CreatureObject.h"
-#include "ObjectController.h"
-#include "ObjectControllerCommandMap.h"
+#include "Utils/MathFunctions.h"
 
-PVState::PVState(ObjectController* controller)
-: ProcessValidator(controller)
-{}
-
-PVState::~PVState()
-{}
-
-bool PVState::validate(uint32 &reply1, uint32 &reply2, uint64 targetId, uint32 opcode, ObjectControllerCmdProperties*& cmdProperties)
-{
-     CreatureObject* creature = dynamic_cast<CreatureObject*>(mController->getObject());
-
-    // if this command doesn't require state checks skip it, otherwise check our states
-    if(creature && cmdProperties && (cmdProperties->mStates != 0) && (creature->getState() & cmdProperties->mStates) != 0)
-    {
-		if(creature->checkStates(cmdProperties->mStates))
-		{
-			reply1 = kCannotDoWhileState;
-			reply2 = mController->getLowestCommonBit(creature->getState(), cmdProperties->mStates);
-			return false;
-		}
-
+bool IsPointInRectangle(const glm::vec2& check_point, const glm::vec2& rectangle_center, float width, float height) {
+    // Get nobuild lower right and upper left corners.
+    glm::vec2 lower_left(rectangle_center.x - (0.5*width), rectangle_center.y - (0.5*height));
+    glm::vec2 upper_right(rectangle_center.x + (0.5*width), rectangle_center.y + (0.5*height));
+    
+    // Check and see if the player is within this no build region.
+    glm::vec2::bool_type greater_than = glm::greaterThanEqual(check_point, lower_left);
+    glm::vec2::bool_type less_than = glm::lessThanEqual(check_point, upper_right);
+    
+    if (greater_than.x && greater_than.y && less_than.x && less_than.y) {
+        return true;
     }
-    return true;
+
+    return false;
 }

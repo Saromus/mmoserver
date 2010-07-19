@@ -25,32 +25,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
 
-#include "PVState.h"
-#include "CreatureObject.h"
-#include "ObjectController.h"
-#include "ObjectControllerCommandMap.h"
+#ifndef SRC_UTILS_MATHFUNCTIONS_H_
+#define SRC_UTILS_MATHFUNCTIONS_H_
 
-PVState::PVState(ObjectController* controller)
-: ProcessValidator(controller)
-{}
+#include <glm/glm.hpp>
 
-PVState::~PVState()
-{}
+/**
+ * Checks to see if a given point is within the bounds of a rectangle given its center and width/height.
+ *
+ * \param check_point A point to check whether or not is inside a rectangle's bounds.
+ * \param rectangle_center The center point of a rectangle.
+ * \param width The width of the rectangle.
+ * \param height The height of the rectangle.
+ * \returns True if the check_point is within the rectangle bounds, false if not.
+ */
+bool IsPointInRectangle(const glm::vec2& check_point, const glm::vec2& rectangle_center, float width, float height);
 
-bool PVState::validate(uint32 &reply1, uint32 &reply2, uint64 targetId, uint32 opcode, ObjectControllerCmdProperties*& cmdProperties)
-{
-     CreatureObject* creature = dynamic_cast<CreatureObject*>(mController->getObject());
-
-    // if this command doesn't require state checks skip it, otherwise check our states
-    if(creature && cmdProperties && (cmdProperties->mStates != 0) && (creature->getState() & cmdProperties->mStates) != 0)
-    {
-		if(creature->checkStates(cmdProperties->mStates))
-		{
-			reply1 = kCannotDoWhileState;
-			reply2 = mController->getLowestCommonBit(creature->getState(), cmdProperties->mStates);
-			return false;
-		}
-
-    }
-    return true;
-}
+#endif  // SRC_UTILS_MATHFUNCTIONS_H_

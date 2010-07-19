@@ -25,32 +25,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
 
-#include "PVState.h"
-#include "CreatureObject.h"
-#include "ObjectController.h"
-#include "ObjectControllerCommandMap.h"
+#include <gtest/gtest.h>
 
-PVState::PVState(ObjectController* controller)
-: ProcessValidator(controller)
-{}
+#include "Utils/MathFunctions.h"
 
-PVState::~PVState()
-{}
+TEST(MathFunctionsTests, CanCheckIfPointIsInRectangleBoundries) {
+    // Load up some initial data
+    glm::vec2 rec_center(-5160.0f, 4380.0f);
+    glm::vec2 player_pos1(-4000.0f, 4000.0f);
+    glm::vec2 player_pos2(-6500.0f, 3000.0f);
 
-bool PVState::validate(uint32 &reply1, uint32 &reply2, uint64 targetId, uint32 opcode, ObjectControllerCmdProperties*& cmdProperties)
-{
-     CreatureObject* creature = dynamic_cast<CreatureObject*>(mController->getObject());
+    float width = 2500.0f;
+    float height = 1500.0f;
 
-    // if this command doesn't require state checks skip it, otherwise check our states
-    if(creature && cmdProperties && (cmdProperties->mStates != 0) && (creature->getState() & cmdProperties->mStates) != 0)
-    {
-		if(creature->checkStates(cmdProperties->mStates))
-		{
-			reply1 = kCannotDoWhileState;
-			reply2 = mController->getLowestCommonBit(creature->getState(), cmdProperties->mStates);
-			return false;
-		}
+    // This point should be inside the rectangle.
+    EXPECT_EQ(true, IsPointInRectangle(player_pos1, rec_center, width, height));
 
-    }
-    return true;
+    // This point should not be inside the rectangle.
+    EXPECT_EQ(false, IsPointInRectangle(player_pos2, rec_center, width, height));
 }
