@@ -692,8 +692,9 @@ void CreatureObject::incap()
 		uint32 configIncapCount = gWorldConfig->getConfiguration<uint32>("Player_Incapacitation",3);
 		if(++mIncapCount < (uint8)configIncapCount)
 		{
-			// update the posture
+			// update the posture and locomotion
 			mPosture = CreaturePosture_Incapacitated;
+			setLocomotionByPosture(mPosture);
 
 			// send timer updates
 			mCurrentIncapTime = gWorldConfig->getBaseIncapTime() * 1000;
@@ -754,6 +755,7 @@ void CreatureObject::die()
 	}
 
 	mPosture = CreaturePosture_Dead;
+	setLocomotionByPosture(mPosture);
 
 	// reset ham regeneration
 	mHam.updateRegenRates();
@@ -773,23 +775,7 @@ void CreatureObject::die()
 		gMessageLib->sendSelfPostureUpdate(player);
 
 		// update duel lists
-		PlayerList::iterator duelIt = player->getDuelList()->begin();
-
-		while(duelIt != player->getDuelList()->end())
-		{
-			if((*duelIt)->checkDuelList(player))
-			{
-				PlayerObject* duelPlayer = (*duelIt);
-
-				duelPlayer->removeFromDuelList(player);
-
-				gMessageLib->sendUpdatePvpStatus(player,duelPlayer);
-				gMessageLib->sendUpdatePvpStatus(duelPlayer,player);
-			}
-
-			++duelIt;
-		}
-		player->getDuelList()->clear();
+		player->clearDuelList();
 
 		// update defender lists
 		ObjectIDList::iterator defenderIt = mDefenders.begin();

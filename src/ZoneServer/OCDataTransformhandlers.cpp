@@ -109,7 +109,7 @@ void ObjectController::handleDataTransform(Message* message,bool inRangeUpdate)
 	// stop entertaining ???
 	// important is, that if we move we change our posture to NOT skill animating anymore!
 	// so only stop entertaining when we are performing and NOT skillanimationg
-	if(player->getPerformingState() != PlayerPerformance_None /*&& player->getPosture() != CreaturePosture_SkillAnimating*/)
+	if(player->getPerformingState() != PlayerPerformance_None && player->getPosture() != CreaturePosture_SkillAnimating)
 	{
 		gEntertainerManager->stopEntertaining(player);
 	}
@@ -298,10 +298,10 @@ void ObjectController::handleDataTransform(Message* message,bool inRangeUpdate)
 			{
 				// send out position updates to known players
 				// please note that these updates mess up our dance performance
-				if(player->getPerformingState() == PlayerPerformance_None)
-				{
-					gMessageLib->sendUpdateTransformMessage(player);
-				}
+				/*if(player->getPerformingState() == PlayerPerformance_None)
+				{*/
+				gMessageLib->sendUpdateTransformMessage(player);
+				//}
 		
 
 			}
@@ -359,7 +359,7 @@ void ObjectController::handleDataTransformWithParent(Message* message,bool inRan
 		speed  = message->getFloat();
 
 		// stop entertaining, if we were
-		if(player->getPerformingState() != PlayerPerformance_None/* && player->getPosture() != CreaturePosture_SkillAnimating*/)
+		if(player->getPerformingState() != PlayerPerformance_None && player->getPosture() != CreaturePosture_SkillAnimating)
 		{
 			gEntertainerManager->stopEntertaining(player);
 		}
@@ -602,8 +602,19 @@ bool ObjectController::_updateInRangeObjectsOutside()
 	{
 		//BEWARE Object is at this time possibly not valid anymore!
 		//this actually causes a lot of crashes!!!!
+		Object* object = nullptr;
+		try
+		{
+			//the object might no exist anymore - the first cast to object actually might still work
+			//got alot of crashes that way ... -leave until we use smartpointers
+			object = dynamic_cast<Object*>(*mObjectSetIt);
+			uint64 id = object->getId();
+			object = dynamic_cast<Object*>(gWorldManager->getObjectById(id));
 
-		Object* object = dynamic_cast<Object*>(*mObjectSetIt);
+		}
+		catch (...)
+		{
+		}
 		// Just simplified the code a little. Good find Schmunzel.
 
 		// only add it if its also outside
