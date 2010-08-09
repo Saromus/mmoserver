@@ -316,7 +316,8 @@ void PlayerObject::onForceRun(const ForceRunEvent* event)
 	{
 		if (this->checkPlayerCustomFlag(PlayerCustomFlag_ForceRun))
 		{
-			gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "forcerun_stop_single"), this);
+			gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "forcerun_stop_single"), this);
+			//I don't really remember if there was even any combat spam that was seen by other players for this.
 			//Combat Spam
 			int8 s[256];
 			sprintf(s, "%s %s slows down.", this->getFirstName().getAnsi(), this->getLastName().getAnsi());
@@ -327,10 +328,11 @@ void PlayerObject::onForceRun(const ForceRunEvent* event)
 			this->togglePlayerCustomFlagOff(PlayerCustomFlag_ForceRun);
 
 			this->modifySkillModValue(SMod_slope_move, -50);
-			this->setCurrentRunSpeedLimit(5.75f);
-			this->setCurrentAcceleration(1.50f);
+			this->setCurrentRunSpeedLimit(5.75f); //this->setCurrentRunSpeedLimit(this->getBaseRunSpeedLimit());
+			this->setCurrentAcceleration(1.50f); //this->setCurrentAcceleration(this->getBaseAcceleration());
 			gMessageLib->sendUpdateMovementProperties(this);
-			//gMessageLib->sendTerrainNegotiation(this);
+
+			//this->setUpright();
 		}
 	}
 	//have to call once more so we can get back here...
@@ -355,7 +357,7 @@ void PlayerObject::onForceMeditate(const ForceMeditateEvent* event)
 		if (this->isForceMeditating())
 		{
 			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/pl_force_meditate_self.cef", "", this);
-			mObjectController.addEvent(new ForceMeditateEvent(6000), 6000); //this makes it so the event loops thus making the client effect loop again and again...
+			mObjectController.addEvent(new ForceMeditateEvent(6000), 6000); //this makes it so the event loops, thus causing the client effect to loop again and again...until we stop force meditating.
 		}
 	}
 	//have to call once more so we can get back here...

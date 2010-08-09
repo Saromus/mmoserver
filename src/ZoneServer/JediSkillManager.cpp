@@ -1082,10 +1082,8 @@ bool JediSkillManager::ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Ta
 
 	return true;
 }
-//TODO: Implement a efficient way to update the Force Regen rate.
+//TODO: Implement an efficient way to update the Force Regen rate.
 //The Regen Rate/modifier from forcemeditate is *3
-//BUG: When you stand up from force meditate, it doesn't set the mood to "none." 
-//see - PlayerObject.cpp : setUpright(), setProne(), & setCrouched() for the mood reset for forcemeditate, that doesn't work -_-
 bool JediSkillManager::ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int ForceRegen)
 {
 	if (Jedi->isForceMeditating())
@@ -1101,23 +1099,18 @@ bool JediSkillManager::ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControll
 	// Schedule Execution
 	Jedi->getController()->addEvent(new ForceMeditateEvent(6000), 6000);
 
-	if (!Jedi->isForceMeditating())
-	{
-		Jedi->modifySkillModValue(SMod_jedi_force_power_regen, -ForceRegen);
-		return false;
-	}
-
 	return true;
 }
 
 //BUG: While force running, if you /kneel, /sit, or /prone then stand up, it will kill the force run,
 //however the client effect will remain as if you are still force running but it will eventually stop when the force run timer stops.
 //So you are still force running, but without the speed lol. I'll fix this another day...
+//TODO: Add player damage reductions for Force Run 2 and Force Run 3.
 bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int SkillLevel)
 // Force Run Skill Level
 // 1 - Force Run 1 [force run +1, terrain neg. +33]
-// 2 - Force Run 2 [force run +2, terrain neg. +66]
-// 3 - Force Run 3 [force run +3, terrain neg. +99]
+// 2 - Force Run 2 [force run +2, terrain neg. +66], Additionally, player damage is reduced by 95%.
+// 3 - Force Run 3 [force run +3, terrain neg. +99], Additionally while this ability is up, all the player's damage is reduced by 95%.
 {
 	if (Jedi->checkIfMounted())
 	{
@@ -1142,9 +1135,8 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 	uint32 buffState;
 	float speed;
 	float acceleration;
-	//float terrainNegotiation;
 	int slope;
-	int duration;
+	int duration; 
 	int forceCost;
 
 	if (SkillLevel = 2)
@@ -1152,7 +1144,6 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 		buffState = jedi_force_run_2;
 		speed = 8.624f;
 		acceleration = -.55f;
-		//terrainNegotiation = 66;
 		slope = 50;
 		duration = 120;
 		forceCost = 400;
@@ -1162,7 +1153,6 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 		buffState = jedi_force_run_3;
 		speed = 14.624f;
 		acceleration = -.55f;
-		//terrainNegotiation = 99;
 		slope = 50;
 		duration = 120;
 		forceCost = 600;
@@ -1172,7 +1162,6 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 		buffState = jedi_force_run_1;
 		speed = 2.624f;
 		acceleration = -.55f;
-		//terrainNegotiation = 33;
 		slope = 50;
 		duration = 120;
 		forceCost = 200;
@@ -1187,15 +1176,12 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 	// Updates
 	float new_speed = Jedi->getBaseRunSpeedLimit() + speed;
 	float new_acceleration = Jedi->getBaseAcceleration() + acceleration;
-	//float new_terrainNegotiation = Jedi->getBaseTerrainNegotiation() + terrainNegotiation;
-	Jedi->modifySkillModValue(SMod_slope_move, +slope);
+	Jedi->modifySkillModValue(SMod_slope_move, +slope); //terrain negotiation mod.
 
 	// Implement Speed
 	Jedi->setCurrentRunSpeedLimit(new_speed);
 	Jedi->setCurrentAcceleration(new_acceleration);
-	//Jedi->setCurrentTerrainNegotiation(new_terrainNegotiation);
 	gMessageLib->sendUpdateMovementProperties(Jedi);
-	//gMessageLib->sendTerrainNegotiation(Jedi);
 
 	// Buff Icon
 	Buff* forceRun = Buff::SimpleBuff(Jedi, Jedi, 120, buffState, gWorldManager->GetCurrentGlobalTick());
@@ -1208,7 +1194,7 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 	Jedi->getHam()->updateCurrentForce(-forceCost);
 
 	// Schedule Execution
-	Jedi->getController()->addEvent(new ForceRunEvent(120*1000), 120*1000);
+	Jedi->getController()->addEvent(new ForceRunEvent(duration*1000), duration*1000);
 
 	// Client Effect
 	gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/pl_force_run_self.cef", "", Jedi);
@@ -1216,6 +1202,8 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 	// Msg to Client
 	gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "forcerun_start_single"), Jedi);
 
-	return true;
+	// Set Locomotion
+	Jedi->setLocomotion(kLocomotionRunning);
 
+	return true;
 }
