@@ -328,8 +328,8 @@ void PlayerObject::onForceRun(const ForceRunEvent* event)
 			this->togglePlayerCustomFlagOff(PlayerCustomFlag_ForceRun);
 
 			this->modifySkillModValue(SMod_slope_move, -50);
-			this->setCurrentRunSpeedLimit(5.75f); //this->setCurrentRunSpeedLimit(this->getBaseRunSpeedLimit());
-			this->setCurrentAcceleration(1.50f); //this->setCurrentAcceleration(this->getBaseAcceleration());
+			this->setCurrentRunSpeedLimit(this->getBaseRunSpeedLimit());
+			this->setCurrentAcceleration(this->getBaseAcceleration());
 			gMessageLib->sendUpdateMovementProperties(this);
 
 			//this->setUpright();
@@ -354,10 +354,12 @@ void PlayerObject::onForceMeditate(const ForceMeditateEvent* event)
 	//do we need to play the effect again??
 	if (now > t)
 	{
-		if (this->isForceMeditating())
+		if (this->isMeditating())
 		{
 			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/pl_force_meditate_self.cef", "", this);
-			mObjectController.addEvent(new ForceMeditateEvent(6000), 6000); //this makes it so the event loops, thus causing the client effect to loop again and again...until we stop force meditating.
+
+			//this makes it so the event loops, thus causing the client effect to loop again and again...until we stop force meditating.
+			mObjectController.addEvent(new ForceMeditateEvent(6000), 6000);
 		}
 	}
 	//have to call once more so we can get back here...

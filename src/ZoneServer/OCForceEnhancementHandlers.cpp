@@ -203,6 +203,10 @@ void ObjectController::_handleForceResistStates(uint64 targetId,Message* message
 
 void ObjectController::_handleTransferForce(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	mHandlerCompleted = gJediSkillManager->TransferForce(Jedi, Target, cmdProperties);
 }
 
 //=============================================================================================================================

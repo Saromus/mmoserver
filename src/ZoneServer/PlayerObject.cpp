@@ -318,8 +318,9 @@ void PlayerObject::resetProperties()
 	getSampleData()->mPendingSample		= false;
 	getSampleData()->mSampleNodeRecovery= false;
 
-	this->togglePlayerCustomFlagOff(PlayerCustomFlag_LogOut);	
-	this->togglePlayerCustomFlagOff(PlayerCustomFlag_BurstRun);	
+	this->togglePlayerCustomFlagOff(PlayerCustomFlag_LogOut);
+	this->togglePlayerCustomFlagOff(PlayerCustomFlag_BurstRun);
+	this->togglePlayerCustomFlagOff(PlayerCustomFlag_ForceRun);
 
 	mDefenderUpdateCounter				= 0;
 	mReady								= false;
@@ -2187,12 +2188,12 @@ void PlayerObject::setUpright()
 		gMessageLib->sendHeartBeat(this->getClient());
 
 	// see if we need to stop force meditating
-	if (this->isForceMeditating())
+	if (this->isMeditating())
 	{
 		mMeditating = false;
 		this->toggleStateOff(CreatureState_Alert);
 		gMessageLib->sendMoodString(this, BString("neutral"));
-		gMessageLib->SendSystemMessage(L"You stop meditating", this);
+		gMessageLib->SendSystemMessage(::common::OutOfBand("teraskasi", "med_end"), this);
 	}
 
 	// see if we need to get out of sampling mode
@@ -2232,12 +2233,12 @@ void PlayerObject::setProne()
 		gMessageLib->sendHeartBeat(this->getClient());
 
 	// see if we need to stop force meditating
-	if (this->isForceMeditating())
+	if (this->isMeditating())
 	{
 		mMeditating = false;
 		this->toggleStateOff(CreatureState_Alert);
 		gMessageLib->sendMoodString(this, BString("neutral"));
-		gMessageLib->SendSystemMessage(L"You stop meditating", this);
+		gMessageLib->SendSystemMessage(::common::OutOfBand("teraskasi", "med_end"), this);
 	}
 
 	// see if we need to get out of sampling mode
@@ -2286,12 +2287,12 @@ void PlayerObject::setCrouched()
 	bool IsSeatedOnChair = this->checkState(CreatureState_SittingOnChair);
 
 	// see if we need to stop force meditating
-	if (this->isForceMeditating())
+	if (this->isMeditating())
 	{
 		mMeditating = false;
 		this->toggleStateOff(CreatureState_Alert);
 		gMessageLib->sendMoodString(this, BString("neutral"));
-		gMessageLib->SendSystemMessage(L"You stop meditating", this);
+		gMessageLib->SendSystemMessage(::common::OutOfBand("teraskasi", "med_end"), this);
 	}
 
 	//make sure we end states

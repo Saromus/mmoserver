@@ -676,7 +676,7 @@ void Ham::updateRegenRates()
 	switch(mParent->getPosture())
 	{
 		case CreaturePosture_Crouched:			regenModifier = 1.25f;	break;
-		case CreaturePosture_Sitting:			if (!mParent->isForceMeditating() && !mParent->isMeditating()) regenModifier = 1.75f;	break;
+		case CreaturePosture_Sitting:			regenModifier = 1.75f;	break;
 		case CreaturePosture_Incapacitated:
 		case CreaturePosture_Dead:				regenModifier = 0.0f;	break;
 		case CreaturePosture_KnockedDown:		regenModifier = 0.75f;	break;
@@ -685,17 +685,7 @@ void Ham::updateRegenRates()
 	mHealthRegenRate	= (int32)((mConstitution.getCurrentHitPoints() / gWorldConfig->mHealthRegenDivider) * regenModifier);
 	mActionRegenRate	= (int32)((mStamina.getCurrentHitPoints() / gWorldConfig->mActionRegenDivider) * regenModifier);
 	mMindRegenRate		= (int32)((mWillpower.getCurrentHitPoints() / gWorldConfig->mMindRegenDivider) * regenModifier);
-
-	if (mParent->isForceMeditating())
-		mForceRegenRate = (int32)mParent->getSkillModValue(SMod_jedi_force_power_regen);
-	else
-		mForceRegenRate	= (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * regenModifier);
-
-	//This is to change the regen rates for when you use Teras Kasi - Meditate.
-	/*if (mParent->isMeditating())
-	{
-		//TODO:
-	}*/
+	mForceRegenRate		= (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * regenModifier);
 
 	// Test for creatures
 	if (this->getParent())

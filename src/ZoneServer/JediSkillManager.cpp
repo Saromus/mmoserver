@@ -1083,10 +1083,10 @@ bool JediSkillManager::ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Ta
 	return true;
 }
 //TODO: Implement an efficient way to update the Force Regen rate.
-//The Regen Rate/modifier from forcemeditate is *3
+//The Regen Rate/modifier for forcemeditate is *3
 bool JediSkillManager::ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int ForceRegen)
 {
-	if (Jedi->isForceMeditating())
+	if (Jedi->isMeditating())
 	{
 		gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "already_in_meditative_state"), Jedi);
 		return false;
@@ -1102,9 +1102,6 @@ bool JediSkillManager::ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControll
 	return true;
 }
 
-//BUG: While force running, if you /kneel, /sit, or /prone then stand up, it will kill the force run,
-//however the client effect will remain as if you are still force running but it will eventually stop when the force run timer stops.
-//So you are still force running, but without the speed lol. I'll fix this another day...
 //TODO: Add player damage reductions for Force Run 2 and Force Run 3.
 bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int SkillLevel)
 // Force Run Skill Level
@@ -1118,7 +1115,7 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 		return false;
 	}
 
-	//In Pre-CU, you couldn't force run while you were dizzy. (Thanks Shotter for reminding about about this.)
+	//In Pre-CU, you couldn't force run while you were dizzy. (Thanks Shotter for reminding me about this.)
 	if (Jedi->checkState(CreatureState_Dizzy))
 	{
 		gMessageLib->SendSystemMessage(L"You are incapable of such speed right now.", Jedi);
@@ -1132,6 +1129,13 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 		return false;
 	}
 
+	//Check for other forms of running.
+	if (Jedi->checkPlayerCustomFlag(PlayerCustomFlag_BurstRun))
+	{
+		gMessageLib->SendSystemMessage(L"You cannot force run right now.", Jedi);
+		return false;
+	}
+
 	uint32 buffState;
 	float speed;
 	float acceleration;
@@ -1142,7 +1146,7 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 	if (SkillLevel = 2)
 	{
 		buffState = jedi_force_run_2;
-		speed = 8.624f;
+		speed = 8.25;
 		acceleration = -.55f;
 		slope = 50;
 		duration = 120;
@@ -1151,7 +1155,7 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 	else if (SkillLevel = 3)
 	{
 		buffState = jedi_force_run_3;
-		speed = 14.624f;
+		speed = 14.25;
 		acceleration = -.55f;
 		slope = 50;
 		duration = 120;
@@ -1160,7 +1164,7 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 	else
 	{
 		buffState = jedi_force_run_1;
-		speed = 2.624f;
+		speed = 2.25;
 		acceleration = -.55f;
 		slope = 50;
 		duration = 120;
@@ -1187,7 +1191,6 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 	Buff* forceRun = Buff::SimpleBuff(Jedi, Jedi, 120, buffState, gWorldManager->GetCurrentGlobalTick());
 	Jedi->AddBuff(forceRun);
 
-	Jedi->togglePlayerCustomFlagOn(buffState);
 	Jedi->togglePlayerCustomFlagOn(PlayerCustomFlag_ForceRun);
 
 	// Force Cost
@@ -1204,6 +1207,61 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 
 	// Set Locomotion
 	Jedi->setLocomotion(kLocomotionRunning);
+
+	return true;
+}
+
+bool JediSkillManager::TransferForce(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties)
+{
+	int TransferredForce = 200;
+
+	// Perform Checks
+	if (Jedi->checkIfMounted())
+	{
+		gMessageLib->SendSystemMessage(L"You cannot do that while mounted on a creature or vehicle.", Jedi);
+		return false;
+	}
+
+	if (Jedi->getHam()->getCurrentForce() < TransferredForce)
+	{
+		gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "no_force_power"), Jedi);
+		return false;
+	}
+
+	if (Jedi == Target)
+	{
+		gMessageLib->SendSystemMessage(L"You cannot transfer force to yourself.", Jedi);
+		return false;
+	}
+
+	// You can't use transfer force on a non-jedi player.
+	if (Target->getJediState() == 0)
+	{
+		//gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "not_this_target"), Jedi); //This command cannot be used on this target.
+		gMessageLib->SendSystemMessage(L"You can only transfer force to other Jedi.", Jedi);
+		return false;
+	}
+
+	// Range = 32
+	float distance = gWorldConfig->getConfiguration<float>("Player_heal_distance", (float)32.0);
+
+	// Make sure target is in range.
+	if (glm::distance(Jedi->mPosition, Target->mPosition) > distance)
+	{
+		gMessageLib->SendSystemMessage(OutOfBand("healing", "no_line_of_sight"), Jedi);
+		return false;
+	}
+	
+	//gMessageLib->sendCreatureAnimation(Jedi, BString("force_transfer_1"));
+
+	// Deduct force power from player.
+	Jedi->getHam()->updateCurrentForce(-TransferredForce);
+
+	// Play Animation
+	gMessageLib->sendCreatureAnimation(Jedi, BString("force_transfer_1"));
+
+	// Transfer force power to friendly jedi.
+	Target->getHam()->updateCurrentForce(200);
 
 	return true;
 }

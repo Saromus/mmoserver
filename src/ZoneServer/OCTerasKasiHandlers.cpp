@@ -36,7 +36,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Common/MessageFactory.h"
 #include "Common/Message.h"
 
-
 //=============================================================================================================================
 //
 // meditate
@@ -44,7 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 void ObjectController::_handleMeditate(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -53,7 +52,7 @@ void ObjectController::_handleMeditate(uint64 targetId,Message* message,ObjectCo
 
 void ObjectController::_handlePowerBoost(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 //
@@ -62,7 +61,7 @@ void ObjectController::_handlePowerBoost(uint64 targetId,Message* message,Object
 
 void ObjectController::_handleForceOfWill(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-} 
+}
 
 //=============================================================================================================================
 

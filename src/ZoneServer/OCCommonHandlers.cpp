@@ -1660,7 +1660,6 @@ void ObjectController::_handleClientLogout(uint64 targetId,Message* message,Obje
 
 void ObjectController::_BurstRun(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-	
 	PlayerObject* player = dynamic_cast<PlayerObject*>(mObject);
 
 	//can we burstrun right now ??
@@ -1676,13 +1675,20 @@ void ObjectController::_BurstRun(uint64 targetId,Message* message,ObjectControll
 		return;
 	}
 
+	//Check for other forms of running.
+	if(player->checkPlayerCustomFlag(PlayerCustomFlag_ForceRun))
+	{
+		gMessageLib->SendSystemMessage(::common::OutOfBand("combat_effects", "burst_run_no"), player);
+		return;
+	}
+
 	uint32 actioncost = gWorldConfig->getConfiguration<uint32>("Player_BurstRun_Action",(uint32)300);
 	uint32 healthcost = gWorldConfig->getConfiguration<uint32>("Player_BurstRun_Health",(uint32)300);
 	uint32 mindcost	  = gWorldConfig->getConfiguration<uint32>("Player_BurstRun_Mind",(uint32)0);
 
 	if(!player->getHam()->checkMainPools(healthcost,actioncost,mindcost))
 	{
-		gMessageLib->SendSystemMessage(L"You cannot burst run right now.", player); // the stf doesn't work!
+		gMessageLib->SendSystemMessage(::common::OutOfBand("combat_effects", "burst_run_no"), player);
 		return;
 	}
 

@@ -281,7 +281,6 @@ public:
 		// meditation
 		void				setMeditateState();
 		bool				isMeditating() { return mMeditating; }
-		bool				isForceMeditating() { return mMeditating; /*return mForceMeditating;*/}
 
 	protected:
 
@@ -337,9 +336,7 @@ public:
 		uint8				mRaceId;
 		bool				mReady;
 		bool				mStationary;			 //sets the stationary flag in the tano3 so better move it there
-
 		bool				mMeditating;
-		//bool				mForceMeditating;
 
 		// entertaining
 

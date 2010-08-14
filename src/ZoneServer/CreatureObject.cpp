@@ -397,10 +397,34 @@ void CreatureObject::updateMovementProperties()
 
 		case CreaturePosture_Upright:
 		{
-			mCurrentRunSpeedLimit		= mBaseRunSpeedLimit;
-			mCurrentAcceleration		= mBaseAcceleration;
-			mCurrentTurnRate			= mBaseTurnRate;
-			mCurrentTerrainNegotiation	= mBaseTerrainNegotiation;
+			if (GetBuffExists(jedi_force_run_1))
+			{
+				mCurrentRunSpeedLimit		= 8.0f;
+				mCurrentAcceleration		= 0.95f;
+				mCurrentTurnRate			= mBaseTurnRate;
+				mCurrentTerrainNegotiation	= mBaseTerrainNegotiation;
+			}
+			else if (GetBuffExists(jedi_force_run_2))
+			{
+				mCurrentRunSpeedLimit		= 14.0f;
+				mCurrentAcceleration		= 0.95f;
+				mCurrentTurnRate			= mBaseTurnRate;
+				mCurrentTerrainNegotiation	= mBaseTerrainNegotiation;
+			}
+			else if (GetBuffExists(jedi_force_run_3))
+			{
+				mCurrentRunSpeedLimit		= 20.0f;
+				mCurrentAcceleration		= 0.95f;
+				mCurrentTurnRate			= mBaseTurnRate;
+				mCurrentTerrainNegotiation	= mBaseTerrainNegotiation;
+			}
+			else
+			{
+				mCurrentRunSpeedLimit		= mBaseRunSpeedLimit;
+				mCurrentAcceleration		= mBaseAcceleration;
+				mCurrentTurnRate			= mBaseTurnRate;
+				mCurrentTerrainNegotiation	= mBaseTerrainNegotiation;
+			}
 		}
 		break;
 

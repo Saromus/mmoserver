@@ -70,9 +70,13 @@ public:
 	bool ForceHealTargetState(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
 	bool ForceCureTarget(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType);
 	bool ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
-
+	
+	//Force Enhancement
 	bool ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int ForceRegen);
 	bool ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int SkillLevel);
+	
+	//Target Skills
+	bool TransferForce(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
 
 private:
 	static JediSkillManager*	mSingleton;
