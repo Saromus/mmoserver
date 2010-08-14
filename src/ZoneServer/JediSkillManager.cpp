@@ -1251,7 +1251,7 @@ bool JediSkillManager::TransferForce(PlayerObject* Jedi, PlayerObject* Target, O
 		gMessageLib->SendSystemMessage(OutOfBand("healing", "no_line_of_sight"), Jedi);
 		return false;
 	}
-	
+
 	//gMessageLib->sendCreatureAnimation(Jedi, BString("force_transfer_1"));
 
 	// Deduct force power from player.
@@ -1261,7 +1261,61 @@ bool JediSkillManager::TransferForce(PlayerObject* Jedi, PlayerObject* Target, O
 	gMessageLib->sendCreatureAnimation(Jedi, BString("force_transfer_1"));
 
 	// Transfer force power to friendly jedi.
-	Target->getHam()->updateCurrentForce(200);
+	Target->getHam()->updateCurrentForce(TransferredForce);
 
+	return true;
+}
+
+bool JediSkillManager::DrainForce(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties)
+{
+	int ForceDrained = 100;
+
+	// Perform Checks
+	if (Jedi->checkIfMounted())
+	{
+		gMessageLib->SendSystemMessage(L"You cannot do that while mounted on a creature or vehicle.", Jedi);
+		return false;
+	}
+
+	if (Jedi == Target)
+	{
+		gMessageLib->SendSystemMessage(L"You cannot drain force from yourself.", Jedi);
+		return false;
+	}
+
+	// You can't drain force from a non-jedi player...obviously.
+	if (Target->getJediState() == 0)
+	{
+		//gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "not_this_target"), Jedi); //This command cannot be used on this target.
+		gMessageLib->SendSystemMessage(L"You can only drain force from other Jedi.", Jedi);
+		return false;
+	}
+
+	// Check if target has enough force to be drained.
+	if (Target->getHam()->getCurrentForce() < ForceDrained)
+	{
+		gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "target_no_force"), Jedi);
+		return false;
+	}
+
+	// Range = 32
+	float distance = gWorldConfig->getConfiguration<float>("Player_heal_distance", (float)32.0);
+
+	// Make sure target is in range.
+	if (glm::distance(Jedi->mPosition, Target->mPosition) > distance)
+	{
+		gMessageLib->SendSystemMessage(OutOfBand("healing", "no_line_of_sight"), Jedi);
+		return false;
+	}
+
+	// Drain force from enemy jedi.
+	Target->getHam()->updateCurrentForce(-ForceDrained);
+
+	// Animation
+	gMessageLib->sendCreatureAnimation(Jedi, BString("force_drain_1"));
+
+	// Add drained force to player.
+	Jedi->getHam()->updateCurrentForce(ForceDrained);
+	
 	return true;
 }

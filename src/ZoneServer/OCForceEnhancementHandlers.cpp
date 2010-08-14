@@ -225,6 +225,10 @@ void ObjectController::_handleChannelForce(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleDrainForce(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+
+	mHandlerCompleted = gJediSkillManager->DrainForce(Jedi, Target, cmdProperties);
 }
 
 //=============================================================================================================================
