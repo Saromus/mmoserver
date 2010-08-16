@@ -1498,5 +1498,8 @@
     <ClInclude Include="CraftingManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MeditateEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

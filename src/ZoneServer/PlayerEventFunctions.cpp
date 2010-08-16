@@ -332,6 +332,8 @@ void PlayerObject::onForceRun(const ForceRunEvent* event)
 			this->setCurrentAcceleration(this->getBaseAcceleration());
 			gMessageLib->sendUpdateMovementProperties(this);
 
+			this->setLocomotion(kLocomotionStanding);
+
 			//this->setUpright();
 		}
 	}
@@ -366,5 +368,145 @@ void PlayerObject::onForceMeditate(const ForceMeditateEvent* event)
 	else
 	{
 		mObjectController.addEvent(new ForceMeditateEvent(t), t - now);
+	}
+}
+
+//=============================================================================
+// this event manages teras kasi meditate.
+// also manages healing tickets for meditation.
+// see - http://wiki.swganh.org/index.php/Meditate_(Ability)
+//
+void PlayerObject::onMeditate(const MeditateEvent* event)
+{
+	uint64 now = gWorldManager->GetCurrentGlobalTick();
+	uint64 t = event->getTickTime();
+
+	//do we need to tick again??
+	if (now > t)
+	{
+		if (this->isMeditating())
+		{
+			int healAmount;
+			int meditateMod = this->getSkillModValue(SMod_meditate);
+			Ham* playerHam = this->getHam();
+
+			//*DOT Healing*
+			// DOTs are healed in a particular order which is unknown.
+			// however the purposed order (which can be found on the wikipage) is: [Heal bleeds, poisons, then diseases]
+			//TODO: Meditation DOT healing.
+
+			//*Wound Healing*
+			// Player must have +75 Meditate SkillMod (Master Meditative Techniques skillbox) in order to be able to heal wounds.
+			if (meditateMod >= 75)
+			{
+				int HealthWounds = playerHam->mHealth.getWounds();
+				int StrengthWounds = playerHam->mStrength.getWounds();
+				int ConstitutionWounds = playerHam->mConstitution.getWounds();
+				int ActionWounds = playerHam->mAction.getWounds();
+				int QuicknessWounds = playerHam->mQuickness.getWounds();
+				int StaminaWounds = playerHam->mStamina.getWounds();
+				int MindWounds = playerHam->mMind.getWounds();
+				int FocusWounds = playerHam->mFocus.getWounds();
+				int WillpowerWounds = playerHam->mWillpower.getWounds();
+				
+				if (meditateMod > 0 && meditateMod < 100)
+					healAmount = (gRandom->getRand() % 20) + 10; //10-20
+				else if (meditateMod >= 100)
+					//some documentation says its 20-30 and a few say its 20-35. I need someone to verify which one should be used. So for now I'll put it at 20-30.
+					healAmount = (gRandom->getRand() % 30) + 20; //20-30
+					//heal = (gRandom->getRand() % 35) + 20; //20-35
+				else
+					return;
+
+				// Wound healing order - [Action, Health and Mind] (including secondary stats.)
+				// Meditation only heals one wound pool per tick.
+				// The (if, else if, ...) statements will make sure that only one wound pool is healed per tick. 
+				// If a wound pool = 0, then it will move onto the next wound pool until it finds a wound pool with wounds.
+				if (ActionWounds > 0)
+				{
+					if (ActionWounds < healAmount)
+						healAmount = ActionWounds;
+
+					playerHam->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -healAmount);
+					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "action_wounds", healAmount), this);
+				}
+				else if (QuicknessWounds > 0)
+				{
+					if (QuicknessWounds < healAmount)
+						healAmount = QuicknessWounds;
+
+					playerHam->updatePropertyValue(HamBar_Quickness, HamProperty_Wounds, -healAmount);
+					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "quickness_wounds", healAmount), this);
+				}
+				else if (StaminaWounds > 0)
+				{
+					if (StaminaWounds < healAmount)
+						healAmount = StaminaWounds;
+
+					playerHam->updatePropertyValue(HamBar_Stamina, HamProperty_Wounds, -healAmount);
+					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "stamina_wounds", healAmount), this);
+				}
+				else if (HealthWounds > 0)
+				{
+					if (HealthWounds < healAmount)
+						healAmount = HealthWounds;
+
+					playerHam->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -healAmount);
+					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "health_wounds", healAmount), this);
+				}
+				else if (StrengthWounds > 0)
+				{
+					if (StrengthWounds < healAmount)
+						healAmount = StrengthWounds;
+
+					playerHam->updatePropertyValue(HamBar_Strength, HamProperty_Wounds, -healAmount);
+					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "strength_wounds", healAmount), this);
+				}
+				else if (ConstitutionWounds > 0)
+				{
+					if (ConstitutionWounds < healAmount)
+						healAmount = ConstitutionWounds;
+
+					playerHam->updatePropertyValue(HamBar_Constitution, HamProperty_Wounds, -healAmount);
+					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "constitution_wounds", healAmount), this);
+				}
+				else if (MindWounds > 0)
+				{
+					if (MindWounds < healAmount)
+						healAmount = MindWounds;
+
+					playerHam->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -healAmount);
+					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "mind_wounds", healAmount), this);
+				}
+				else if (FocusWounds > 0)
+				{
+					if (FocusWounds < healAmount)
+						healAmount = FocusWounds;
+
+					playerHam->updatePropertyValue(HamBar_Focus, HamProperty_Wounds, -healAmount);
+					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "focus_wounds", healAmount), this);
+				}
+				else if (WillpowerWounds > 0)
+				{
+					if (WillpowerWounds < healAmount)
+						healAmount = WillpowerWounds;
+
+					playerHam->updatePropertyValue(HamBar_Willpower, HamProperty_Wounds, -healAmount);
+					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "willpower_wounds", healAmount), this);
+				}
+				else // Either there are no wounds to heal, or all the wound pools have been healed.
+				{
+					return;
+				}
+			}
+
+			// Loop - tick again
+			mObjectController.addEvent(new MeditateEvent(5000), 5000);
+		}
+	}
+	//have to call once more so we can get back here...
+	else
+	{
+		mObjectController.addEvent(new MeditateEvent(t), t - now);
 	}
 }

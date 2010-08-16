@@ -464,6 +464,7 @@
     <ClInclude Include="ManufacturingSchematic.h" />
     <ClInclude Include="Medicine.h" />
     <ClInclude Include="MedicManager.h" />
+    <ClInclude Include="MeditateEvent.h" />
     <ClInclude Include="MissionBag.h" />
     <ClInclude Include="MissionFactory.h" />
     <ClInclude Include="MissionManager.h" />

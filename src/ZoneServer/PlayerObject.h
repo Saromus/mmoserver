@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "WoundTreatmentEvent.h"
 #include "ForceRunEvent.h"
 #include "ForceMeditateEvent.h"
+#include "MeditateEvent.h"
 #include "Common/DispatchClient.h"
 #include <map>
 
@@ -385,6 +386,7 @@ class PlayerObject : public CreatureObject
 		void				onQuickHealInjuryTreatment(const QuickHealInjuryTreatmentEvent* event);
 		void				onForceRun(const ForceRunEvent* event);
 		void				onForceMeditate(const ForceMeditateEvent* event);
+		void				onMeditate(const MeditateEvent* event);
 
 		// cloning
 		void				clone(uint64 parentId, const glm::quat& dir, const glm::vec3& pos, bool preDesignatedFacility=false);

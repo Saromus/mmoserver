@@ -156,8 +156,8 @@ void CharacterBuilderTerminal::InitWounds()
 	mWoundMenu.push_back("+100 Strength Wound");
 	mWoundMenu.push_back("+100 Constitution Wound");
 	mWoundMenu.push_back("+100 Action Wound");
-	mWoundMenu.push_back("+100 Stamina Wound");
 	mWoundMenu.push_back("+100 Quickness Wound");
+	mWoundMenu.push_back("+100 Stamina Wound");
 	mWoundMenu.push_back("+100 Mind Wound");
 	mWoundMenu.push_back("+100 Focus Wound");
 	mWoundMenu.push_back("+100 Willpower Wound");
@@ -1337,11 +1337,11 @@ void CharacterBuilderTerminal::_handleWoundMenu(PlayerObject* playerObject, uint
 	case 3: //Action Wound
 		playerObject->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, 100);
 		break;
-	case 4: //Stamina Wound
-		playerObject->getHam()->updatePropertyValue(HamBar_Stamina, HamProperty_Wounds, 100);
-		break;
-	case 5: //Quickness Wound
+	case 4: //Quickness Wound
 		playerObject->getHam()->updatePropertyValue(HamBar_Quickness, HamProperty_Wounds, 100);
+		break;
+	case 5: //Stamina Wound
+		playerObject->getHam()->updatePropertyValue(HamBar_Stamina, HamProperty_Wounds, 100);
 		break;
 	case 6: //Mind Wound
 		playerObject->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, 100);
@@ -1367,11 +1367,11 @@ void CharacterBuilderTerminal::_handleWoundMenu(PlayerObject* playerObject, uint
 	case 13: //Action Wound
 		playerObject->getHam()->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -100);
 		break;
-	case 14: //Stamina Wound
-		playerObject->getHam()->updatePropertyValue(HamBar_Stamina, HamProperty_Wounds, -100);
-		break;
-	case 15: //Quickness Wound
+	case 14: //Quickness Wound
 		playerObject->getHam()->updatePropertyValue(HamBar_Quickness, HamProperty_Wounds, -100);
+		break;
+	case 15: //Stamina Wound
+		playerObject->getHam()->updatePropertyValue(HamBar_Stamina, HamProperty_Wounds, -100);
 		break;
 	case 16: //Mind Wound
 		playerObject->getHam()->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -100);
