@@ -33,6 +33,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Utils/typedefs.h"
 #include "Service.h"
 
+#include "NetworkManager/declspec.h"
+
 //======================================================================================================================
 
 class Client;
@@ -46,28 +48,37 @@ typedef Anh_Utils::concurrent_queue<Service*>	ServiceQueue;
 
 //======================================================================================================================
 
-class NetworkManager
+class NET_API NetworkManager
 {
-	public:
+    public:
 
-		NetworkManager(void);
-		~NetworkManager(void);
+        NetworkManager(void);
+        ~NetworkManager(void);
 
-		void		Process(void);
+        void		Process(void);
 
-		Service*	GenerateService(int8* address, uint16 port,uint32 mfHeapSize, bool serverservice);
-		void		DestroyService(Service* service);
-		Client*		Connect(void);
+        Service*	GenerateService(int8* address, uint16 port,uint32 mfHeapSize, bool serverservice);
+        void		DestroyService(Service* service);
+        Client*		Connect(void);
 
-		void		RegisterCallback(NetworkCallback* callback);
-		void		UnregisterCallback(NetworkCallback* callback);
+        void		RegisterCallback(NetworkCallback* callback);
+        void		UnregisterCallback(NetworkCallback* callback);
 
-		void		AddServiceToProcessQueue(Service* service);
+        void		AddServiceToProcessQueue(Service* service);
 
-	private:
+    private:
+        
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
+      ServiceQueue		mServiceProcessQueue;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
 
-	  ServiceQueue		mServiceProcessQueue;
-	  uint32			mServiceIdIndex;
+      uint32			mServiceIdIndex;
 };
 
 
@@ -75,12 +86,12 @@ class NetworkManager
 
 inline void NetworkManager::AddServiceToProcessQueue(Service* service)
 {
-	if(!service->isQueued())
-	{
-		service->setQueued(true);
+    if(!service->isQueued())
+    {
+        service->setQueued(true);
 
-		mServiceProcessQueue.push(service);
-	}
+        mServiceProcessQueue.push(service);
+    }
 }
 
 //======================================================================================================================

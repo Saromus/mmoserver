@@ -33,6 +33,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <string>
 #include <stdexcept>
 
+#include "Common/declspec.h"
+
+/*! \brief Common is a catch-all library containing primarily base classes and
+ * classes used for maintaining application lifetimes.
+ */
 namespace common {
 
 class ByteBuffer;
@@ -52,7 +57,7 @@ ByteBuffer& operator<<(ByteBuffer& buffer, const T& value);
  * @param message The output stream to write the data to.
  * @param buffer The ByteBuffer to stream data from.
  */
-std::ostream& operator<<(std::ostream& message, const ByteBuffer& buffer);
+COMMON_API std::ostream& operator<<(std::ostream& message, const ByteBuffer& buffer);
 
 /**
  * This utility class is used to package various data types into a byte stream.
@@ -60,26 +65,26 @@ std::ostream& operator<<(std::ostream& message, const ByteBuffer& buffer);
  * Byte streams are commonly used for packets and binary files, this utility class
  * eases the task of reading and writing data to these resources.
  */
-class ByteBuffer
+class COMMON_API ByteBuffer
 {		
 public:
-	enum { SWAP_ENDIAN = 1 };
+    enum { SWAP_ENDIAN = 1 };
 
 public:
     /// Default constructor, creates an empty ByteBuffer.
-	ByteBuffer();
+    ByteBuffer();
 
     /**
      * Constructor overload used to set an explicit size for the ByteBuffer.
      */
-	explicit ByteBuffer(size_t length);
+    explicit ByteBuffer(size_t length);
 
     /**
      * Constructor overload that creates a ByteBuffer from a data array.
      *
      * @param data The data to initialize the ByteBuffer with.
      */
-	explicit ByteBuffer(std::vector<unsigned char>& data);
+    explicit ByteBuffer(std::vector<unsigned char>& data);
 
     /**
      * Constructor overload that creates a ByteBuffer from a C array.
@@ -87,31 +92,31 @@ public:
      * @param data A C array containing the data.
      * @param length Length of the C array.
      */
-	ByteBuffer(const unsigned char* data, size_t length);
+    ByteBuffer(const unsigned char* data, size_t length);
 
     /// Default deconstructor.
-	~ByteBuffer();
+    ~ByteBuffer();
 
     /**
      * Copy constructor, used to copy one ByteBuffer to another.
      * 
      * @param from The ByteBuffer to use as the source in the copy.
      */
-	ByteBuffer(const ByteBuffer& from);
+    ByteBuffer(const ByteBuffer& from);
 
     /**
      * Assignment operator, assigns one ByteBuffer's contents to another.
      *
      * @param from The ByteBuffer to use as the source in the assignment.
      */
-	ByteBuffer& operator=(const ByteBuffer& from);
+    ByteBuffer& operator=(const ByteBuffer& from);
 
     /**
      * A no-throw swap used for swapping the contents of two ByteBuffers.
      *
      * @param from The source ByteBuffer to swap contents with.
      */
-	void Swap(ByteBuffer& from);
+    void Swap(ByteBuffer& from);
 
     /**
      * Appends one ByteBuffer to another.
@@ -134,7 +139,7 @@ public:
      *
      * @param data The data to write to the ByteBuffer.
      */
-	template<typename T> ByteBuffer& Write(T data);
+    template<typename T> ByteBuffer& Write(T data);
 
     /**
      * Write's data of type T to the ByteBuffer at an offset.
@@ -152,7 +157,7 @@ public:
      * @param offset The offset to start writing the data at.
      * @param data The data to write to the ByteBuffer.
      */
-	template<typename T> ByteBuffer& WriteAt(size_t offset, T data);
+    template<typename T> ByteBuffer& WriteAt(size_t offset, T data);
 
     /**
      * Reads a value from the ByteBuffer at the current read position without it.
@@ -160,7 +165,7 @@ public:
      * @param do_swap_endian Swaps the endian of the value from the ByteBuffer before it is returned.
      * @returns The value at the current position.
      */
-	template<typename T> const T Peek(bool do_swap_endian = false) const;
+    template<typename T> const T Peek(bool do_swap_endian = false) const;
 
     /**
      * Reads a value from the ByteBuffer at an offset without moving the read position.
@@ -169,7 +174,7 @@ public:
      * @param do_swap_endian Swaps the endian of the value from the ByteBuffer before it is returned.
      * @returns The value at the current position.
      */
-	template<typename T> const T PeekAt(size_t offset, bool do_swap_endian = false) const;
+    template<typename T> const T PeekAt(size_t offset, bool do_swap_endian = false) const;
 
     /**
      * Reads a value from the ByteBuffer at the current read position.
@@ -177,7 +182,7 @@ public:
      * @param do_swap_endian Swaps the endian of the value from the ByteBuffer before it is returned.
      * @returns The value at the current position.
      */
-	template<typename T> const T Read(bool do_swap_endian = false);
+    template<typename T> const T Read(bool do_swap_endian = false);
 
     /**
      * Write's data to the ByteBuffer.
@@ -185,7 +190,7 @@ public:
      * @param data The data to write to the ByteBuffer.
      * @param size Size of the data to write to the ByteBuffer.
      */
-	void Write(const unsigned char* data, size_t size);
+    void Write(const unsigned char* data, size_t size);
     
     /**
      * Write's data to the ByteBuffer at an offset.
@@ -194,10 +199,10 @@ public:
      * @param data The data to write to the ByteBuffer.
      * @param size Size of the data to write to the ByteBuffer.
      */
-	void Write(size_t offset, const unsigned char* data, size_t size);
+    void Write(size_t offset, const unsigned char* data, size_t size);
 
     /// Clear's the ByteBuffer (useful for reusing a buffer to save memory allocations).
-	void Clear();
+    void Clear();
 
     /**
      * Gets the current read position
@@ -239,14 +244,14 @@ public:
      *
      * @returns The current size of the ByteBuffer.
      */
-	size_t Size() const;
+    size_t Size() const;
 
     /**
      * Returns the ByteBuffer contents, useful for working with C functions.
      *
      * @returns The raw ByteBuffer contents.
      */
-	const unsigned char* Data() const;
+    const unsigned char* Data() const;
 
     /** 
      * Returns the ByteBuffer contents in a modifyable format. This should rarely
@@ -258,11 +263,20 @@ public:
     std::vector<uint8_t>& Raw();
 
 private:
-	template<typename T> void SwapEndian_(T& data) const;
+    template<typename T> void SwapEndian_(T& data) const;
+    
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
+    std::vector<uint8_t> data_;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
 
-	std::vector<uint8_t> data_;
-	size_t read_position_;
-	size_t write_position_;
+    size_t read_position_;
+    size_t write_position_;
 
 }; // ByteBuffer
 

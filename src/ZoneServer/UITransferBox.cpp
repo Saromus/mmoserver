@@ -33,9 +33,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "UIDropdownBox.h"
 #include "UICallback.h"
 #include "PlayerObject.h"
-#include "LogManager/LogManager.h"
-#include "Common/Message.h"
-#include "Common/MessageFactory.h"
+#include "Common/LogManager.h"
+#include "NetworkManager/Message.h"
+#include "NetworkManager/MessageFactory.h"
 
 #include <boost/lexical_cast.hpp>
 

@@ -53,16 +53,18 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;BOOST_HAS_STDINT_H;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WIN32_WINNT=0x0501;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WIN32_WINNT=0x0501;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)deps;$(SolutionDir)deps\boost;$(SolutionDir)deps\glm;$(SolutionDir)deps\lua\src;$(SolutionDir)deps\noise\src;$(SolutionDir)deps\spatialindex\include;$(SolutionDir)deps\spatialindex\tools\include;$(SolutionDir)src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)deps;$(SolutionDir)deps\boost;$(SolutionDir)deps\boost.atomic;$(SolutionDir)deps\glm;$(SolutionDir)deps\lua\src;$(SolutionDir)deps\noise\src;$(SolutionDir)deps\spatialindex\include;$(SolutionDir)deps\spatialindex\tools\include;$(SolutionDir)src</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)deps\boost\stage\lib;$(SolutionDir)deps\lua\lib;$(SolutionDir)deps\mysql\lib\debug;$(SolutionDir)deps\noise\win32\Debug;$(SolutionDir)deps\spatialindex\Debug;$(SolutionDir)deps\tolua++\win32\vc9\withLua51_Debug;$(SolutionDir)deps\zlib\projects\visualc6\Win32_LIB_Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>winmm.lib;ws2_32.lib;lua5.1d.lib;libmysql.lib;libnoise.lib;spatialindex.lib;toluapp.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/NODEFAULTLIB:libcmtd.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>
+      </AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>call "$(SolutionDir)tools\postbuild.bat" "$(SolutionDir)" "$(ConfigurationName)"</Command>
@@ -76,10 +78,11 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;BOOST_HAS_STDINT_H;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WIN32_WINNT=0x0501;BOOST_HAS_STDINT_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WIN32_WINNT=0x0501;BOOST_HAS_STDINT_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)deps;$(SolutionDir)deps\boost;$(SolutionDir)deps\glm;$(SolutionDir)deps\lua\src;$(SolutionDir)deps\noise\src;$(SolutionDir)deps\spatialindex\include;$(SolutionDir)deps\spatialindex\tools\include;$(SolutionDir)src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)deps;$(SolutionDir)deps\boost;$(SolutionDir)deps\boost.atomic;$(SolutionDir)deps\glm;$(SolutionDir)deps\lua\src;$(SolutionDir)deps\noise\src;$(SolutionDir)deps\spatialindex\include;$(SolutionDir)deps\spatialindex\tools\include;$(SolutionDir)src</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -88,7 +91,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)deps\boost\stage\lib;$(SolutionDir)deps\lua\lib;$(SolutionDir)deps\mysql\lib\opt;$(SolutionDir)deps\noise\win32\Release;$(SolutionDir)deps\spatialindex\Release;$(SolutionDir)deps\tolua++\win32\vc9\withLua51_Release;$(SolutionDir)deps\zlib\projects\visualc6\Win32_LIB_Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>winmm.lib;ws2_32.lib;lua5.1.lib;libmysql.lib;libnoise.lib;spatialIndex.lib;toluapp.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/NODEFAULTLIB:libcmt.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>
+      </AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>call "$(SolutionDir)tools\postbuild.bat" "$(SolutionDir)" "$(ConfigurationName)"</Command>
@@ -172,6 +176,7 @@
     <ClCompile Include="GroupManagerHandler.cpp" />
     <ClCompile Include="Ham.cpp" />
     <ClCompile Include="HamProperty.cpp" />
+    <ClCompile Include="HamService.cpp" />
     <ClCompile Include="HarvesterFactory.cpp" />
     <ClCompile Include="HarvesterObject.cpp" />
     <ClCompile Include="Heightmap.cpp" />
@@ -281,8 +286,6 @@
     <ClCompile Include="RegionObject.cpp" />
     <ClCompile Include="Resource.cpp" />
     <ClCompile Include="ResourceCategory.cpp" />
-    <ClCompile Include="ResourceCollectionCommand.cpp" />
-    <ClCompile Include="ResourceCollectionManager.cpp" />
     <ClCompile Include="ResourceContainer.cpp" />
     <ClCompile Include="ResourceContainerFactory.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
@@ -369,7 +372,6 @@
     <ClInclude Include="BuildingEnums.h" />
     <ClInclude Include="BuildingFactory.h" />
     <ClInclude Include="BuildingObject.h" />
-    <ClInclude Include="BurstRunEvent.h" />
     <ClInclude Include="Camp.h" />
     <ClInclude Include="CampRegion.h" />
     <ClInclude Include="CampTerminal.h" />
@@ -384,6 +386,7 @@
     <ClInclude Include="CloningTerminal.h" />
     <ClInclude Include="CMWeaponGroup.h" />
     <ClInclude Include="CombatManager.h" />
+    <ClInclude Include="OCCommonHandlers.h" />
     <ClInclude Include="Container.h" />
     <ClInclude Include="ContainerObjectFactory.h" />
     <ClInclude Include="Conversation.h" />
@@ -438,6 +441,7 @@
     <ClInclude Include="GroupObject.h" />
     <ClInclude Include="Ham.h" />
     <ClInclude Include="HamProperty.h" />
+    <ClInclude Include="HamService.h" />
     <ClInclude Include="HarvesterFactory.h" />
     <ClInclude Include="HarvesterObject.h" />
     <ClInclude Include="Heightmap.h" />
@@ -517,8 +521,6 @@
     <ClInclude Include="RegionObject.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ResourceCategory.h" />
-    <ClInclude Include="ResourceCollectionCommand.h" />
-    <ClInclude Include="ResourceCollectionManager.h" />
     <ClInclude Include="ResourceContainer.h" />
     <ClInclude Include="ResourceContainerFactory.h" />
     <ClInclude Include="ResourceManager.h" />
@@ -598,14 +600,8 @@
     <ProjectReference Include="..\Common\Common.vcxproj">
       <Project>{432dcbe9-1f49-49ff-9753-be806192a917}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\ConfigManager\ConfigManager.vcxproj">
-      <Project>{c8684fd3-623a-484c-8686-1e7dfc09d759}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\DatabaseManager\DatabaseManager.vcxproj">
       <Project>{c4e4bd1a-64fe-46b4-a38b-9fe62e57697d}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\LogManager\LogManager.vcxproj">
-      <Project>{daca5015-e625-4cda-a634-89ded4a9516a}</Project>
     </ProjectReference>
     <ProjectReference Include="..\MessageLib\MessageLib.vcxproj">
       <Project>{0c19070e-efc9-403c-ad41-79dd6f3b0e52}</Project>
@@ -615,6 +611,9 @@
     </ProjectReference>
     <ProjectReference Include="..\ScriptEngine\ScriptEngine.vcxproj">
       <Project>{1e105ba1-3ec9-411a-9cfe-ab279f6fc3a7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\SwgProtocol\SwgProtocol.vcxproj">
+      <Project>{0a2cf1bc-a4eb-4113-825b-9bda52c00e1b}</Project>
     </ProjectReference>
     <ProjectReference Include="..\Utils\Utils.vcxproj">
       <Project>{95a1522d-a200-4f0c-9e57-815eb370d181}</Project>

@@ -34,13 +34,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ZoneServer/WorldManager.h"
 #include "ZoneServer/ZoneOpcodes.h"
 
-#include "LogManager/LogManager.h"
+#include "Common/LogManager.h"
 #include "ZoneServer/PlayerStructure.h"
 
-#include "Common/DispatchClient.h"
-#include "Common/MessageFactory.h"
-#include "Common/MessageOpcodes.h"
-#include "Common/Message.h"
+#include "NetworkManager/DispatchClient.h"
+#include "NetworkManager/MessageFactory.h"
+#include "NetworkManager/MessageOpcodes.h"
+#include "NetworkManager/Message.h"
 
 
 

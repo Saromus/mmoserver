@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 #include "Utils/typedefs.h"
+#include "DatabaseManager/declspec.h"
 #include <boost/pool/pool.hpp>
 
 
@@ -40,21 +41,29 @@ class DataField;
 
 //======================================================================================================================
 
-class DataBindingFactory
+class DBMANAGER_API DataBindingFactory
 {
-	public:
+    public:
 
-		DataBindingFactory(void);
-		~DataBindingFactory(void);
+        DataBindingFactory(void);
+        ~DataBindingFactory(void);
 
-		DataBinding*	CreateDataBinding(uint16 fieldCount);
-		void			DestroyDataBinding(DataBinding* binding);
+        DataBinding*	CreateDataBinding(uint16 fieldCount);
+        void			DestroyDataBinding(DataBinding* binding);
 
-		bool			releasePoolMemory(){ return(mDataBindingPool.release_memory()); }
+        bool			releasePoolMemory(){ return(mDataBindingPool.release_memory()); }
 
-	private:
-
-		boost::pool<boost::default_user_allocator_malloc_free>	mDataBindingPool;
+    private:
+        
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
+        boost::pool<boost::default_user_allocator_malloc_free>	mDataBindingPool;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
 };
 
 //======================================================================================================================

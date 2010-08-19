@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <queue>
 #include "DataBindingFactory.h"
 #include <boost/pool/pool.hpp>
+#include "DatabaseManager/declspec.h"
 
 
 //======================================================================================================================
@@ -51,7 +52,7 @@ typedef Anh_Utils::concurrent_queue<DatabaseWorkerThread*>		DatabaseWorkerThread
 
 //======================================================================================================================
 
-class Database
+class DBMANAGER_API Database
 {
   public:
                                           Database(DBType type,int8* host, uint16 port, int8* user, int8* pass, int8* schema);
@@ -93,7 +94,11 @@ private:
   DBType                                  mDatabaseType;      // This denotes which DB implementation we are connecting to. MySQL, Postgres, etc.
 
   DataBindingFactory*                     mDataBindingFactory;
-
+  
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
   DatabaseJobQueue                        mJobPendingQueue;
   DatabaseJobQueue                        mJobCompleteQueue;
   DatabaseWorkerThreadQueue               mWorkerIdleQueue;
@@ -102,11 +107,15 @@ private:
 
   uint32                                  mMinThreads;
   uint32                                  mMaxThreads;
-
+  
   boost::pool<boost::default_user_allocator_malloc_free>							  mJobPool;
   boost::pool<boost::default_user_allocator_malloc_free>							  mTransactionPool;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
 protected:
-	DatabaseResult*                         ExecuteSql(const int8* sql, ...);
+    DatabaseResult*                         ExecuteSql(const int8* sql, ...);
 };
 
 //======================================================================================================================

@@ -28,8 +28,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
 #include "Utils/typedefs.h"
+#include "Utils/bstring.h"
 
-class atMacroString
+#include "Common/declspec.h"
+
+class COMMON_API atMacroString
 {
 public:
 	atMacroString();

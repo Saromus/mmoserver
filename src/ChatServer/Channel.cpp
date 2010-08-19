@@ -30,11 +30,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ChatAvatarId.h"
 #include "Player.h"
 
-#include "LogManager/LogManager.h"
+#include "Common/LogManager.h"
 
-#include "Common/DispatchClient.h"
-#include "Common/Message.h"
-#include "Common/MessageFactory.h"
+#include "NetworkManager/DispatchClient.h"
+#include "NetworkManager/Message.h"
+#include "NetworkManager/MessageFactory.h"
 
 #include <cstring>
 

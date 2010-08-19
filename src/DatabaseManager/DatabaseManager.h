@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "DatabaseType.h"
 #include <list>
 #include "Utils/typedefs.h"
+#include "DatabaseManager/declspec.h"
 
 
 //======================================================================================================================
@@ -41,7 +42,7 @@ typedef std::list<Database*>           DatabaseList;
 
 
 //======================================================================================================================
-class DatabaseManager
+class DBMANAGER_API DatabaseManager
 {
 public:
                                   DatabaseManager(void);
@@ -52,7 +53,15 @@ public:
   Database*                       Connect(DBType type, int8* host, uint16 port, int8* user, int8* pass, int8* dbname);
 
 private:
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
   DatabaseList                    mDatabaseList;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
 };
 
 

@@ -31,17 +31,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "NetworkManager/Service.h"
 
-#include "LogManager/LogManager.h"
+#include "Common/LogManager.h"
 
 #include "DatabaseManager/DataBinding.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 
-#include "Common/Message.h"
-#include "Common/MessageFactory.h"
-#include "Common/MessageOpcodes.h"
+#include "NetworkManager/Message.h"
+#include "NetworkManager/MessageFactory.h"
+#include "NetworkManager/MessageOpcodes.h"
 
-#include "ConfigManager/ConfigManager.h"
+#include "Common/ConfigManager.h"
 
 //======================================================================================================================
 
@@ -51,26 +51,26 @@ mDatabase(database),
 mMessageRouter(router),
 mConnectionDispatch(dispatch)
 {
-	// Set our member variables
-	mMessageRouter->setClientManager(this);
+    // Set our member variables
+    mMessageRouter->setClientManager(this);
 
-	// Put ourselves on the callback list for this service.
-	mClientService->AddNetworkCallback(this);
+    // Put ourselves on the callback list for this service.
+    mClientService->AddNetworkCallback(this);
 
-	// Register our opcodes
-	mConnectionDispatch->RegisterMessageCallback(opClientIdMsg, this);
-	mConnectionDispatch->RegisterMessageCallback(opSelectCharacter, this);
-	mConnectionDispatch->RegisterMessageCallback(opClusterZoneTransferCharacter, this);
+    // Register our opcodes
+    mConnectionDispatch->RegisterMessageCallback(opClientIdMsg, this);
+    mConnectionDispatch->RegisterMessageCallback(opSelectCharacter, this);
+    mConnectionDispatch->RegisterMessageCallback(opClusterZoneTransferCharacter, this);
 }
 
 //======================================================================================================================
 
 ClientManager::~ClientManager(void)
 {
-	// Unregister our opcodes
-	mConnectionDispatch->UnregisterMessageCallback(opClientIdMsg);
-	mConnectionDispatch->UnregisterMessageCallback(opSelectCharacter);
-	mConnectionDispatch->UnregisterMessageCallback(opClusterZoneTransferCharacter);
+    // Unregister our opcodes
+    mConnectionDispatch->UnregisterMessageCallback(opClientIdMsg);
+    mConnectionDispatch->UnregisterMessageCallback(opSelectCharacter);
+    mConnectionDispatch->UnregisterMessageCallback(opClusterZoneTransferCharacter);
 }
 
 //======================================================================================================================
@@ -84,25 +84,25 @@ void ClientManager::Process(void)
 
 void ClientManager::SendMessageToClient(Message* message)
 {
-	// Find our client from the accountId.
+    // Find our client from the accountId.
     boost::recursive_mutex::scoped_lock lk(mServiceMutex);
 
-	PlayerClientMap::iterator iter = mPlayerClientMap.find(message->getAccountId());
+    PlayerClientMap::iterator iter = mPlayerClientMap.find(message->getAccountId());
 
-	// We're headed to the client, don't use the routing header.
-	message->setRouted(false);
+    // We're headed to the client, don't use the routing header.
+    message->setRouted(false);
 
-	// If we found the client, send the data.
-	if (iter != mPlayerClientMap.end())
-	{
-		ConnectionClient* client = (*iter).second;
-		client->SendChannelA(message, message->getPriority(), message->getFastpath());
-	}
-	else
-	{
-		//happens when the client logs out
-		gMessageFactory->DestroyMessage(message);
-	}
+    // If we found the client, send the data.
+    if (iter != mPlayerClientMap.end())
+    {
+        ConnectionClient* client = (*iter).second;
+        client->SendChannelA(message, message->getPriority(), message->getFastpath());
+    }
+    else
+    {
+        //happens when the client logs out
+        gMessageFactory->DestroyMessage(message);
+    }
 }
 
 //======================================================================================================================
@@ -112,25 +112,25 @@ void ClientManager::SendMessageToClient(Message* message)
 
 void ClientManager::handleServerDown(uint32 serverId)
 {
-	// disconnect all clients that were on this server, if its a zone
-	if(serverId >= 8)
-	{
+    // disconnect all clients that were on this server, if its a zone
+    if(serverId >= 8)
+    {
         boost::recursive_mutex::scoped_lock lk(mServiceMutex);
 
-		PlayerClientMap::iterator it = mPlayerClientMap.begin();
+        PlayerClientMap::iterator it = mPlayerClientMap.begin();
 
-		while(it != mPlayerClientMap.end())
-		{
-			ConnectionClient* client = (*it).second;
+        while(it != mPlayerClientMap.end())
+        {
+            ConnectionClient* client = (*it).second;
 
-			if(client->getServerId() == serverId)
-			{
-				client->Disconnect(0);
-			}
+            if(client->getServerId() == serverId)
+            {
+                client->Disconnect(0);
+            }
 
-			++it;
-		}
-	}
+            ++it;
+        }
+    }
 
 }
 
@@ -138,53 +138,53 @@ void ClientManager::handleServerDown(uint32 serverId)
 
 NetworkClient* ClientManager::handleSessionConnect(Session* session, Service* service)
 {
-	// Create a new client for the network.
-	ConnectionClient* newClient = new ConnectionClient();
+    // Create a new client for the network.
+    ConnectionClient* newClient = new ConnectionClient();
 
-	return reinterpret_cast<NetworkClient*>(newClient);
+    return reinterpret_cast<NetworkClient*>(newClient);
 }
 
 //======================================================================================================================
 
 void ClientManager::handleSessionDisconnect(NetworkClient* client)
 {
-	Message* message;
-	ConnectionClient* connClient = reinterpret_cast<ConnectionClient*>(client);
+    Message* message;
+    ConnectionClient* connClient = reinterpret_cast<ConnectionClient*>(client);
 
-	// Create a ClusterClientDisconnect message and send it to the servers
-	gMessageFactory->StartMessage();
-	gMessageFactory->addUint32(opClusterClientDisconnect);
-	gMessageFactory->addUint32(0);                        // Reason: Disconnected
-	message = gMessageFactory->EndMessage();
+    // Create a ClusterClientDisconnect message and send it to the servers
+    gMessageFactory->StartMessage();
+    gMessageFactory->addUint32(opClusterClientDisconnect);
+    gMessageFactory->addUint32(0);                        // Reason: Disconnected
+    message = gMessageFactory->EndMessage();
 
-	message->setAccountId(connClient->getAccountId());
-	message->setDestinationId(CR_Chat);  // chat server
-	message->setRouted(true);
-	mMessageRouter->RouteMessage(message, connClient);
+    message->setAccountId(connClient->getAccountId());
+    message->setDestinationId(CR_Chat);  // chat server
+    message->setRouted(true);
+    mMessageRouter->RouteMessage(message, connClient);
 
-	// Create a ClusterClientDisconnect message and send it to the servers
-	gMessageFactory->StartMessage();
-	gMessageFactory->addUint32(opClusterClientDisconnect);
-	gMessageFactory->addUint32(0);                        // Reason: Disconnected
-	message = gMessageFactory->EndMessage();
+    // Create a ClusterClientDisconnect message and send it to the servers
+    gMessageFactory->StartMessage();
+    gMessageFactory->addUint32(opClusterClientDisconnect);
+    gMessageFactory->addUint32(0);                        // Reason: Disconnected
+    message = gMessageFactory->EndMessage();
 
-	message->setAccountId(connClient->getAccountId());
-	message->setDestinationId(static_cast<uint8>(connClient->getServerId()));  // zone server
-	message->setRouted(true);
-	mMessageRouter->RouteMessage(message, connClient);
+    message->setAccountId(connClient->getAccountId());
+    message->setDestinationId(static_cast<uint8>(connClient->getServerId()));  // zone server
+    message->setRouted(true);
+    mMessageRouter->RouteMessage(message, connClient);
 
-	// Update the account record that the account is logged out.
-	mDatabase->ExecuteSqlAsync(0, 0, "UPDATE account SET loggedin=0 WHERE account_id=%u;", connClient->getAccountId());
+    // Update the account record that the account is logged out.
+    mDatabase->ExecuteSqlAsync(0, 0, "UPDATE account SET loggedin=0 WHERE account_id=%u;", connClient->getAccountId());
 
-	// Client has disconnected.
+    // Client has disconnected.
     boost::recursive_mutex::scoped_lock lk(mServiceMutex);
-	PlayerClientMap::iterator iter = mPlayerClientMap.find(connClient->getAccountId());
+    PlayerClientMap::iterator iter = mPlayerClientMap.find(connClient->getAccountId());
 
-	if(iter != mPlayerClientMap.end())
-	{
-		delete ((*iter).second);
-		mPlayerClientMap.erase(iter);
-	}
+    if(iter != mPlayerClientMap.end())
+    {
+        delete ((*iter).second);
+        mPlayerClientMap.erase(iter);
+    }
 }
 
 
@@ -239,27 +239,27 @@ void ClientManager::handleDatabaseJobComplete(void* ref, DatabaseResult* result)
       _handleQueryAuth(client, result);
       break;
     }
-	case CCSTATE_AllowedChars:
-		{
-			struct charsCurrentAllowed {
-				uint32  currentChars;
-				uint32	charsAllowed;
-			} charsStruct;
+    case CCSTATE_AllowedChars:
+        {
+            struct charsCurrentAllowed {
+                uint32  currentChars;
+                uint32	charsAllowed;
+            } charsStruct;
 
-			DataBinding* binding = mDatabase->CreateDataBinding(2);
-			binding->addField(DFT_int32,offsetof(charsCurrentAllowed, currentChars), 4, 0);
-			binding->addField(DFT_int32,offsetof(charsCurrentAllowed, charsAllowed), 4, 1);
-			
-			result->GetNextRow(binding,&charsStruct);
-			client->setCharsAllowed(charsStruct.charsAllowed);
-			client->setCurrentChars(charsStruct.currentChars);
-			
-			client->setState(CCSTATE_QueryAuth);
-			mDatabase->DestroyDataBinding(binding);
-			break;
-		}
+            DataBinding* binding = mDatabase->CreateDataBinding(2);
+            binding->addField(DFT_int32,offsetof(charsCurrentAllowed, currentChars), 4, 0);
+            binding->addField(DFT_int32,offsetof(charsCurrentAllowed, charsAllowed), 4, 1);
+            
+            result->GetNextRow(binding,&charsStruct);
+            client->setCharsAllowed(charsStruct.charsAllowed);
+            client->setCurrentChars(charsStruct.currentChars);
+            
+            client->setState(CCSTATE_QueryAuth);
+            mDatabase->DestroyDataBinding(binding);
+            break;
+        }
   default:
-  	break;
+    break;
   }
 }
 
@@ -384,16 +384,16 @@ void ClientManager::_processClusterZoneTransferCharacter(ConnectionClient* clien
     newZoneMessage->setRouted(true);
     mMessageRouter->RouteMessage(newZoneMessage, client);
 
-	// notify the chatserver
-	gMessageFactory->StartMessage();
-	gMessageFactory->addUint32(opClusterZoneTransferCharacter);
-	gMessageFactory->addUint32(newPlanetId);
-	newZoneMessage = gMessageFactory->EndMessage();
+    // notify the chatserver
+    gMessageFactory->StartMessage();
+    gMessageFactory->addUint32(opClusterZoneTransferCharacter);
+    gMessageFactory->addUint32(newPlanetId);
+    newZoneMessage = gMessageFactory->EndMessage();
 
-	newZoneMessage->setAccountId(message->getAccountId());
-	newZoneMessage->setDestinationId(CR_Chat);
-	newZoneMessage->setRouted(true);
-	mMessageRouter->RouteMessage(newZoneMessage,client);
+    newZoneMessage->setAccountId(message->getAccountId());
+    newZoneMessage->setDestinationId(CR_Chat);
+    newZoneMessage->setRouted(true);
+    mMessageRouter->RouteMessage(newZoneMessage,client);
   }
   else
   {
@@ -411,11 +411,11 @@ void ClientManager::_handleQueryAuth(ConnectionClient* client, DatabaseResult* r
   {
     // Update the account record that it is now logged in and last login date.
     mDatabase->ExecuteSqlAsync(0, 0, "UPDATE account SET lastlogin=NOW(), loggedin=%u WHERE account_id=%u;", gConfig->read<uint32>("ClusterId"), client->getAccountId());
-	 
+     
     // finally add them to our accountId map.
     boost::recursive_mutex::scoped_lock lk(mServiceMutex);
-	mPlayerClientMap.insert(std::make_pair(client->getAccountId(), client));
-	lk.unlock();
+    mPlayerClientMap.insert(std::make_pair(client->getAccountId(), client));
+    lk.unlock();
 
     // send an opClusterClientConnect message to admin server.
     gMessageFactory->StartMessage();
@@ -433,23 +433,23 @@ void ClientManager::_handleQueryAuth(ConnectionClient* client, DatabaseResult* r
     gMessageFactory->addUint32(opClientPermissionsMessage);
     gMessageFactory->addUint8(1);             // Galaxy Available
 
-	// Checks the Clients Characters allowed against how many they have and sends the flag accordingly for char creation Also checks Unlimited Char Creation
-	if (client->getCharsAllowed() > client->getCurrentChars() && client->getCharsAllowed() != 0){
-		gMessageFactory->addUint8(1);             // Character creation allowed
-		gMessageFactory->addUint8(0);             // Unlimited Character Creation Flag DISABLED
-	}
-	else if(client->getCharsAllowed() < client->getCurrentChars() && client->getCharsAllowed() != 0){
-		gMessageFactory->addUint8(0);             // Character creation disabled
-		gMessageFactory->addUint8(0);             // Unlimited Character Creation Flag DISABLED
-	}
-	else if(client->getCharsAllowed() == 0){
-		gMessageFactory->addUint8(1);             // Character creation allowed
-		gMessageFactory->addUint8(1);             // Unlimited Character Creation Flag DISABLED
-	}
-	else {
-		gMessageFactory->addUint8(0);             // Character creation disabled
-		gMessageFactory->addUint8(0);             // Unlimited Character Creation Flag DISABLED
-	}
+    // Checks the Clients Characters allowed against how many they have and sends the flag accordingly for char creation Also checks Unlimited Char Creation
+    if (client->getCharsAllowed() > client->getCurrentChars() && client->getCharsAllowed() != 0){
+        gMessageFactory->addUint8(1);             // Character creation allowed
+        gMessageFactory->addUint8(0);             // Unlimited Character Creation Flag DISABLED
+    }
+    else if(client->getCharsAllowed() < client->getCurrentChars() && client->getCharsAllowed() != 0){
+        gMessageFactory->addUint8(0);             // Character creation disabled
+        gMessageFactory->addUint8(0);             // Unlimited Character Creation Flag DISABLED
+    }
+    else if(client->getCharsAllowed() == 0){
+        gMessageFactory->addUint8(1);             // Character creation allowed
+        gMessageFactory->addUint8(1);             // Unlimited Character Creation Flag DISABLED
+    }
+    else {
+        gMessageFactory->addUint8(0);             // Character creation disabled
+        gMessageFactory->addUint8(0);             // Unlimited Character Creation Flag DISABLED
+    }
     Message* message = gMessageFactory->EndMessage();
 
     // Send our message to the client.
@@ -464,13 +464,13 @@ void ClientManager::_handleQueryAuth(ConnectionClient* client, DatabaseResult* r
 }
 void ClientManager::_processAllowedChars(DatabaseCallback* callback,ConnectionClient* client)
 {
-	client->setState(CCSTATE_AllowedChars);
-	gLogger->log(LogManager::DEBUG, "SQL :: %s", "SELECT COUNT(characters.id) AS current_characters, characters_allowed FROM account INNER JOIN characters ON characters.account_id = account.account_id where account.account_id = '%u',client->getAccountId());"); // SQL Debug Log
+    client->setState(CCSTATE_AllowedChars);
+    gLogger->log(LogManager::DEBUG, "SQL :: %s", "SELECT COUNT(characters.id) AS current_characters, characters_allowed FROM account INNER JOIN characters ON characters.account_id = account.account_id where account.account_id = '%u',client->getAccountId());"); // SQL Debug Log
 
-	mDatabase->ExecuteSqlAsync(this, client,"SELECT COUNT(characters.id) AS current_characters, characters_allowed FROM account INNER JOIN characters ON characters.account_id = account.account_id where characters.archived = '0' AND account.account_id = '%u'",client->getAccountId());
+    mDatabase->ExecuteSqlAsync(this, client,"SELECT COUNT(characters.id) AS current_characters, characters_allowed FROM account INNER JOIN characters ON characters.account_id = account.account_id where characters.archived = '0' AND account.account_id = '%u'",client->getAccountId());
 
-	gLogger->log(LogManager::DEBUG, "SQL :: %s", "SELECT * FROM account WHERE account_id=%u AND authenticated=1 AND loggedin=0; , client->getAccountId());"); // SQL Debug Log
-	mDatabase->ExecuteSqlAsync(this,client, "SELECT * FROM account WHERE account_id=%u AND authenticated=1 AND loggedin=0;", client->getAccountId());
+    gLogger->log(LogManager::DEBUG, "SQL :: %s", "SELECT * FROM account WHERE account_id=%u AND authenticated=1 AND loggedin=0; , client->getAccountId());"); // SQL Debug Log
+    mDatabase->ExecuteSqlAsync(this,client, "SELECT * FROM account WHERE account_id=%u AND authenticated=1 AND loggedin=0;", client->getAccountId());
 }
 
 

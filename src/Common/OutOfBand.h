@@ -1,29 +1,29 @@
-///*
-//---------------------------------------------------------------------------------------
-//This source file is part of SWG:ANH (Star Wars Galaxies - A New Hope - Server Emulator)
-//
-//For more information, visit http://www.swganh.com
-//
-//Copyright (c) 2006 - 2010 The SWG:ANH Team
-//---------------------------------------------------------------------------------------
-//Use of this source code is governed by the GPL v3 license that can be found
-//in the COPYING file or at http://www.gnu.org/licenses/gpl-3.0.html
-//
-//This library is free software; you can redistribute it and/or
-//modify it under the terms of the GNU Lesser General Public
-//License as published by the Free Software Foundation; either
-//version 2.1 of the License, or (at your option) any later version.
-//
-//This library is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//Lesser General Public License for more details.
-//
-//You should have received a copy of the GNU Lesser General Public
-//License along with this library; if not, write to the Free Software
-//Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//---------------------------------------------------------------------------------------
-//*/
+/*
+---------------------------------------------------------------------------------------
+This source file is part of SWG:ANH (Star Wars Galaxies - A New Hope - Server Emulator)
+
+For more information, visit http://www.swganh.com
+
+Copyright (c) 2006 - 2010 The SWG:ANH Team
+---------------------------------------------------------------------------------------
+Use of this source code is governed by the GPL v3 license that can be found
+in the COPYING file or at http://www.gnu.org/licenses/gpl-3.0.html
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+---------------------------------------------------------------------------------------
+*/
 
 #ifndef SRC_COMMON_OUTOFBAND_H_
 #define SRC_COMMON_OUTOFBAND_H_
@@ -32,12 +32,17 @@
 #include <memory>
 #include <string>
 
+#include "Common/declspec.h"
+
+/*! \brief Common is a catch-all library containing primarily base classes and
+ * classes used for maintaining application lifetimes.
+ */
 namespace common {
 
 class ByteBuffer;
 
 /**
- * The ProsePackage is part of the OutOfBand attachment and is used to send custom STF strings.
+ * \brief The ProsePackage is part of the OutOfBand attachment and is used to send custom STF strings.
  *
  * Several types of text responses such as spatial chat and system messages use 
  * this package for displaying custom text or text from an STF file. Once initialized
@@ -56,7 +61,7 @@ class ByteBuffer;
  *
  * Credit to Xenozephyr for information.
  */
-struct ProsePackage {
+struct COMMON_API ProsePackage {
     /**
      * Default constructor.
      *
@@ -78,8 +83,13 @@ struct ProsePackage {
     /// Default deconstructor.
     ~ProsePackage();
 
-    std::string base_stf_file; ///< File containing the STF message.
-    std::string base_stf_label; ///< Label of the STF message.
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
+
+    std::string  base_stf_file;  ///< File containing the STF message.
+    std::string  base_stf_label; ///< Label of the STF message.
 
     uint64_t     tu_object_id;     ///< Text You value: object id
     std::string  tu_stf_file;      ///< Text You value: STF file
@@ -95,6 +105,11 @@ struct ProsePackage {
     std::string  to_stf_file;      ///< Text Object value: STF file
     std::string  to_stf_label;     ///< Text Object value: STF label
     std::wstring to_custom_string; ///< Text Object value: custom string
+
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
 
     int32_t di_integer; ///< Decimal value: integer
     float df_float;     ///< Decimal value: float
@@ -116,14 +131,16 @@ struct WaypointPackage {
 };
 
 /**
- * The OutOfBand attachment is used in multiple places to send out customized data
- * to the client. The OutOfBand attachment is actually made up of several sub-types,
+ * \brief The OutOfBand attachment is used in multiple places to send out 
+ * customized data to the client. 
+ *
+ * The OutOfBand attachment is actually made up of several sub-types,
  * for further information on each sub-type supported see it's related struct.
  *
  * @see ProsePackage
  * @see WaypointPackage
  */
-class OutOfBand {
+class COMMON_API OutOfBand {
 public:
     /// Default constructor, generates an empty OutOfBand package.
     OutOfBand();    
@@ -261,8 +278,16 @@ private:
     void SetLength_(ByteBuffer& buffer);
 
     uint16_t count_;
-
+    
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
     std::unique_ptr<ByteBuffer> data_;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
 };
 
 }  // namespace common

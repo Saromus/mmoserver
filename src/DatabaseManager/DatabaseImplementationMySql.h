@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "DatabaseImplementation.h"
 #include "Utils/typedefs.h"
+#include "DatabaseManager/declspec.h"
 
 //======================================================================================================================
 class DatabaseResult;
@@ -41,10 +42,10 @@ typedef struct st_mysql_rows MYSQL_ROWS;
 
 //======================================================================================================================
 
-class DatabaseImplementationMySql : public DatabaseImplementation
+class DBMANAGER_API DatabaseImplementationMySql : public DatabaseImplementation
 {
 public:
-									 DatabaseImplementationMySql(char* host, uint16 port, char* user, char* pass, char* schema);
+                                     DatabaseImplementationMySql(char* host, uint16 port, char* user, char* pass, char* schema);
   virtual							~DatabaseImplementationMySql(void);
   
   virtual DatabaseResult*			ExecuteSql(int8* sql,bool procedure = false);

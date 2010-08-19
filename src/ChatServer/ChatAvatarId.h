@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define ANH_CHATAVATARID_CHANNEL_H
 
 #include "Utils/typedefs.h"
+#include "Utils/bstring.h"
 
 class ChatSystemAvatar;
 class Player;

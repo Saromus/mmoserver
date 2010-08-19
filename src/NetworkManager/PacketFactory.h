@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Packet.h"
 #include <boost/pool/pool.hpp>
 
+#include "NetworkManager/declspec.h"
 
 //======================================================================================================================
 
@@ -40,25 +41,33 @@ typedef boost::pool<boost::default_user_allocator_malloc_free> PacketPool;
 
 //======================================================================================================================
 
-class PacketFactory
+class NET_API PacketFactory
 {
-	public:
+    public:
 
-		PacketFactory(bool serverservice);
-		~PacketFactory(void);
+        PacketFactory(bool serverservice);
+        ~PacketFactory(void);
 
-		void		Process(void);
+        void		Process(void);
 
-		Packet*		CreatePacket(void);
-		void		DestroyPacket(Packet* packet);
+        Packet*		CreatePacket(void);
+        void		DestroyPacket(Packet* packet);
 
-		uint16		mMaxPayLoad;
+        uint16		mMaxPayLoad;
 
-	private:
-		uint32							mPacketCount;
+    private:
+        uint32							mPacketCount;
+        
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
         PacketPool						mPacketPool;
-		boost::recursive_mutex			mPacketFactoryMutex;
-	  
+        boost::recursive_mutex			mPacketFactoryMutex;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif      
 };
 
 //======================================================================================================================

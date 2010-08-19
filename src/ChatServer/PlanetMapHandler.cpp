@@ -28,16 +28,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "PlanetMapHandler.h"
 #include "ChatOpcodes.h"
 
-#include "LogManager/LogManager.h"
+#include "Common/LogManager.h"
 
 #include "DatabaseManager/DataBinding.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 
-#include "Common/DispatchClient.h"
-#include "Common/Message.h"
-#include "Common/MessageDispatch.h"
-#include "Common/MessageFactory.h"
+#include "NetworkManager/DispatchClient.h"
+#include "NetworkManager/Message.h"
+#include "NetworkManager/MessageDispatch.h"
+#include "NetworkManager/MessageFactory.h"
 
 //#include <stdio.h>
 #include <assert.h>

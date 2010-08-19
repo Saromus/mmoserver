@@ -28,15 +28,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef ANH_UTILS_TIMER_H
 #define ANH_UTILS_TIMER_H
 
-#include "typedefs.h"
-#include "clock.h"
 #include <boost/thread/thread.hpp>
+
+#include "Utils/clock.h"
+#include "Utils/typedefs.h"
+
+#include "Utils/declspec.h"
 
 class TimerCallback;
 
 //==============================================================================================================================
 
-class Timer
+class UTILS_API Timer
 {
 public:
     Timer(uint32 id,TimerCallback* callback,uint64 interval, void* container);
@@ -47,7 +50,16 @@ public:
     uint32			getId(){ return mId; }
 
 private:
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
     boost::thread   mThread;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
+
     void*						mContainer;
     TimerCallback*	mCallback;
     uint32					mId;

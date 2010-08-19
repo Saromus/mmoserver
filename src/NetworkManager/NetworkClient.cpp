@@ -27,8 +27,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "NetworkClient.h"
 #include "Session.h"
-#include "LogManager/LogManager.h"
-#include "Common/Message.h"
+#include "Common/LogManager.h"
+#include "NetworkManager/Message.h"
 
 
 

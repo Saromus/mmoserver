@@ -554,12 +554,6 @@
     <ClCompile Include="ResourceCategory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ResourceCollectionCommand.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ResourceCollectionManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ResourceContainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -761,6 +755,9 @@
     <ClCompile Include="CraftingManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HamService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActiveConversation.h">
@@ -824,9 +821,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BuildingObject.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BurstRunEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Camp.h">
@@ -1234,12 +1228,6 @@
     <ClInclude Include="ResourceCategory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ResourceCollectionCommand.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ResourceCollectionManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ResourceContainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1499,6 +1487,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MeditateEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HamService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OCCommonHandlers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

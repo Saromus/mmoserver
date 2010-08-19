@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Utils/typedefs.h"
 #include "Utils/concurrent_queue.h"
+#include "NetworkManager/declspec.h"
 
 #include <list>
 
@@ -50,7 +51,7 @@ typedef std::list<NetworkCallback*>				NetworkCallbackList;
 
 //======================================================================================================================
 
-class Service
+class NET_API Service
 {
 	public:
 
@@ -78,7 +79,17 @@ class Service
 
 		NetworkCallback*		mCallBack;
 		//NetworkCallbackList		mNetworkCallbackList;
+        
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
 		SessionQueue			mSessionProcessQueue;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
+
 		int8					mLocalAddressName[256];
 		NetworkManager*			mNetworkManager;
 		SocketReadThread*		mSocketReadThread;

@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "DatabaseType.h"
 #include "Utils/typedefs.h"
+#include "DatabaseManager/declspec.h"
 #include <boost/thread/thread.hpp>
 
 //======================================================================================================================
@@ -40,7 +41,7 @@ class DatabaseImplementation;
 
 
 //======================================================================================================================
-class DatabaseWorkerThread
+class DBMANAGER_API DatabaseWorkerThread
 {
 public:
                               DatabaseWorkerThread(DBType type, Database* datbase, int8* host, uint16 port, int8* user, int8* pass, int8* schema);
@@ -68,10 +69,19 @@ private:
   DatabaseImplementation*     mDatabaseImplementation;
 
   DatabaseJob*                mCurrentJob;
-  DBType                      mDatabaseImplementationType;
+  DBType                      mDatabaseImplementationType;  
 
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
   boost::mutex              mWorkerThreadMutex;
   boost::thread			    mThread;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
+
   bool						  mExit;
 };
 

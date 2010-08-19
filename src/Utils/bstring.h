@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define ANH_UTILS_BSTRING_H
 
 #include <vector>
+#include "Utils/typedefs.h"
+#include "Utils/declspec.h"
 
 class BString;
 
@@ -47,7 +49,7 @@ enum BStringType
 
 //======================================================================================================================
 
-class BString
+class UTILS_API BString
 {
 public:
     BString();
@@ -75,9 +77,9 @@ public:
     BString& operator =(const BString& data);
 
     BString& operator <<(const int8* data);
-	BString& operator <<(const uint16* data);
+    BString& operator <<(const uint16* data);
     BString& operator <<(int8* data);
-	BString& operator <<(uint16* data);
+    BString& operator <<(uint16* data);
 
     // Accessor Methods
     int8* getAnsi();

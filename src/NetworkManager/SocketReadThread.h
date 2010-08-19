@@ -35,7 +35,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <list>
 #include <map>
 
-	
+#include "NetworkManager/declspec.h"
+
+    
 //======================================================================================================================
 
 class SocketWriteThread;
@@ -51,63 +53,72 @@ class Packet;
 
 typedef std::list<Session*>			SessionList;
 typedef std::map<uint64,Session*>	AddressSessionMap;     
-				                                                                     
+                                                                                     
 typedef unsigned int SOCKET;                                      
 
 //======================================================================================================================
 
 class NewConnection
 {
-	public:
+    public:
 
-	  int8              mAddress[256];
-	  uint16            mPort;
-	  Session*          mSession;
+      int8              mAddress[256];
+      uint16            mPort;
+      Session*          mSession;
 };
 
 //======================================================================================================================
 
-class SocketReadThread
+class NET_API SocketReadThread
 {
-	public:
-									SocketReadThread(SOCKET socket, SocketWriteThread* writeThread, Service* service,uint32 mfHeapSize, bool serverservice);
-									~SocketReadThread();
+    public:
+                                    SocketReadThread(SOCKET socket, SocketWriteThread* writeThread, Service* service,uint32 mfHeapSize, bool serverservice);
+                                    ~SocketReadThread();
 
-	  virtual void					run();
+      virtual void					run();
 
-	  void                          NewOutgoingConnection(int8* address, uint16 port);
-	  void                          RemoveAndDestroySession(Session* session);
+      void                          NewOutgoingConnection(int8* address, uint16 port);
+      void                          RemoveAndDestroySession(Session* session);
 
-	  NewConnection*                getNewConnectionInfo(void)  { return &mNewConnection; };
-	  bool                          getIsRunning(void)          { return mIsRunning; }
-	  void							requestExit()				{ mExit = true; }
+      NewConnection*                getNewConnectionInfo(void)  { return &mNewConnection; };
+      bool                          getIsRunning(void)          { return mIsRunning; }
+      void							requestExit()				{ mExit = true; }
 
-	protected:
+    protected:
 
-	  void                          _startup(void);
-	  void                          _shutdown(void);
+      void                          _startup(void);
+      void                          _shutdown(void);
 
-	  Packet*                       mReceivePacket;
-	  Packet*                       mDecompressPacket;
+      Packet*                       mReceivePacket;
+      Packet*                       mDecompressPacket;
 
-	  uint16						mMessageMaxSize;
-	  SocketWriteThread*            mSocketWriteThread;
-	  SessionFactory*               mSessionFactory;
-	  PacketFactory*                mPacketFactory;
-	  MessageFactory*               mMessageFactory;
-	  CompCryptor*                  mCompCryptor;
-	  NewConnection                 mNewConnection;
+      uint16						mMessageMaxSize;
+      SocketWriteThread*            mSocketWriteThread;
+      SessionFactory*               mSessionFactory;
+      PacketFactory*                mPacketFactory;
+      MessageFactory*               mMessageFactory;
+      CompCryptor*                  mCompCryptor;
+      NewConnection                 mNewConnection;
 
-	  SOCKET                        mSocket;
+      SOCKET                        mSocket;
 
-	  bool							mIsRunning;
+      bool							mIsRunning;
 
-	  uint32						mSessionResendWindowSize;
+      uint32						mSessionResendWindowSize;
+        
+    // Win32 complains about stl during linkage, disable the warning.
+#ifdef _WIN32
+#pragma warning (disable : 4251)
+#endif
       boost::thread 				mThread;
       boost::mutex					mSocketReadMutex;
-	  AddressSessionMap             mAddressSessionMap;
-	  
-	  bool							mExit;
+      AddressSessionMap             mAddressSessionMap;
+    // Re-enable the warning.
+#ifdef _WIN32
+#pragma warning (default : 4251)
+#endif
+      
+      bool							mExit;
 };
 
 //======================================================================================================================
