@@ -212,9 +212,7 @@ bool ArtisanManager::handleRequestCoreSample(Object* player,Object* target, Mess
     // don't allow more than one sample at a time
     if(playerObject->getSamplingState())
     {
-        playerObject->getSampleData()->mPendingSample = false;
-        playerObject->setNextSampleTime(localTime + 18000);
-        gMessageLib->SendSystemMessage(::common::OutOfBand("survey", "tool_recharge_time", 0, 0, 0, (int32)(playerObject->getNextSampleTime() - localTime) / 1000), playerObject);
+        gMessageLib->SendSystemMessage(::common::OutOfBand("error_message", "survey_cant"), playerObject);
         return false;
     }
 
@@ -671,6 +669,7 @@ void	ArtisanManager::finishSampling(PlayerObject* player, CurrentResource* resou
                         gMessageLib->sendResourceContainerUpdateAmount(resCont,player);
 
                         gWorldManager->getDatabase()->ExecuteSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",newAmount,resCont->getId());
+                        gLogger->log(LogManager::DEBUG, "SQL :: UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",newAmount,resCont->getId()); // SQL Debug Log
                     }
                     // target container full, put in what fits, create a new one
                     else if(newAmount > maxAmount)
@@ -680,7 +679,8 @@ void	ArtisanManager::finishSampling(PlayerObject* player, CurrentResource* resou
                         resCont->setAmount(maxAmount);
 
                         gMessageLib->sendResourceContainerUpdateAmount(resCont,player);
-                        gWorldManager->getDatabase()->ExecuteSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",maxAmount,resCont->getId());
+                       gWorldManager->getDatabase()->ExecuteSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",maxAmount,resCont->getId());
+                        gLogger->log(LogManager::DEBUG, "SQL :: UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",maxAmount,resCont->getId()); // SQL Debug Log
 
                         gObjectFactory->requestNewResourceContainer(inventory,resource->getId(),inventory->getId(),99,selectedNewAmount);
                     }
