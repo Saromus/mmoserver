@@ -59,7 +59,7 @@ using ::common::OutOfBand;
 
 void PlayerObject::onLogout(const LogOutEvent* event)
 {
-    
+
     if(!this->checkPlayerCustomFlag(PlayerCustomFlag_LogOut))
     {
         return;
@@ -73,14 +73,14 @@ void PlayerObject::onLogout(const LogOutEvent* event)
         gMessageLib->SendSystemMessage(OutOfBand("logout", "time_left", 0, 0, 0, timeLeft), this);
         return;
     }
-            
+
     gMessageLib->SendSystemMessage(OutOfBand("logout", "safe_to_log_out"), this);
-	
+
     gMessageLib->sendLogout(this);
-    this->togglePlayerCustomFlagOff(PlayerCustomFlag_LogOut);	
+    this->togglePlayerCustomFlagOff(PlayerCustomFlag_LogOut);
     gWorldManager->addDisconnectedPlayer(this);
     //Initiate Logout
-	
+
 }
 
 
@@ -93,17 +93,17 @@ void PlayerObject::onItemDeleteEvent(const ItemDeleteEvent* event)
     uint64 now = Anh_Utils::Clock::getSingleton()->getLocalTime();
 
     //do we have to remove the cooldown?
-    
+
     Item* item = dynamic_cast<Item*>(gWorldManager->getObjectById(event->getItem()));
     if(!item)
     {
         gLogger->log(LogManager::DEBUG,"PlayerObject::onItemDeleteEvent: Item %I64u not found",event->getItem());
         return;
     }
-    
+
     TangibleObject* tO = dynamic_cast<TangibleObject*>(gWorldManager->getObjectById(item->getParentId()));
     tO->deleteObject(item);
-        
+
 }
 
 //=============================================================================
@@ -119,7 +119,7 @@ void PlayerObject::onInjuryTreatment(const InjuryTreatmentEvent* event)
         this->togglePlayerCustomFlagOff(PlayerCustomFlag_InjuryTreatment);
         gMessageLib->SendSystemMessage(::common::OutOfBand("healing_response", "healing_response_58"), this);
     }
-    
+
     //have to call once more so we can get back here...
     else
     {
@@ -139,7 +139,7 @@ void PlayerObject::onQuickHealInjuryTreatment(const QuickHealInjuryTreatmentEven
         this->togglePlayerCustomFlagOff(PlayerCustomFlag_QuickHealInjuryTreatment);
         gMessageLib->SendSystemMessage(::common::OutOfBand("healing_response", "healing_response_58"), this);
     }
-    
+
     //have to call once more so we can get back here...
     else
     {
@@ -158,7 +158,7 @@ void PlayerObject::onWoundTreatment(const WoundTreatmentEvent* event)
     if(now >  t)
     {
         this->togglePlayerCustomFlagOff(PlayerCustomFlag_WoundTreatment);
-        
+
         gMessageLib->SendSystemMessage(::common::OutOfBand("healing_response", "healing_response_59"), this);
     }
     //have to call once more so we can get back here...
@@ -173,40 +173,40 @@ void PlayerObject::onWoundTreatment(const WoundTreatmentEvent* event)
 //
 void PlayerObject::onForceRun(const ForceRunEvent* event)
 {
-	uint64 now = gWorldManager->GetCurrentGlobalTick();
-	uint64 t = event->getEndTime();
+    uint64 now = gWorldManager->GetCurrentGlobalTick();
+    uint64 t = event->getEndTime();
 
-	//do we have to remove the force run??
-	if (now > t)
-	{
-		if (this->checkPlayerCustomFlag(PlayerCustomFlag_ForceRun))
-		{
-			gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "forcerun_stop_single"), this);
-			//I don't really remember if there was even any combat spam that was seen by other players for this.
-			//Combat Spam
-			int8 s[256];
-			sprintf(s, "%s %s slows down.", this->getFirstName().getAnsi(), this->getLastName().getAnsi());
-			BString bs(s);
-			bs.convert(BSTRType_Unicode16);
-			gMessageLib->sendCombatSpam(this, this, 0, "", "", 0, 0, bs.getUnicode16());
+    //do we have to remove the force run??
+    if (now > t)
+    {
+        if (this->checkPlayerCustomFlag(PlayerCustomFlag_ForceRun))
+        {
+            gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "forcerun_stop_single"), this);
+            //I don't really remember if there was even any combat spam that was seen by other players for this.
+            //Combat Spam
+            int8 s[256];
+            sprintf(s, "%s %s slows down.", this->getFirstName().getAnsi(), this->getLastName().getAnsi());
+            BString bs(s);
+            bs.convert(BSTRType_Unicode16);
+            gMessageLib->sendCombatSpam(this, this, 0, "", "", 0, 0, bs.getUnicode16());
 
-			this->togglePlayerCustomFlagOff(PlayerCustomFlag_ForceRun);
+            this->togglePlayerCustomFlagOff(PlayerCustomFlag_ForceRun);
 
-			this->modifySkillModValue(SMod_slope_move, -50);
-			this->setCurrentRunSpeedLimit(this->getBaseRunSpeedLimit());
-			this->setCurrentAcceleration(this->getBaseAcceleration());
-			gMessageLib->sendUpdateMovementProperties(this);
+            this->modifySkillModValue(SMod_slope_move, -50);
+            this->setCurrentRunSpeedLimit(this->getBaseRunSpeedLimit());
+            this->setCurrentAcceleration(this->getBaseAcceleration());
+            gMessageLib->sendUpdateMovementProperties(this);
 
-			this->setLocomotion(kLocomotionStanding);
+            this->setLocomotion(kLocomotionStanding);
 
-			//this->setUpright();
-		}
-	}
-	//have to call once more so we can get back here...
-	else
-	{
-		mObjectController.addEvent(new ForceRunEvent(t), t - now);
-	}
+            //this->setUpright();
+        }
+    }
+    //have to call once more so we can get back here...
+    else
+    {
+        mObjectController.addEvent(new ForceRunEvent(t), t - now);
+    }
 }
 
 //=============================================================================
@@ -215,25 +215,25 @@ void PlayerObject::onForceRun(const ForceRunEvent* event)
 //
 void PlayerObject::onForceMeditate(const ForceMeditateEvent* event)
 {
-	uint64 now = gWorldManager->GetCurrentGlobalTick();
-	uint64 t = event->getEffectTime();
+    uint64 now = gWorldManager->GetCurrentGlobalTick();
+    uint64 t = event->getEffectTime();
 
-	//do we need to play the effect again??
-	if (now > t)
-	{
-		if (this->isMeditating())
-		{
-			gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/pl_force_meditate_self.cef", "", this);
+    //do we need to play the effect again??
+    if (now > t)
+    {
+        if (this->isMeditating())
+        {
+            gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/pl_force_meditate_self.cef", "", this);
 
-			//this makes it so the event loops, thus causing the client effect to loop again and again...until we stop force meditating.
-			mObjectController.addEvent(new ForceMeditateEvent(6000), 6000);
-		}
-	}
-	//have to call once more so we can get back here...
-	else
-	{
-		mObjectController.addEvent(new ForceMeditateEvent(t), t - now);
-	}
+            //this makes it so the event loops, thus causing the client effect to loop again and again...until we stop force meditating.
+            mObjectController.addEvent(new ForceMeditateEvent(6000), 6000);
+        }
+    }
+    //have to call once more so we can get back here...
+    else
+    {
+        mObjectController.addEvent(new ForceMeditateEvent(t), t - now);
+    }
 }
 
 //=============================================================================
@@ -243,135 +243,135 @@ void PlayerObject::onForceMeditate(const ForceMeditateEvent* event)
 //
 void PlayerObject::onMeditate(const MeditateEvent* event)
 {
-	uint64 now = gWorldManager->GetCurrentGlobalTick();
-	uint64 t = event->getTickTime();
+    uint64 now = gWorldManager->GetCurrentGlobalTick();
+    uint64 t = event->getTickTime();
 
-	//do we need to tick again??
-	if (now > t)
-	{
-		if (this->isMeditating())
-		{
-			int healAmount;
-			int meditateMod = this->getSkillModValue(SMod_meditate);
-			Ham* playerHam = this->getHam();
+    //do we need to tick again??
+    if (now > t)
+    {
+        if (this->isMeditating())
+        {
+            int healAmount;
+            int meditateMod = this->getSkillModValue(SMod_meditate);
+            Ham* playerHam = this->getHam();
 
-			//*DOT Healing*
-			// DOTs are healed in a particular order which is unknown.
-			// however the purposed order (which can be found on the wikipage) is: [Heal bleeds, poisons, then diseases]
-			//TODO: Meditation DOT healing.
+            //*DOT Healing*
+            // DOTs are healed in a particular order which is unknown.
+            // however the purposed order (which can be found on the wikipage) is: [Heal bleeds, poisons, then diseases]
+            //TODO: Meditation DOT healing.
 
-			//*Wound Healing*
-			// Player must have +75 Meditate SkillMod (Master Meditative Techniques skillbox) in order to be able to heal wounds.
-			if (meditateMod >= 75)
-			{
-				int HealthWounds = playerHam->mHealth.getWounds();
-				int StrengthWounds = playerHam->mStrength.getWounds();
-				int ConstitutionWounds = playerHam->mConstitution.getWounds();
-				int ActionWounds = playerHam->mAction.getWounds();
-				int QuicknessWounds = playerHam->mQuickness.getWounds();
-				int StaminaWounds = playerHam->mStamina.getWounds();
-				int MindWounds = playerHam->mMind.getWounds();
-				int FocusWounds = playerHam->mFocus.getWounds();
-				int WillpowerWounds = playerHam->mWillpower.getWounds();
+            //*Wound Healing*
+            // Player must have +75 Meditate SkillMod (Master Meditative Techniques skillbox) in order to be able to heal wounds.
+            if (meditateMod >= 75)
+            {
+                int HealthWounds = playerHam->mHealth.getWounds();
+                int StrengthWounds = playerHam->mStrength.getWounds();
+                int ConstitutionWounds = playerHam->mConstitution.getWounds();
+                int ActionWounds = playerHam->mAction.getWounds();
+                int QuicknessWounds = playerHam->mQuickness.getWounds();
+                int StaminaWounds = playerHam->mStamina.getWounds();
+                int MindWounds = playerHam->mMind.getWounds();
+                int FocusWounds = playerHam->mFocus.getWounds();
+                int WillpowerWounds = playerHam->mWillpower.getWounds();
 				
-				if (meditateMod > 0 && meditateMod < 100)
-					healAmount = (gRandom->getRand() % 20) + 10; //10-20
-				else if (meditateMod >= 100)
-					//some documentation says its 20-30 and a few say its 20-35. I need someone to verify which one should be used. So for now I'll put it at 20-30.
-					healAmount = (gRandom->getRand() % 30) + 20; //20-30
-					//heal = (gRandom->getRand() % 35) + 20; //20-35
-				else
-					return;
+                if (meditateMod > 0 && meditateMod < 100)
+                    healAmount = (gRandom->getRand() % 20) + 10; //10-20
+                else if (meditateMod >= 100)
+                    //some documentation says its 20-30 and a few say its 20-35. I need someone to verify which one should be used. So for now I'll put it at 20-30.
+                    healAmount = (gRandom->getRand() % 30) + 20; //20-30
+                    //heal = (gRandom->getRand() % 35) + 20; //20-35
+                else
+                    return;
 
-				// Wound healing order - [Action, Health and Mind] (including secondary stats.)
-				// Meditation only heals one wound pool per tick.
-				// The (if, else if, ...) statements will make sure that only one wound pool is healed per tick. 
-				// If a wound pool = 0, then it will move onto the next wound pool until it finds a wound pool with wounds.
-				if (ActionWounds > 0)
-				{
-					if (ActionWounds < healAmount)
-						healAmount = ActionWounds;
+                // Wound healing order - [Action, Health and Mind] (including secondary stats.)
+                // Meditation only heals one wound pool per tick.
+                // The (if, else if, ...) statements will make sure that only one wound pool is healed per tick. 
+                // If a wound pool = 0, then it will move onto the next wound pool until it finds a wound pool with wounds.
+                if (ActionWounds > 0)
+                {
+                    if (ActionWounds < healAmount)
+                        healAmount = ActionWounds;
 
-					playerHam->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -healAmount);
-					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "action_wounds", healAmount), this);
-				}
-				else if (QuicknessWounds > 0)
-				{
-					if (QuicknessWounds < healAmount)
-						healAmount = QuicknessWounds;
+                    playerHam->updatePropertyValue(HamBar_Action, HamProperty_Wounds, -healAmount);
+                    gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "action_wounds", healAmount), this);
+                }
+                else if (QuicknessWounds > 0)
+                {
+                    if (QuicknessWounds < healAmount)
+                        healAmount = QuicknessWounds;
 
-					playerHam->updatePropertyValue(HamBar_Quickness, HamProperty_Wounds, -healAmount);
-					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "quickness_wounds", healAmount), this);
-				}
-				else if (StaminaWounds > 0)
-				{
-					if (StaminaWounds < healAmount)
-						healAmount = StaminaWounds;
+                    playerHam->updatePropertyValue(HamBar_Quickness, HamProperty_Wounds, -healAmount);
+                    gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "quickness_wounds", healAmount), this);
+                }
+                else if (StaminaWounds > 0)
+                {
+                    if (StaminaWounds < healAmount)
+                        healAmount = StaminaWounds;
 
-					playerHam->updatePropertyValue(HamBar_Stamina, HamProperty_Wounds, -healAmount);
-					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "stamina_wounds", healAmount), this);
-				}
-				else if (HealthWounds > 0)
-				{
+                    playerHam->updatePropertyValue(HamBar_Stamina, HamProperty_Wounds, -healAmount);
+                    gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "stamina_wounds", healAmount), this);
+                }
+                else if (HealthWounds > 0)
+                {
 					if (HealthWounds < healAmount)
-						healAmount = HealthWounds;
+                        healAmount = HealthWounds;
 
-					playerHam->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -healAmount);
-					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "health_wounds", healAmount), this);
-				}
-				else if (StrengthWounds > 0)
-				{
-					if (StrengthWounds < healAmount)
-						healAmount = StrengthWounds;
+                    playerHam->updatePropertyValue(HamBar_Health, HamProperty_Wounds, -healAmount);
+                    gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "health_wounds", healAmount), this);
+                }
+                else if (StrengthWounds > 0)
+                {
+                    if (StrengthWounds < healAmount)
+                        healAmount = StrengthWounds;
 
-					playerHam->updatePropertyValue(HamBar_Strength, HamProperty_Wounds, -healAmount);
-					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "strength_wounds", healAmount), this);
-				}
-				else if (ConstitutionWounds > 0)
-				{
-					if (ConstitutionWounds < healAmount)
-						healAmount = ConstitutionWounds;
+                    playerHam->updatePropertyValue(HamBar_Strength, HamProperty_Wounds, -healAmount);
+                    gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "strength_wounds", healAmount), this);
+                }
+                else if (ConstitutionWounds > 0)
+                {
+                    if (ConstitutionWounds < healAmount)
+                        healAmount = ConstitutionWounds;
 
-					playerHam->updatePropertyValue(HamBar_Constitution, HamProperty_Wounds, -healAmount);
-					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "constitution_wounds", healAmount), this);
-				}
-				else if (MindWounds > 0)
-				{
-					if (MindWounds < healAmount)
-						healAmount = MindWounds;
+                    playerHam->updatePropertyValue(HamBar_Constitution, HamProperty_Wounds, -healAmount);
+                    gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "constitution_wounds", healAmount), this);
+                }
+                else if (MindWounds > 0)
+                {
+                    if (MindWounds < healAmount)
+                        healAmount = MindWounds;
 
-					playerHam->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -healAmount);
-					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "mind_wounds", healAmount), this);
-				}
-				else if (FocusWounds > 0)
-				{
-					if (FocusWounds < healAmount)
-						healAmount = FocusWounds;
+                    playerHam->updatePropertyValue(HamBar_Mind, HamProperty_Wounds, -healAmount);
+                    gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "mind_wounds", healAmount), this);
+                }
+                else if (FocusWounds > 0)
+                {
+                    if (FocusWounds < healAmount)
+                        healAmount = FocusWounds;
 
-					playerHam->updatePropertyValue(HamBar_Focus, HamProperty_Wounds, -healAmount);
-					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "focus_wounds", healAmount), this);
-				}
-				else if (WillpowerWounds > 0)
-				{
-					if (WillpowerWounds < healAmount)
-						healAmount = WillpowerWounds;
+                    playerHam->updatePropertyValue(HamBar_Focus, HamProperty_Wounds, -healAmount);
+                    gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "focus_wounds", healAmount), this);
+                }
+                else if (WillpowerWounds > 0)
+                {
+                    if (WillpowerWounds < healAmount)
+                        healAmount = WillpowerWounds;
 
-					playerHam->updatePropertyValue(HamBar_Willpower, HamProperty_Wounds, -healAmount);
-					gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "willpower_wounds", healAmount), this);
-				}
-				else // Either there are no wounds to heal, or all the wound pools have been healed.
-				{
-					return;
-				}
-			}
+                    playerHam->updatePropertyValue(HamBar_Willpower, HamProperty_Wounds, -healAmount);
+                    gMessageLib->SendSystemMessage(OutOfBand("teraskasi", "prose_curewound", "", "", "", "", "jedi_spam", "willpower_wounds", healAmount), this);
+                }
+                else // Either there are no wounds to heal, or all the wound pools have been healed.
+                {
+                    return;
+                }
+            }
 
-			// Loop - tick again
-			mObjectController.addEvent(new MeditateEvent(5000), 5000);
-		}
-	}
-	//have to call once more so we can get back here...
-	else
-	{
-		mObjectController.addEvent(new MeditateEvent(t), t - now);
-	}
+            // Loop - tick again
+            mObjectController.addEvent(new MeditateEvent(5000), 5000);
+        }
+    }
+    //have to call once more so we can get back here...
+    else
+    {
+        mObjectController.addEvent(new MeditateEvent(t), t - now);
+    }
 }

@@ -45,20 +45,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 void ObjectController::_handleMeditate(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-	PlayerObject* player = dynamic_cast<PlayerObject*>(mObject);
+    PlayerObject* player = dynamic_cast<PlayerObject*>(mObject);
 
-	if (player->isMeditating())
-	{
-		gMessageLib->SendSystemMessage(::common::OutOfBand("jedi_spam", "already_in_meditative_state"), player);
-		return;
-	}
+    if (player->isMeditating())
+    {
+        gMessageLib->SendSystemMessage(::common::OutOfBand("jedi_spam", "already_in_meditative_state"), player);
+        return;
+    }
 
-	// Begin Meditating
-	gMessageLib->SendSystemMessage(::common::OutOfBand("teraskasi", "med_begin"), player);
-	player->setMeditateState();
+    // Begin Meditating
+    gMessageLib->SendSystemMessage(::common::OutOfBand("teraskasi", "med_begin"), player);
+    player->setMeditateState();
 
-	// Schedule Execution
-	addEvent(new MeditateEvent(3500), 3500);
+    // Schedule Execution
+    addEvent(new MeditateEvent(3500), 3500);
 }
 
 //=============================================================================================================================

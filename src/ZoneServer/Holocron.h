@@ -34,14 +34,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 class Holocron : public Item
 {
-	friend class ItemFactory;
+    friend class ItemFactory;
 
-	public:
-		Holocron();
-		virtual ~Holocron();
+    public:
+        Holocron();
+        virtual ~Holocron();
 
-		virtual void prepareCustomRadialMenu(CreatureObject* creatureObject, uint8 itemCount);
-		virtual void handleObjectMenuSelect(uint8 messageType, Object* srcObject);
+        virtual void prepareCustomRadialMenu(CreatureObject* creatureObject, uint8 itemCount);
+        virtual void handleObjectMenuSelect(uint8 messageType, Object* srcObject);
 };
 
 //=============================================================================

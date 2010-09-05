@@ -49,48 +49,48 @@ Holocron::~Holocron()
 
 void Holocron::handleObjectMenuSelect(uint8 messageType, Object* srcObject)
 {
-	if (PlayerObject* player = dynamic_cast<PlayerObject*>(srcObject))
-	{
-		switch(messageType)
-		{
-		case radId_itemUse:
-			{
-				//Check if player already has a full force bar.
-				if (player->getHam()->getCurrentForce() == player->getHam()->getMaxForce())
-				{
-					gMessageLib->SendSystemMessage(::common::OutOfBand("jedi_spam", "holocron_force_max"), player);
-					return;
-				}
-				else
-				{
-					//Replenish Force Power
-					//Subtract Max Force from Current Force in order to get the amount of force that needs to be replenished in order to achieve max force again.
-					int fp = player->getHam()->getMaxForce() - player->getHam()->getCurrentForce();
-					player->getHam()->updateCurrentForce(fp);
+    if (PlayerObject* player = dynamic_cast<PlayerObject*>(srcObject))
+    {
+        switch(messageType)
+        {
+        case radId_itemUse:
+            {
+                //Check if player already has a full force bar.
+                if (player->getHam()->getCurrentForce() == player->getHam()->getMaxForce())
+                {
+                    gMessageLib->SendSystemMessage(::common::OutOfBand("jedi_spam", "holocron_force_max"), player);
+                    return;
+                }
+                else
+                {
+                    //Replenish Force Power
+                    //Subtract Max Force from Current Force in order to get the amount of force that needs to be replenished in order to achieve max force again.
+                    int fp = player->getHam()->getMaxForce() - player->getHam()->getCurrentForce();
+                    player->getHam()->updateCurrentForce(fp);
 
-					//Send Client Message
-					gMessageLib->SendSystemMessage(::common::OutOfBand("jedi_spam", "holocron_force_replenish"), player);
+                    //Send Client Message
+                    gMessageLib->SendSystemMessage(::common::OutOfBand("jedi_spam", "holocron_force_replenish"), player);
 
-					//Now that we have used the holocron, we need to delete it from the inventory since you can't use the same holocron twice.
-					Inventory* inventory = dynamic_cast<Inventory*>(player->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
-					inventory->removeObject(this);
-					gMessageLib->sendDestroyObject(this->getId(), player);
-					gObjectFactory->deleteObjectFromDB(this);
-					gWorldManager->destroyObject(this);
-				}
-			}
-		}
-	}
+                    //Now that we have used the holocron, we need to delete it from the inventory since you can't use the same holocron twice.
+                    Inventory* inventory = dynamic_cast<Inventory*>(player->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
+                    inventory->removeObject(this);
+                    gMessageLib->sendDestroyObject(this->getId(), player);
+                    gObjectFactory->deleteObjectFromDB(this);
+                    gWorldManager->destroyObject(this);
+                }
+            }
+        }
+    }
 }
 
 //=============================================================================
 
 void Holocron::prepareCustomRadialMenu(CreatureObject* creatureObject, uint8 itemCount)
 {
-	RadialMenu* radial = new RadialMenu();
-	radial->addItem(1, 0, radId_itemUse, radAction_ObjCallback, "");
-	radial->addItem(2, 0, radId_examine, radAction_ObjCallback, "");
-	radial->addItem(3, 0, radId_itemDestroy, radAction_ObjCallback, "");
-	RadialMenuPtr radialPtr(radial);
-	mRadialMenu = radialPtr;
+    RadialMenu* radial = new RadialMenu();
+    radial->addItem(1, 0, radId_itemUse, radAction_ObjCallback, "");
+    radial->addItem(2, 0, radId_examine, radAction_ObjCallback, "");
+    radial->addItem(3, 0, radId_itemDestroy, radAction_ObjCallback, "");
+    RadialMenuPtr radialPtr(radial);
+    mRadialMenu = radialPtr;
 }

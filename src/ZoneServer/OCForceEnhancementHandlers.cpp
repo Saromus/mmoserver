@@ -91,11 +91,11 @@ void ObjectController::_handleForceSpeed2(uint64 targetId,Message* message,Objec
 
 void ObjectController::_handleForceRun1(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+    PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
 
-	int SkillLevel = 1;
+    int SkillLevel = 1;
 
-	mHandlerCompleted = gJediSkillManager->ForceRunSelfSkill(Jedi, cmdProperties, SkillLevel);
+    mHandlerCompleted = gJediSkillManager->ForceRunSelfSkill(Jedi, cmdProperties, SkillLevel);
 }
 
 //=============================================================================================================================
@@ -105,11 +105,11 @@ void ObjectController::_handleForceRun1(uint64 targetId,Message* message,ObjectC
 
 void ObjectController::_handleForceRun2(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+    PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
 
-	int SkillLevel = 2;
+    int SkillLevel = 2;
 
-	mHandlerCompleted = gJediSkillManager->ForceRunSelfSkill(Jedi, cmdProperties, SkillLevel);
+    mHandlerCompleted = gJediSkillManager->ForceRunSelfSkill(Jedi, cmdProperties, SkillLevel);
 }
 
 //=============================================================================================================================
@@ -119,11 +119,11 @@ void ObjectController::_handleForceRun2(uint64 targetId,Message* message,ObjectC
 
 void ObjectController::_handleForceRun3(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+    PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
 
-	int SkillLevel = 3;
+    int SkillLevel = 3;
 
-	mHandlerCompleted = gJediSkillManager->ForceRunSelfSkill(Jedi, cmdProperties, SkillLevel);
+    mHandlerCompleted = gJediSkillManager->ForceRunSelfSkill(Jedi, cmdProperties, SkillLevel);
 }
 
 //=============================================================================================================================
@@ -205,10 +205,10 @@ void ObjectController::_handleForceResistStates(uint64 targetId,Message* message
 
 void ObjectController::_handleTransferForce(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
-	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+    PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+    PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
 
-	mHandlerCompleted = gJediSkillManager->TransferForce(Jedi, Target, cmdProperties);
+    mHandlerCompleted = gJediSkillManager->TransferForce(Jedi, Target, cmdProperties);
 }
 
 //=============================================================================================================================
@@ -227,10 +227,10 @@ void ObjectController::_handleChannelForce(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleDrainForce(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
-	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
-	PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
+    PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+    PlayerObject* Target = dynamic_cast<PlayerObject*>(Jedi->getHealingTarget(Jedi));
 
-	mHandlerCompleted = gJediSkillManager->DrainForce(Jedi, Target, cmdProperties);
+    mHandlerCompleted = gJediSkillManager->DrainForce(Jedi, Target, cmdProperties);
 }
 
 //=============================================================================================================================
@@ -258,12 +258,11 @@ void ObjectController::_handleForceShield2(uint64 targetId,Message* message,Obje
 
 void ObjectController::_handleForceMeditate(uint64 targetId,Message* message,ObjectControllerCmdProperties* cmdProperties)
 {
+    PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
 
-	PlayerObject* Jedi = dynamic_cast<PlayerObject*>(mObject);
+    int ForceRegen = 300; //TODO: the ForceRegenRate should be multiplied by 3
 
-	int ForceRegen = 300; //TODO: the HamRegens should be multiplied by 3
-
-	mHandlerCompleted = gJediSkillManager->ForceMeditateSelfSkill(Jedi, cmdProperties, ForceRegen);
+    mHandlerCompleted = gJediSkillManager->ForceMeditateSelfSkill(Jedi, cmdProperties, ForceRegen);
 }
 
 //=============================================================================================================================

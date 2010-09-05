@@ -51,13 +51,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //======================================================================================================================
 
 ServerManager::ServerManager(Service* service, Database* database, MessageRouter* router, ConnectionDispatch* dispatch,ClientManager* clientManager) :
-mMessageRouter(router),
-mServerService(service),
-mDatabase(database),
-mConnectionDispatch(dispatch),
-mTotalActiveServers(0),
-mTotalConnectedServers(0),
-mClientManager(clientManager)
+    mMessageRouter(router),
+    mServerService(service),
+    mDatabase(database),
+    mConnectionDispatch(dispatch),
+    mTotalActiveServers(0),
+    mTotalConnectedServers(0),
+    mClientManager(clientManager)
 {
     memset(&mServerAddressMap, 0, sizeof(mServerAddressMap));
 
@@ -130,9 +130,8 @@ NetworkClient* ServerManager::handleSessionConnect(Session* session, Service* se
     int8 sql[500];
     sprintf(sql,"SELECT id, address, port, status, active FROM config_process_list WHERE address='%s' AND port=%u;", session->getAddressString(), session->getPortHost());
     DatabaseResult* result = mDatabase->ExecuteSynchSql(sql);
-    gLogger->log(LogManager::DEBUG, "SQL :: %s", sql); // SQL Debug Log
-    gLogger->logCont(LogManager::DEBUG,"\n");
-                            
+    
+
     // If we found them
     if(result->getRowCount() == 1)
     {
@@ -154,18 +153,18 @@ NetworkClient* ServerManager::handleSessionConnect(Session* session, Service* se
 
         memcpy(&mServerAddressMap[serverAddress.mId], &serverAddress, sizeof(ServerAddress));
         mServerAddressMap[serverAddress.mId].mConnectionClient = connClient;
-        
+
         gLogger->log(LogManager::DEBUG,"*** Backend server connected id: %u\n",mServerAddressMap[serverAddress.mId].mId);
-        
+
         // If this is one of the servers we're waiting for, then update our count
         if(mServerAddressMap[serverAddress.mId].mActive)
         {
-            
+
             ++mTotalConnectedServers;
             if(mTotalConnectedServers == mTotalActiveServers)
             {
                 mDatabase->ExecuteProcedureAsync(0, 0, "CALL sp_GalaxyStatusUpdate(%u, %u);", 2, mClusterId); // Set status to online
-                gLogger->log(LogManager::DEBUG, "SQL :: CALL sp_GalaxyStatusUpdate(%u, %u);", 2, mClusterId); // SQL Debug Log
+               
             }
         }
     }
@@ -209,7 +208,7 @@ void ServerManager::handleSessionDisconnect(NetworkClient* client)
     {
         --mTotalConnectedServers;
         mDatabase->ExecuteProcedureAsync(0, 0, "CALL sp_GalaxyStatusUpdate(%u, %u);", 1, mClusterId); // Set status to online
-        gLogger->log(LogManager::DEBUG, "SQL :: CALL sp_GalaxyStatusUpdate(%u, %u);", 1, mClusterId); // SQL Debug Log
+        
     }
 
     gLogger->log(LogManager::DEBUG,"Servermanager handle server down\n");
@@ -217,7 +216,7 @@ void ServerManager::handleSessionDisconnect(NetworkClient* client)
 
     connClient->getSession()->setStatus(SSTAT_Destroy);
     connClient->getSession()->getService()->AddSessionToProcessQueue(connClient->getSession());
-    
+
 
     delete(client);
 }
@@ -226,9 +225,9 @@ void ServerManager::handleSessionDisconnect(NetworkClient* client)
 //======================================================================================================================
 void ServerManager::handleSessionMessage(NetworkClient* client, Message* message)
 {
-  ConnectionClient* connClient = reinterpret_cast<ConnectionClient*>(client);
-  // Send the message off to the router.
-  mMessageRouter->RouteMessage(message,connClient);
+    ConnectionClient* connClient = reinterpret_cast<ConnectionClient*>(client);
+    // Send the message off to the router.
+    mMessageRouter->RouteMessage(message,connClient);
 }
 
 //======================================================================================================================
@@ -237,30 +236,31 @@ void ServerManager::handleDispatchMessage(uint32 opcode,Message* message,Connect
 {
     switch(opcode)
     {
-        case opClusterRegisterServer:
-        {
-            _processClusterRegisterServer(client,message);
-        }
+    case opClusterRegisterServer:
+    {
+        _processClusterRegisterServer(client,message);
+    }
+    break;
+
+    case opClusterZoneTransferRequestByTicket:
+    {
+        _processClusterZoneTransferRequestByTicket(client,message);
+    }
+    break;
+
+    case opClusterZoneTransferRequestByPosition:
+    {
+        _processClusterZoneTransferRequestByPosition(client,message);
+    }
+    break;
+
+    case opTutorialServerStatusRequest:
+    {
+        _processClusterZoneTutorialTerminal(client,message);
+    }
+
+    default:
         break;
-
-        case opClusterZoneTransferRequestByTicket:
-        {
-            _processClusterZoneTransferRequestByTicket(client,message);
-        }
-        break;
-
-        case opClusterZoneTransferRequestByPosition:
-        {
-            _processClusterZoneTransferRequestByPosition(client,message);
-        }
-        break;
-
-        case opTutorialServerStatusRequest:
-        {
-            _processClusterZoneTutorialTerminal(client,message);
-        }
-
-        default: break;
     }
 }
 
@@ -280,7 +280,7 @@ void ServerManager::_loadProcessAddressMap(void)
 
     // retrieve our list of process addresses.
     DatabaseResult* result = mDatabase->ExecuteSynchSql("SELECT id, address, port, status, active FROM config_process_list WHERE active=1 ORDER BY id;");
-    gLogger->log(LogManager::DEBUG, "SQL :: SELECT id, address, port, status, active FROM config_process_list WHERE active=1 ORDER BY id;"); // SQL Debug Log
+    
 
     mTotalActiveServers = static_cast<uint32>(result->getRowCount());
 
@@ -310,39 +310,39 @@ void ServerManager::_processClusterRegisterServer(ConnectionClient* client, Mess
 
 void ServerManager::_processClusterZoneTransferRequestByTicket(ConnectionClient* client, Message* message)
 {
-  // get our destination zone, planetId + 8
-  uint32 destinationZone = message->getUint32() + 8;
-  uint64 ticketId = message->getUint64();
+    // get our destination zone, planetId + 8
+    uint32 destinationZone = message->getUint32() + 8;
+    uint64 ticketId = message->getUint64();
 
-  // see if that zone is available or not.
-  if (mServerAddressMap[destinationZone].mConnectionClient)
-  {
-    // Send back a opClusterZoneTransferApproved
-    gMessageFactory->StartMessage();
-    gMessageFactory->addUint32(opClusterZoneTransferApprovedByTicket);
-    gMessageFactory->addUint64(ticketId);
-    Message* newMessage = gMessageFactory->EndMessage();
+    // see if that zone is available or not.
+    if (mServerAddressMap[destinationZone].mConnectionClient)
+    {
+        // Send back a opClusterZoneTransferApproved
+        gMessageFactory->StartMessage();
+        gMessageFactory->addUint32(opClusterZoneTransferApprovedByTicket);
+        gMessageFactory->addUint64(ticketId);
+        Message* newMessage = gMessageFactory->EndMessage();
 
-    // This one goes to the originating zone
-    newMessage->setAccountId(message->getAccountId());
-    newMessage->setDestinationId(static_cast<uint8>(client->getServerId()));
-    newMessage->setRouted(true);
-    mMessageRouter->RouteMessage(newMessage, client);
-  }
-  else
-  {
-    // Send back a opClusterZoneTransferDenied
-    gMessageFactory->StartMessage();
-    gMessageFactory->addUint32(opClusterZoneTransferDenied);
-    gMessageFactory->addUint32(1);                    // Reason: Server not available
-    Message* newMessage = gMessageFactory->EndMessage();
+        // This one goes to the originating zone
+        newMessage->setAccountId(message->getAccountId());
+        newMessage->setDestinationId(static_cast<uint8>(client->getServerId()));
+        newMessage->setRouted(true);
+        mMessageRouter->RouteMessage(newMessage, client);
+    }
+    else
+    {
+        // Send back a opClusterZoneTransferDenied
+        gMessageFactory->StartMessage();
+        gMessageFactory->addUint32(opClusterZoneTransferDenied);
+        gMessageFactory->addUint32(1);                    // Reason: Server not available
+        Message* newMessage = gMessageFactory->EndMessage();
 
-    // This one goes to
-    newMessage->setAccountId(message->getAccountId());
-    newMessage->setDestinationId(static_cast<uint8>(client->getServerId()));
-    newMessage->setRouted(true);
-    mMessageRouter->RouteMessage(newMessage, client);
-  }
+        // This one goes to
+        newMessage->setAccountId(message->getAccountId());
+        newMessage->setDestinationId(static_cast<uint8>(client->getServerId()));
+        newMessage->setRouted(true);
+        mMessageRouter->RouteMessage(newMessage, client);
+    }
 }
 
 void ServerManager::_processClusterZoneTutorialTerminal(ConnectionClient* client, Message* message)

@@ -30,21 +30,30 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Utils/EventHandler.h"
 
+
+
+
 //======================================================================================================================
 
 class ForceRunEvent : public Anh_Utils::Event
 {
-	public:
+public:
 
-		ForceRunEvent(uint64 time) : mEndTime(time) {}
+    ForceRunEvent(uint64 time) : mEndTime(time) {}
 		
-		uint64	getEndTime()	const { return  mEndTime; }
+    uint64 getEndTime() const {
+        return  mEndTime; 
+    }
 
-	private:
+private:
 
-		uint64				mEndTime;
+    uint64				mEndTime;
 };
+
 
 //======================================================================================================================
 
 #endif
+
+
+

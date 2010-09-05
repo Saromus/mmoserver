@@ -30,21 +30,30 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Utils/EventHandler.h"
 
+
+
+
 //======================================================================================================================
 
 class ForceMeditateEvent : public Anh_Utils::Event
 {
-	public:
+public:
 
-		ForceMeditateEvent(uint64 time) : mEffectTime(time) {}
+    ForceMeditateEvent(uint64 time) : mEffectTime(time) {}
 		
-		uint64	getEffectTime()	const { return  mEffectTime; }
+    uint64getEffectTime() const {
+        return  mEffectTime;
+    }
 
-	private:
+private:
 
-		uint64				mEffectTime;
+    uint64				mEffectTime;
 };
+
 
 //======================================================================================================================
 
 #endif
+
+
+
