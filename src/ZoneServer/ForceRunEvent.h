@@ -40,7 +40,7 @@ class ForceRunEvent : public Anh_Utils::Event
 public:
 
     ForceRunEvent(uint64 time) : mEndTime(time) {}
-		
+
     uint64 getEndTime() const {
         return  mEndTime; 
     }

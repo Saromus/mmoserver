@@ -29,7 +29,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <vector>
 
-
 #define gJediSkillManager JediSkillManager::getSingletonPtr()
 
 class CreatureObject;
@@ -43,48 +42,48 @@ class PlayerObject;
 class JediSkillManager
 {
 public:
-	~JediSkillManager();
+    ~JediSkillManager();
 
-	static JediSkillManager* getSingletonPtr() { return mSingleton; }
-	static JediSkillManager* Init(MessageDispatch* dispatch)
-	{
-		if(!mInsFlag)
-		{
-			mSingleton = new JediSkillManager(dispatch);
-			mInsFlag = true;
-			return mSingleton;
-		}
-		else
-			return mSingleton;
-	}
+    static JediSkillManager* getSingletonPtr() { return mSingleton; }
+    static JediSkillManager* Init(MessageDispatch* dispatch)
+    {
+        if(!mInsFlag)
+        {
+            mSingleton = new JediSkillManager(dispatch);
+            mInsFlag = true;
+            return mSingleton;
+        }
+        else
+            return mSingleton;
+    }
 
-	//ForceHealSelfSkill
-	bool ForceHealSelfDamage(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int HealType);
-	bool ForceHealSelfWound(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int HealType);
-	bool ForceHealSelfState(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties);
-	bool ForceHealSelfTotal(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties);
+    //ForceHealSelfSkill
+    bool ForceHealSelfDamage(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int HealType);
+    bool ForceHealSelfWound(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int HealType);
+    bool ForceHealSelfState(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties);
+    bool ForceHealSelfTotal(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties);
 
-	//ForceHealTargetSkill
-	bool ForceHealTargetDamage(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType);
-	bool ForceHealTargetWound(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType);
-	bool ForceHealTargetState(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
-	bool ForceCureTarget(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType);
-	bool ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
-	
-	//Force Enhancement Self Skills
-	bool ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int ForceRegen);
-	bool ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int SkillLevel);
-	
-	//Force Enhancement Target Skills
-	bool TransferForce(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
-	bool DrainForce(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
+    //ForceHealTargetSkill
+    bool ForceHealTargetDamage(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType);
+    bool ForceHealTargetWound(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType);
+    bool ForceHealTargetState(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
+    bool ForceCureTarget(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties, int HealType);
+    bool ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
+
+    //Force Enhancement Self Skills
+    bool ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int ForceRegen);
+    bool ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int SkillLevel);
+
+    //Force Enhancement Target Skills
+    bool TransferForce(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
+    bool DrainForce(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties);
 
 
 private:
-	static JediSkillManager*	mSingleton;
-	static bool					mInsFlag;
-	MessageDispatch*			Dispatch;
+    static JediSkillManager*	mSingleton;
+    static bool					mInsFlag;
+    MessageDispatch*			Dispatch;
 
-	JediSkillManager(MessageDispatch* dispatch);
+    JediSkillManager(MessageDispatch* dispatch);
 
 };

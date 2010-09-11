@@ -40,8 +40,8 @@ class ForceMeditateEvent : public Anh_Utils::Event
 public:
 
     ForceMeditateEvent(uint64 time) : mEffectTime(time) {}
-		
-    uint64getEffectTime() const {
+	
+    uint64 getEffectTime() const {
         return  mEffectTime;
     }
 

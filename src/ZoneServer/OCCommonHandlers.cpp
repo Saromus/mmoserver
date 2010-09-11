@@ -1690,6 +1690,22 @@ bool HandleBurstRun(Object* object, Object* target, Message* message, ObjectCont
         return false;
     }
 
+    //Check for other forms of running. (Mainly force run.)
+    if(player->checkPlayerCustomFlag(PlayerCustomFlag_ForceRun))
+    {
+        gMessageLib->SendSystemMessage(OutOfBand("combat_effects", "burst_run_no"), player);
+        return false;
+    }
+
+    //Instead of doing the ^above...
+    //We could probably just check if the player is already running (in general),
+    //by checking if the player's locomotion is set to 'kLocomotionRunning'.
+    /*if(player->getLocomotion() = kLocomotionRunning)
+    {
+        gMessageLib->SendSystemMessage(OutOfBand("combat_effects", "burst_run_no"), player);
+        return false;
+    }*/
+
     // Create a pre-command processing event.
     auto pre_execute_event = std::make_shared<PreCommandExecuteEvent>(object->getId());
     pre_execute_event->target_id(0); // This command never has a target.
