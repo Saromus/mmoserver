@@ -293,7 +293,7 @@ void ManufacturingSchematic::setPPAttribute(BString key,std::string value)
 
     if(it == mPPAttributeMap.end())
     {
-        gLogger->log(LogManager::DEBUG,"ManufacturingSchematic::setPPAttribute: could not find %s",key.getAnsi());
+        DLOG(WARNING) << "ManufacturingSchematic::setPPAttribute: could not find " << key.getAnsi();
         return;
     }
 
@@ -320,7 +320,7 @@ void ManufacturingSchematic::removePPAttribute(BString key)
     if(it != mPPAttributeMap.end())
         mPPAttributeMap.erase(it);
     else
-        gLogger->log(LogManager::DEBUG,"ManufacturingSchematic::removePostProcessAttribute: could not find %s",key.getAnsi());
+        DLOG(WARNING) << "ManufacturingSchematic::removePostProcessAttribute: could not find " << key.getAnsi();
 }
 
 //===============================================================
@@ -370,7 +370,6 @@ bool ManufactureSlot::addResourcetoSlot(uint64 resID, uint32 amount, uint8 type)
 
 void ManufactureSlot::addComponenttoSlot(uint64 resID, uint32 amount, uint8 type)
 {
-    uint32 counter = 0;
     if(mFilledResources.empty())
         mFilledIndicatorChange = true;
 

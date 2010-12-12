@@ -85,8 +85,8 @@ bool Shuttle::availableInPort(void)
 
 void Shuttle::useShuttle(PlayerObject* playerObject)
 {
-    if(playerObject->getPosture() == CreaturePosture_SkillAnimating)
-    {
+	if(playerObject->states.getPosture() == CreaturePosture_SkillAnimating)
+	{
         gMessageLib->SendSystemMessage(::common::OutOfBand("error_message", "wrong_state"), playerObject);
         return;
     }
@@ -102,7 +102,7 @@ void Shuttle::useShuttle(PlayerObject* playerObject)
 
         gMessageLib->SendSystemMessage(u.getUnicode16(), playerObject);
 
-        gLogger->log(LogManager::DEBUG, errmsg);
+        LOG(WARNING) <<  errmsg;
 
         return;
     }
@@ -140,7 +140,7 @@ void Shuttle::useShuttle(PlayerObject* playerObject)
 
     case ShuttleState_Away:
     {
-        BString	awayMsg = BString(BSTRType_Unicode16,256);
+        wchar_t temp[256];
         uint32	minutes = (mAwayInterval - mAwayTime) / 60000;
         uint32	seconds = (60000 - (mAwayTime%60000)) / 1000;
 
@@ -148,13 +148,11 @@ void Shuttle::useShuttle(PlayerObject* playerObject)
             seconds = 0;
 
         if(minutes > 0)
-        {
-            awayMsg.setLength(swprintf(awayMsg.getUnicode16(),80,L"The next shuttle will be ready to board in %u minutes %u seconds.",minutes,seconds));
-        }
+            swprintf(temp,80,L"The next shuttle will be ready to board in %u minutes %u seconds.",minutes,seconds);
         else
-            awayMsg.setLength(swprintf(awayMsg.getUnicode16(),80,L"The next shuttle will be ready to board in %u seconds.",seconds));
+            swprintf(temp,80,L"The next shuttle will be ready to board in %u seconds.",seconds);
 
-        gMessageLib->SendSystemMessage(awayMsg.getUnicode16(), playerObject);
+        gMessageLib->SendSystemMessage(temp, playerObject);
     }
     break;
 

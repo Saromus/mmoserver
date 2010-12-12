@@ -26,12 +26,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "BuildingFactory.h"
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "BuildingObject.h"
 #include "CellFactory.h"
 #include "CellObject.h"
 #include "SpawnPoint.h"
 #include "WorldManager.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DataBinding.h"
 #include "DatabaseManager/DatabaseResult.h"
@@ -95,7 +100,7 @@ void BuildingFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result
             asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(asyncContainer->mOfCallback,BFQuery_CloneData,asyncContainer->mClient);
             asContainer->mObject = building;
 
-            mDatabase->ExecuteSqlAsync(this,asContainer,"SELECT spawn_clone.parentId,spawn_clone.oX,spawn_clone.oY,spawn_clone.oZ,spawn_clone.oW,"
+            mDatabase->executeSqlAsync(this,asContainer,"SELECT spawn_clone.parentId,spawn_clone.oX,spawn_clone.oY,spawn_clone.oZ,spawn_clone.oW,"
                                        "spawn_clone.cell_x,spawn_clone.cell_y,spawn_clone.cell_z,spawn_clone.city "
                                        "FROM  spawn_clone "
                                        "INNER JOIN cells ON spawn_clone.parentid = cells.id "
@@ -108,7 +113,7 @@ void BuildingFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result
             asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(asyncContainer->mOfCallback,BFQuery_Cells,asyncContainer->mClient);
             asContainer->mObject = building;
 
-            mDatabase->ExecuteSqlAsync(this,asContainer,"SELECT id FROM cells WHERE parent_id = %"PRIu64";",building->getId());
+            mDatabase->executeSqlAsync(this,asContainer,"SELECT id FROM cells WHERE parent_id = %"PRIu64";",building->getId());
             
         }
     }
@@ -122,14 +127,14 @@ void BuildingFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result
 
         if(!spawnCount)
         {
-            gLogger->log(LogManager::DEBUG,"BuildingFactory: Cloning facility %"PRIu64" has no spawn points",building->getId());
+        	LOG(ERROR) << "Cloning facility [" << building->getId() << "] has no spawn points";
         }
 
         for(uint64 i = 0; i < spawnCount; i++)
         {
             SpawnPoint* spawnPoint = new SpawnPoint();
 
-            result->GetNextRow(mSpawnBinding,spawnPoint);
+            result->getNextRow(mSpawnBinding,spawnPoint);
 
             building->addSpawnPoint(spawnPoint);
         }
@@ -138,7 +143,7 @@ void BuildingFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result
         QueryContainerBase* asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(asyncContainer->mOfCallback,BFQuery_Cells,asyncContainer->mClient);
         asContainer->mObject = building;
 
-        mDatabase->ExecuteSqlAsync(this,asContainer,"SELECT id FROM cells WHERE parent_id = %"PRIu64";",building->getId());
+        mDatabase->executeSqlAsync(this,asContainer,"SELECT id FROM cells WHERE parent_id = %"PRIu64";",building->getId());
         
     }
     break;
@@ -149,7 +154,7 @@ void BuildingFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result
         uint32			cellCount;
         uint64			cellId;
 
-        DataBinding*	cellBinding = mDatabase->CreateDataBinding(1);
+        DataBinding*	cellBinding = mDatabase->createDataBinding(1);
         cellBinding->addField(DFT_int64,0,8);
 
         // store us for later lookup
@@ -161,12 +166,12 @@ void BuildingFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result
 
         for(uint32 j = 0; j < cellCount; j++)
         {
-            result->GetNextRow(cellBinding,&cellId);
+            result->getNextRow(cellBinding,&cellId);
 
             mCellFactory->requestObject(this,cellId,0,0,asyncContainer->mClient);
         }
 
-        mDatabase->DestroyDataBinding(cellBinding);
+        mDatabase->destroyDataBinding(cellBinding);
     }
     break;
 
@@ -181,7 +186,7 @@ void BuildingFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result
 
 void BuildingFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,uint16 subGroup,uint16 subType,DispatchClient* client)
 {
-    mDatabase->ExecuteSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,BFQuery_MainData,client),
+    mDatabase->executeSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,BFQuery_MainData,client),
                                "SELECT buildings.id,buildings.oX,buildings.oY,buildings.oZ,buildings.oW,buildings.x,"
                                "buildings.y,buildings.z,building_types.model,building_types.width,building_types.height,"
                                "building_types.file,building_types.name,building_types.family "
@@ -194,11 +199,13 @@ void BuildingFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,
 
 BuildingObject* BuildingFactory::_createBuilding(DatabaseResult* result)
 {
-    BuildingObject*	buildingObject = new BuildingObject();
+    if (!result->getRowCount()) {
+    	return nullptr;
+    }
 
-    uint64 count = result->getRowCount();
+	BuildingObject*	buildingObject = new BuildingObject();
 
-    result->GetNextRow(mBuildingBinding,buildingObject);
+    result->getNextRow(mBuildingBinding,buildingObject);
 
     buildingObject->setLoadState(LoadState_Loaded);
     buildingObject->setPlayerStructureFamily(PlayerStructure_TreBuilding);
@@ -210,7 +217,7 @@ BuildingObject* BuildingFactory::_createBuilding(DatabaseResult* result)
 
 void BuildingFactory::_setupDatabindings()
 {
-    mBuildingBinding = mDatabase->CreateDataBinding(14);
+    mBuildingBinding = mDatabase->createDataBinding(14);
     mBuildingBinding->addField(DFT_uint64,offsetof(BuildingObject,mId),8,0);
     mBuildingBinding->addField(DFT_float,offsetof(BuildingObject,mDirection.x),4,1);
     mBuildingBinding->addField(DFT_float,offsetof(BuildingObject,mDirection.y),4,2);
@@ -226,7 +233,7 @@ void BuildingFactory::_setupDatabindings()
     mBuildingBinding->addField(DFT_bstring,offsetof(BuildingObject,mName),256,12);
     mBuildingBinding->addField(DFT_uint32,offsetof(BuildingObject,mBuildingFamily),4,13);
 
-    mSpawnBinding = mDatabase->CreateDataBinding(9);
+    mSpawnBinding = mDatabase->createDataBinding(9);
     mSpawnBinding->addField(DFT_uint64,offsetof(SpawnPoint,mCellId),8,0);
     mSpawnBinding->addField(DFT_float,offsetof(SpawnPoint,mDirection.x),4,1);
     mSpawnBinding->addField(DFT_float,offsetof(SpawnPoint,mDirection.y),4,2);
@@ -242,8 +249,8 @@ void BuildingFactory::_setupDatabindings()
 
 void BuildingFactory::_destroyDatabindings()
 {
-    mDatabase->DestroyDataBinding(mBuildingBinding);
-    mDatabase->DestroyDataBinding(mSpawnBinding);
+    mDatabase->destroyDataBinding(mBuildingBinding);
+    mDatabase->destroyDataBinding(mSpawnBinding);
 }
 
 //=============================================================================
@@ -253,7 +260,7 @@ void BuildingFactory::handleObjectReady(Object* object,DispatchClient* client)
     InLoadingContainer* ilc = _getObject(object->getParentId());
 
     if (! ilc) {//ILC sanity check...
-        gLogger->log(LogManager::WARNING,"BuildingFactory::handleObjectReady could not locate ILC for objectParentId:%I64u",object->getParentId());
+    	LOG(WARNING) << "Could not locate InLoadingContainer for object parent [" << object->getParentId() << "]";
         return;
     }
 
@@ -267,7 +274,7 @@ void BuildingFactory::handleObjectReady(Object* object,DispatchClient* client)
     if(building->getLoadCount() == (building->getCellList())->size())
     {
         if(!(_removeFromObjectLoadMap(building->getId())))
-            gLogger->log(LogManager::DEBUG,"BuildingFactory: Failed removing object from loadmap");
+            LOG(WARNING) << "Failed removing object from loadmap";
 
         ilc->mOfCallback->handleObjectReady(building,ilc->mClient);
 

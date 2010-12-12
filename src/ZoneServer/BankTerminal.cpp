@@ -31,7 +31,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "TreasuryManager.h"
 #include "UIManager.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 
 
 
@@ -104,8 +103,6 @@ void BankTerminal::handleObjectMenuSelect(uint8 messageType, Object* srcObject)
 
     default:
 
-        gLogger->log(LogManager::NOTICE,"BankTerminal: Unhandled MenuSelect: %u", messageType);
-
         break;
     }
 
@@ -124,10 +121,10 @@ void BankTerminal::handleUIEvent(BString strInventoryCash, BString strBankCash, 
 
     PlayerObject* playerObject = window->getOwner(); // window owner
 
-    if(playerObject == NULL || !playerObject->isConnected() || playerObject->getSamplingState() || playerObject->isIncapacitated() || playerObject->isDead() || playerObject->checkState(CreatureState_Combat))
-    {
-        return;
-    }
+	if(playerObject == NULL || !playerObject->isConnected() || playerObject->getSamplingState() || playerObject->isIncapacitated() || playerObject->isDead() || playerObject->states.checkState(CreatureState_Combat))
+	{
+		return;
+	}
 
     // two money movement deltas stands for credits
     // variations into bank & inventory.

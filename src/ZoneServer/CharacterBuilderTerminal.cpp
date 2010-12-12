@@ -29,7 +29,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PlayerObject.h"
 #include "WorldManager.h"
-#include "Common/LogManager.h"
 #include "MessageLib/MessageLib.h"
 #include "UIManager.h"
 #include "UIResourceSelectListBox.h"
@@ -37,6 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "TreasuryManager.h"
 #include "TradeManager.h"
 #include "SkillManager.h"
+#include "StateManager.h"
 #include "Buff.h"
 #include "ResourceType.h"
 #include "ResourceCategory.h"
@@ -45,7 +45,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Utils/utils.h"
 
-#include "utils/rand.h"
+#include "Utils/rand.h"
 //=============================================================================
 
 CharacterBuilderTerminal::CharacterBuilderTerminal() : Terminal(), mSortedList(NULL)
@@ -88,7 +88,6 @@ void CharacterBuilderTerminal::InitMenus()
     mMainMenu.push_back("Manage Items");
     mMainMenu.push_back("Manage Resources");
     mMainMenu.push_back("Manage Professions");
-
     mMainCsrMenu.push_back("Manage Experience");
     mMainCsrMenu.push_back("Manage Credits");
     mMainCsrMenu.push_back("Manage Buffs");
@@ -126,7 +125,7 @@ void CharacterBuilderTerminal::InitProfessions()
 
         char profession_nam[64];
 
-        snprintf(profession_nam, 64, "@skl_n:%s", (*skillIt)->mName);
+        snprintf(profession_nam, 64, "@skl_n:%s", (*skillIt)->mName.getAnsi());
         mProfessionMenu.push_back(profession_nam);
 
         ++skillIt;
@@ -173,28 +172,40 @@ void CharacterBuilderTerminal::InitWounds()
     mWoundMenu.push_back("-100 Focus Wound");
     mWoundMenu.push_back("-100 Willpower Wound");
     mWoundMenu.push_back("-100 Battle Fatigue");
-
     mWoundMenu.push_back("Heal all wound and Battle Fatigue");
 }
 void CharacterBuilderTerminal::InitStates()
 {
-    mStateMenu.push_back("Apply Stunned State");
-    mStateMenu.push_back("Apply Blinded State");
-    mStateMenu.push_back("Apply Dizzied State");
-    mStateMenu.push_back("Apply Intimidated State");
-    mStateMenu.push_back("Apply Poisoned State");
-    mStateMenu.push_back("Apply Diseased State");
-    mStateMenu.push_back("Apply Fire State");
-    mStateMenu.push_back("Apply Bleeding State");
-
-    mStateMenu.push_back("Remove Stunned State");
-    mStateMenu.push_back("Remove Blinded State");
-    mStateMenu.push_back("Remove Dizzied State");
-    mStateMenu.push_back("Remove Intimidated State");
-    mStateMenu.push_back("Remove Poisoned State");
-    mStateMenu.push_back("Remove Diseased State");
-    mStateMenu.push_back("Remove Fire State");
-    mStateMenu.push_back("Remove Bleeding State");
+    mStatesMenu.push_back("Cover State");
+    mStatesMenu.push_back("Combat State");
+    mStatesMenu.push_back("Peace State");
+    mStatesMenu.push_back("Aiming State");
+    mStatesMenu.push_back("Alert State");
+    mStatesMenu.push_back("Berserk State");
+    mStatesMenu.push_back("Feign Death State");
+    mStatesMenu.push_back("CombatAttitudeEvasive State");
+    mStatesMenu.push_back("CombatAttitudeNormal State");
+    mStatesMenu.push_back("CombatAttitudeAggressive State");
+    mStatesMenu.push_back("Tumbling State");
+    mStatesMenu.push_back("Rallied State");
+    mStatesMenu.push_back("Stunned State");
+    mStatesMenu.push_back("Swimming State");
+    mStatesMenu.push_back("SittingOnChair State");
+    mStatesMenu.push_back("Crafting State");
+    mStatesMenu.push_back("GlowingJedi State");
+    mStatesMenu.push_back("MaskScent State");
+    mStatesMenu.push_back("Poisoned State");
+    mStatesMenu.push_back("Bleeding State");
+    mStatesMenu.push_back("Diseased State");
+    mStatesMenu.push_back("OnFire State");
+    mStatesMenu.push_back("RidingMount State");
+    mStatesMenu.push_back("MountedCreature State");
+    mStatesMenu.push_back("Blinded State");
+    mStatesMenu.push_back("Dizzy State");
+    mStatesMenu.push_back("Intimidated State");
+    mStatesMenu.push_back("Immobolized State");
+    mStatesMenu.push_back("Frozen State");
+    mStatesMenu.push_back("Clear All States");
 }
 void CharacterBuilderTerminal::InitItems()
 {
@@ -285,7 +296,6 @@ void CharacterBuilderTerminal::InitStructures()
     mMineralMenu.push_back("Heavy");
     mMineralMenu.push_back("Small");
     mMineralMenu.push_back("Medium");
-
 
     ////Houses
     //BStringVector			mGenericMenu;
@@ -567,7 +577,6 @@ void CharacterBuilderTerminal::InitArmor()
     mUbeseArmorMenu.push_back("Helmet");
     mUbeseArmorMenu.push_back("Jacket");
     mUbeseArmorMenu.push_back("Pants");
-
 }
 CharacterBuilderTerminal::~CharacterBuilderTerminal()
 {
@@ -615,7 +624,6 @@ void CharacterBuilderTerminal::SendXPMenu(PlayerObject* playerObject, uint32 act
         SAFE_DELETE(mSortedList);
     }
     mSortedList = new SortedList;
-
 
     while (xpIt != xpList->end())
     {
@@ -690,8 +698,8 @@ void CharacterBuilderTerminal::SendResourcesMenu(PlayerObject* playerObject, uin
 
 void CharacterBuilderTerminal::_handleMainMenu(PlayerObject* playerObject, uint32 action,int32 element,BString inputStr,UIWindow* window)
 {
-    // Check if the player is a csr and handle the menu appropriately.
-    if (playerObject->getCsrTag())
+  // Check if the player is a csr and handle the menu appropriately.
+	if (playerObject->getCsrTag())
         return _handleMainCsrMenu(playerObject, action, element, inputStr, window);
 
     switch(element)
@@ -780,8 +788,8 @@ void CharacterBuilderTerminal::_handleMainCsrMenu(PlayerObject* playerObject, ui
     case 8: //States
         if(playerObject->isConnected())
         {
-            gUIManager->createNewListBox(this, "handleStateMenu", "States", "Select a State.", mStateMenu, playerObject, SUI_Window_CharacterBuilder_ListBox_StateMenu);
-        {
+            gUIManager->createNewListBox(this,"handleStateMenu","States","Select a State.",mStatesMenu,playerObject,SUI_Window_CharacterBuilder_ListBox_StateMenu);
+        }
         break;
     default:
         break;
@@ -856,40 +864,39 @@ void CharacterBuilderTerminal::_handleCreditMenu(PlayerObject* player, uint32 ac
     {
         switch(element)
         {
-        case 0: // inventory credits
-        {
-            BStringVector dropDowns;
-            dropDowns.push_back("test");
-            gUIManager->createNewInputBox(this,
-                                          "handleInputInventoryCredits",
-                                          "Inventory Credits",
-                                          "Enter amount",
-                                          dropDowns,
-                                          player,
-                                          SUI_IB_NODROPDOWN_OKCANCEL,
-                                          SUI_Window_CharacterBuilderCreditsMenuInventory_InputBox,
-                                          8);
-        }
-        break;
+            case 0: // inventory credits
+            {
+                BStringVector dropDowns;
+                dropDowns.push_back("test");
+                gUIManager->createNewInputBox(this,
+                    "handleInputInventoryCredits",
+                    "Inventory Credits",
+                    "Enter amount",
+                    dropDowns,
+                    player,
+                    SUI_IB_NODROPDOWN_OKCANCEL,
+                    SUI_Window_CharacterBuilderCreditsMenuInventory_InputBox,
+                    8);
+            }
+            break;
 
-        case 1: // bank credits
-        {
-            BStringVector dropDowns;
-            dropDowns.push_back("test");
-            gUIManager->createNewInputBox(this,
-                                          "handleInputInventoryCredits",
-                                          "Bank Credits",
-                                          "Enter amount",
-                                          dropDowns,
-                                          player,
-                                          SUI_IB_NODROPDOWN_OKCANCEL,
-                                          SUI_Window_CharacterBuilderCreditsMenuBank_InputBox,
-                                          8);
-        }
-        break;
+            case 1: // bank credits
+            {
+                BStringVector dropDowns;
+                dropDowns.push_back("test");
+                gUIManager->createNewInputBox(this,
+                    "handleInputInventoryCredits",
+                    "Bank Credits",
+                    "Enter amount",
+                    dropDowns,
+                    player,
+                    SUI_IB_NODROPDOWN_OKCANCEL,
+                    SUI_Window_CharacterBuilderCreditsMenuBank_InputBox,
+                    8);
+            }
+            break;
 
-        default:
-        {} break;
+            default:{}break;
         }
     } else {
         // parse the input value
@@ -903,9 +910,6 @@ void CharacterBuilderTerminal::_handleCreditMenu(PlayerObject* player, uint32 ac
             gMessageLib->SendSystemMessage(L"Invalid amount.", player);
             return;
         }
-
-        gLogger->log(LogManager::DEBUG,"input: %u", mInputBoxAmount);
-
         // bank or inv?
         if(window->getWindowType() == SUI_Window_CharacterBuilderCreditsMenuInventory_InputBox)
         {
@@ -925,124 +929,117 @@ void CharacterBuilderTerminal::_handleBuffMenu(PlayerObject* playerObject, uint3
     switch(element)
     {
     case 0:
-    {
-        BuffAttribute* tempAttribute1 = new BuffAttribute(attr_health, +2400,0,-2400);
-        Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_health, gWorldManager->GetCurrentGlobalTick());
-        tempBuff1->AddAttribute(tempAttribute1);
-        playerObject->AddBuff(tempBuff1);
+        {
+            BuffAttribute* tempAttribute1 = new BuffAttribute(attr_health, +2400,0,-2400);
+            Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_health, gWorldManager->GetCurrentGlobalTick());
+            tempBuff1->AddAttribute(tempAttribute1);
+            playerObject->AddBuff(tempBuff1);
 
-        BuffAttribute* tempAttribute2 = new BuffAttribute(attr_strength, +2400,0,-2400);
-        Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_strength, gWorldManager->GetCurrentGlobalTick());
-        tempBuff2->AddAttribute(tempAttribute2);
-        playerObject->AddBuff(tempBuff2);
+            BuffAttribute* tempAttribute2 = new BuffAttribute(attr_strength, +2400,0,-2400);
+            Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_strength, gWorldManager->GetCurrentGlobalTick());
+            tempBuff2->AddAttribute(tempAttribute2);
+            playerObject->AddBuff(tempBuff2);
 
-        BuffAttribute* tempAttribute3 = new BuffAttribute(attr_constitution, +2400,0,-2400);
-        Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_constitution, gWorldManager->GetCurrentGlobalTick());
-        tempBuff3->AddAttribute(tempAttribute3);
-        playerObject->AddBuff(tempBuff3);
+            BuffAttribute* tempAttribute3 = new BuffAttribute(attr_constitution, +2400,0,-2400);
+            Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_constitution, gWorldManager->GetCurrentGlobalTick());
+            tempBuff3->AddAttribute(tempAttribute3);
+            playerObject->AddBuff(tempBuff3);
 
-    }
-    break;
-    case 1:
-    {
-        BuffAttribute* tempAttribute1 = new BuffAttribute(attr_action, +2400,0,-2400);
-        Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_action, gWorldManager->GetCurrentGlobalTick());
-        tempBuff1->AddAttribute(tempAttribute1);
-        playerObject->AddBuff(tempBuff1);
+        }break;
+    case 1: 
+        {
+            BuffAttribute* tempAttribute1 = new BuffAttribute(attr_action, +2400,0,-2400);
+            Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_action, gWorldManager->GetCurrentGlobalTick());
+            tempBuff1->AddAttribute(tempAttribute1);
+            playerObject->AddBuff(tempBuff1);
 
-        BuffAttribute* tempAttribute2 = new BuffAttribute(attr_quickness, +2400,0,-2400);
-        Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_quickness, gWorldManager->GetCurrentGlobalTick());
-        tempBuff2->AddAttribute(tempAttribute2);
-        playerObject->AddBuff(tempBuff2);
+            BuffAttribute* tempAttribute2 = new BuffAttribute(attr_quickness, +2400,0,-2400);
+            Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_quickness, gWorldManager->GetCurrentGlobalTick());
+            tempBuff2->AddAttribute(tempAttribute2);
+            playerObject->AddBuff(tempBuff2);
 
-        BuffAttribute* tempAttribute3 = new BuffAttribute(attr_stamina, +2400,0,-2400);
-        Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_stamina, gWorldManager->GetCurrentGlobalTick());
-        tempBuff3->AddAttribute(tempAttribute3);
-        playerObject->AddBuff(tempBuff3);
+            BuffAttribute* tempAttribute3 = new BuffAttribute(attr_stamina, +2400,0,-2400);
+            Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 60000, medical_enhance_stamina, gWorldManager->GetCurrentGlobalTick());
+            tempBuff3->AddAttribute(tempAttribute3);
+            playerObject->AddBuff(tempBuff3);
 
-    }
-    break;
-    case 2:
-    {
-        BuffAttribute* tempAttribute1 = new BuffAttribute(attr_mind, +600,0,-600);
-        Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 60000, performance_enhance_dance_mind, gWorldManager->GetCurrentGlobalTick());
-        tempBuff1->AddAttribute(tempAttribute1);
-        playerObject->AddBuff(tempBuff1);
+        }break;
+    case 2: 
+        {
+            BuffAttribute* tempAttribute1 = new BuffAttribute(attr_mind, +600,0,-600);
+            Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 60000, performance_enhance_dance_mind, gWorldManager->GetCurrentGlobalTick());
+            tempBuff1->AddAttribute(tempAttribute1);
+            playerObject->AddBuff(tempBuff1);
 
-        BuffAttribute* tempAttribute2 = new BuffAttribute(attr_focus, +600,0,-600);
-        Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 60000, performance_enhance_music_focus, gWorldManager->GetCurrentGlobalTick());
-        tempBuff2->AddAttribute(tempAttribute2);
-        playerObject->AddBuff(tempBuff2);
+            BuffAttribute* tempAttribute2 = new BuffAttribute(attr_focus, +600,0,-600);
+            Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 60000, performance_enhance_music_focus, gWorldManager->GetCurrentGlobalTick());
+            tempBuff2->AddAttribute(tempAttribute2);
+            playerObject->AddBuff(tempBuff2);
 
-        BuffAttribute* tempAttribute3 = new BuffAttribute(attr_willpower, +600,0,-600);
-        Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 60000, performance_enhance_music_willpower, gWorldManager->GetCurrentGlobalTick());
-        tempBuff3->AddAttribute(tempAttribute3);
-        playerObject->AddBuff(tempBuff3);
+            BuffAttribute* tempAttribute3 = new BuffAttribute(attr_willpower, +600,0,-600);
+            Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 60000, performance_enhance_music_willpower, gWorldManager->GetCurrentGlobalTick());
+            tempBuff3->AddAttribute(tempAttribute3);
+            playerObject->AddBuff(tempBuff3);
 
-    }
-    break;
+        }break;
     case 3:
-    {
-        BuffAttribute* tempAttribute1 = new BuffAttribute(attr_health, +2400,0,-2400);
-        Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_health, gWorldManager->GetCurrentGlobalTick());
-        tempBuff1->AddAttribute(tempAttribute1);
-        playerObject->AddBuff(tempBuff1);
+        {
+            BuffAttribute* tempAttribute1 = new BuffAttribute(attr_health, +2400,0,-2400);
+            Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_health, gWorldManager->GetCurrentGlobalTick());
+            tempBuff1->AddAttribute(tempAttribute1);
+            playerObject->AddBuff(tempBuff1);
 
-        BuffAttribute* tempAttribute2 = new BuffAttribute(attr_strength, +2400,0,-2400);
-        Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_strength, gWorldManager->GetCurrentGlobalTick());
-        tempBuff2->AddAttribute(tempAttribute2);
-        playerObject->AddBuff(tempBuff2);
+            BuffAttribute* tempAttribute2 = new BuffAttribute(attr_strength, +2400,0,-2400);
+            Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_strength, gWorldManager->GetCurrentGlobalTick());
+            tempBuff2->AddAttribute(tempAttribute2);
+            playerObject->AddBuff(tempBuff2);
 
-        BuffAttribute* tempAttribute3 = new BuffAttribute(attr_constitution, +2400,0,-2400);
-        Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_constitution, gWorldManager->GetCurrentGlobalTick());
-        tempBuff3->AddAttribute(tempAttribute3);
-        playerObject->AddBuff(tempBuff3);
+            BuffAttribute* tempAttribute3 = new BuffAttribute(attr_constitution, +2400,0,-2400);
+            Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_constitution, gWorldManager->GetCurrentGlobalTick());
+            tempBuff3->AddAttribute(tempAttribute3);
+            playerObject->AddBuff(tempBuff3);
 
-    }
-    break;
-    case 4:
-    {
-        BuffAttribute* tempAttribute1 = new BuffAttribute(attr_action, +2400,0,-2400);
-        Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_action, gWorldManager->GetCurrentGlobalTick());
-        tempBuff1->AddAttribute(tempAttribute1);
-        playerObject->AddBuff(tempBuff1);
+        }break;
+    case 4: 
+        {
+            BuffAttribute* tempAttribute1 = new BuffAttribute(attr_action, +2400,0,-2400);
+            Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_action, gWorldManager->GetCurrentGlobalTick());
+            tempBuff1->AddAttribute(tempAttribute1);
+            playerObject->AddBuff(tempBuff1);
 
-        BuffAttribute* tempAttribute2 = new BuffAttribute(attr_quickness, +2400,0,-2400);
-        Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_quickness, gWorldManager->GetCurrentGlobalTick());
-        tempBuff2->AddAttribute(tempAttribute2);
-        playerObject->AddBuff(tempBuff2);
+            BuffAttribute* tempAttribute2 = new BuffAttribute(attr_quickness, +2400,0,-2400);
+            Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_quickness, gWorldManager->GetCurrentGlobalTick());
+            tempBuff2->AddAttribute(tempAttribute2);
+            playerObject->AddBuff(tempBuff2);
 
-        BuffAttribute* tempAttribute3 = new BuffAttribute(attr_stamina, +2400,0,-2400);
-        Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_stamina, gWorldManager->GetCurrentGlobalTick());
-        tempBuff3->AddAttribute(tempAttribute3);
-        playerObject->AddBuff(tempBuff3);
+            BuffAttribute* tempAttribute3 = new BuffAttribute(attr_stamina, +2400,0,-2400);
+            Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 10800000, medical_enhance_stamina, gWorldManager->GetCurrentGlobalTick());
+            tempBuff3->AddAttribute(tempAttribute3);
+            playerObject->AddBuff(tempBuff3);
 
-    }
-    break;
-    case 5:
-    {
-        BuffAttribute* tempAttribute1 = new BuffAttribute(attr_mind, +600,0,-600);
-        Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 10800000, performance_enhance_dance_mind, gWorldManager->GetCurrentGlobalTick());
-        tempBuff1->AddAttribute(tempAttribute1);
-        playerObject->AddBuff(tempBuff1);
+        }break;
+    case 5: 
+        {
+            BuffAttribute* tempAttribute1 = new BuffAttribute(attr_mind, +600,0,-600);
+            Buff* tempBuff1 = Buff::SimpleBuff(playerObject, playerObject, 10800000, performance_enhance_dance_mind, gWorldManager->GetCurrentGlobalTick());
+            tempBuff1->AddAttribute(tempAttribute1);
+            playerObject->AddBuff(tempBuff1);
 
-        BuffAttribute* tempAttribute2 = new BuffAttribute(attr_focus, +600,0,-600);
-        Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 10800000, performance_enhance_music_focus, gWorldManager->GetCurrentGlobalTick());
-        tempBuff2->AddAttribute(tempAttribute2);
-        playerObject->AddBuff(tempBuff2);
+            BuffAttribute* tempAttribute2 = new BuffAttribute(attr_focus, +600,0,-600);
+            Buff* tempBuff2 = Buff::SimpleBuff(playerObject, playerObject, 10800000, performance_enhance_music_focus, gWorldManager->GetCurrentGlobalTick());
+            tempBuff2->AddAttribute(tempAttribute2);
+            playerObject->AddBuff(tempBuff2);
 
-        BuffAttribute* tempAttribute3 = new BuffAttribute(attr_willpower, +600,0,-600);
-        Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 10800000, performance_enhance_music_willpower, gWorldManager->GetCurrentGlobalTick());
-        tempBuff3->AddAttribute(tempAttribute3);
-        playerObject->AddBuff(tempBuff3);
+            BuffAttribute* tempAttribute3 = new BuffAttribute(attr_willpower, +600,0,-600);
+            Buff* tempBuff3 = Buff::SimpleBuff(playerObject, playerObject, 10800000, performance_enhance_music_willpower, gWorldManager->GetCurrentGlobalTick());
+            tempBuff3->AddAttribute(tempAttribute3);
+            playerObject->AddBuff(tempBuff3);
 
-    }
-    break;
+        }break;
     case 6:
         playerObject->ClearAllBuffs();
         break;
-    default:
-        break;
+    default:break;
     }
 }
 void CharacterBuilderTerminal::_handleItemMenu(PlayerObject* playerObject, uint32 action,int32 element,BString inputStr,UIWindow* window)
@@ -1091,8 +1088,7 @@ void CharacterBuilderTerminal::_handleItemMenu(PlayerObject* playerObject, uint3
             gUIManager->createNewListBox(this,"handleArmorMenu","Armor","Select a category.",mArmorMenu,playerObject,SUI_Window_CharacterBuilder_ListBox_ArmorMenu);
         }
         break;
-    default:
-        break;
+    default:break;
     }
 }
 void CharacterBuilderTerminal::_handleResourceMenu(PlayerObject* playerObject, uint32 action,int32 element,BString inputStr,UIWindow* window)
@@ -1175,7 +1171,7 @@ void CharacterBuilderTerminal::_handleResourceMenu(PlayerObject* playerObject, u
             gUIManager->createNewResourceSelectListBox(this,"handleResourcesMenu","Resources","Select",resourceNameList,resourceIdList,playerObject,SUI_Window_CharacterBuilder_ListBox_ResourceMenu);
         }
         else//if(rParent->getChildren()->size())
-        {   //it was a resource - create
+        {				//it was a resource - create
 
             ResourceIdList resourceIdList = dynamic_cast<UIResourceSelectListBox*>(window)->getResourceIdList();
 
@@ -1268,14 +1264,13 @@ void CharacterBuilderTerminal::_handleResourcesCRC(PlayerObject* playerObject, u
         //	gLogger->log(LogManager::WARNING,"CharacterBuilderTerminal::_handleResourcesCRC could not locate resource in list for element index:%I32u",element);
         //	return;
         //}
-        uint32		crc;
+        uint32		crc;	
         try
         {
             crc	= static_cast<uint32>(resourceIdList[element]);
         }
         catch (...)
         {
-            gLogger->log(LogManager::WARNING,"CharacterBuilderTerminal::_handleResourcesCRC could not locate resource in list for element index:%I32u",element);
             return;
         }
 
@@ -1328,7 +1323,7 @@ void CharacterBuilderTerminal::_handleResourcesTypes(PlayerObject* playerObject,
         }
 
         gUIManager->createNewResourceSelectListBox(this,"handleResourcesMenu","Resources","Select",resourceNameList,resourceIdList,playerObject,SUI_Window_CharacterBuilderResourcesCRCMenu_ListBox);
-    }
+    }	
 }
 void CharacterBuilderTerminal::_handleWoundMenu(PlayerObject* playerObject, uint32 action,int32 element,BString inputStr,UIWindow* window)
 {
@@ -1407,238 +1402,105 @@ void CharacterBuilderTerminal::_handleWoundMenu(PlayerObject* playerObject, uint
         playerObject->getHam()->updateBattleFatigue(-1000);
     default:
         break;
-    }
+    }	
 }
 
-void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint32 action, int32 element, BString inputStr, UIWindow* window)
+void CharacterBuilderTerminal::_handleStateMenu(PlayerObject* playerObject, uint32 action,int32 element,BString inputStr,UIWindow* window)
 {
     switch(element)
     {
-    //Apply States
-    case 0: //Stunned State
-        if (playerObject->checkState(CreatureState_Stunned))
-        {
-            gMessageLib->SendSystemMessage(L"You're already stunned.", playerObject);
-            return;
-        }
-        else
-        {
-            playerObject->toggleStateOn(CreatureState_Stunned);
-            gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_stun.cef", "", playerObject);
-            gMessageLib->sendFlyText(playerObject, "combat_effects", "go_stunned", 0, 255, 0);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "go_stunned_single"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 0:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Cover);
         break;
-    case 1: //Blinded State
-        if (playerObject->checkState(CreatureState_Blinded))
-        {
-            gMessageLib->SendSystemMessage(L"You're already blinded.", playerObject);
-            return;      
-        }
-        else
-        {
-            playerObject->toggleStateOn(CreatureState_Blinded);
-            gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_blind.cef", "", playerObject);
-            gMessageLib->sendFlyText(playerObject, "combat_effects", "go_blind", 0, 255, 0);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "go_blind_single"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 1:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Combat);
         break;
-    case 2: //Dizzy State
-        if (playerObject->checkState(CreatureState_Dizzy))
-        {
-            gMessageLib->SendSystemMessage(L"You're already dizzy.", playerObject);
-            return;      
-        }
-        else
-        {
-            playerObject->toggleStateOn(CreatureState_Dizzy);
-            gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_dizzy.cef", "", playerObject);
-            gMessageLib->sendFlyText(playerObject, "combat_effects", "go_dizzy", 0, 255, 0);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "go_dizzy_single"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 2:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Peace);
         break;
-    case 3: //Intimidated State
-        if (playerObject->checkState(CreatureState_Intimidated))
-        {
-            gMessageLib->SendSystemMessage(L"You're already intimidated.", playerObject);
-            return;      
-        }
-        else
-        {
-            playerObject->toggleStateOn(CreatureState_Intimidated);
-            gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/combat_special_defender_intimidate.cef", "", playerObject);
-            gMessageLib->sendFlyText(playerObject, "combat_effects", "go_intimidated", 0, 255, 0);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 3:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Aiming);
         break;
-    case 4: //Poisoned State
-        if (playerObject->checkState(CreatureState_Poisoned))
-        {
-            gMessageLib->SendSystemMessage(L"You're already poisoned.", playerObject);
-            return;      
-        }
-        else
-        {
-            playerObject->toggleStateOn(CreatureState_Poisoned);
-            gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_poison.cef", "", playerObject);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "start_poisoned"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 4:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Alert);
         break;
-    case 5: //Diseased State
-        if (playerObject->checkState(CreatureState_Diseased))
-        {
-            gMessageLib->SendSystemMessage(L"You're already diseased.", playerObject);
-            return;      
-        }
-        else
-        {
-            playerObject->toggleStateOn(CreatureState_Diseased);
-            gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_disease.cef", "", playerObject);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "start_diseased"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 5:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Berserk);
         break;
-    case 6: //Fire State
-        if (playerObject->checkState(CreatureState_OnFire))
-        {
-            gMessageLib->SendSystemMessage(L"You're already on fire.", playerObject);
-            return;      
-        }
-        else
-        {
-            playerObject->toggleStateOn(CreatureState_OnFire);
-            gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_fire.cef", "", playerObject);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "start_fire"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 6:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_FeignDeath);
         break;
-    case 7: //Bleeding State
-        if (playerObject->checkState(CreatureState_Bleeding))
-        {
-            gMessageLib->SendSystemMessage(L"You're already bleeding.", playerObject);
-            return;      
-        }
-        else
-        {
-            playerObject->toggleStateOn(CreatureState_Bleeding);
-            gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/dot_apply_bleeding.cef", "", playerObject);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "start_bleeding"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 7:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_CombatAttitudeEvasive);
         break;
-    //Remove States
-    case 8: //Stunned State
-        if (playerObject->checkState(CreatureState_Stunned))
-        {
-            gMessageLib->SendSystemMessage(L"You are not stunned.", playerObject);
-            return;
-        }
-        else
-        {
-            playerObject->toggleStateOff(CreatureState_Stunned);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "no_stunned_single"), playerObject);
-            gMessageLib->sendFlyText(playerObject, "combat_effects", "no_stunned", 255, 0, 0);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 8:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_CombatAttitudeNormal);
         break;
-    case 9: //Blinded State
-        if (playerObject->checkState(CreatureState_Blinded))
-        {
-            gMessageLib->SendSystemMessage(L"You are not blinded.", playerObject);
-            return;
-        }
-        else
-        {
-            playerObject->toggleStateOff(CreatureState_Blinded);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "no_blind_single"), playerObject);
-            gMessageLib->sendFlyText(playerObject, "combat_effects", "no_blind", 255, 0, 0);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 9:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_CombatAttitudeAggressive);
         break;
-    case 10: //Dizzy State
-        if (playerObject->checkState(CreatureState_Dizzy))
-        {
-            gMessageLib->SendSystemMessage(L"You are not dizzy.", playerObject);
-            return;
-        }
-        else
-        {
-            playerObject->toggleStateOff(CreatureState_Dizzy);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("cbt_spam", "no_dizzy_single"), playerObject);
-            gMessageLib->sendFlyText(playerObject, "combat_effects", "no_dizzy", 255, 0, 0);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 10:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Tumbling);
         break;
-    case 11: //Intimidated State
-        if (playerObject->checkState(CreatureState_Intimidated))
-        {
-            gMessageLib->SendSystemMessage(L"You are not intimidated.", playerObject);
-            return;
-        }
-        else
-        {
-            playerObject->toggleStateOff(CreatureState_Intimidated);
-            gMessageLib->sendFlyText(playerObject, "combat_effects", "no_intimidated", 255, 0, 0);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 11:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Rallied);
         break;
-    case 12: //Poisoned State
-        if (playerObject->checkState(CreatureState_Poisoned))
-        {
-            gMessageLib->SendSystemMessage(L"You are not poisoned.", playerObject);
-            return;
-        }
-        else
-        {
-            playerObject->toggleStateOff(CreatureState_Poisoned);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "stop_poisoned"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 12:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Stunned);
         break;
-    case 13: //Diseased State
-        if (playerObject->checkState(CreatureState_Diseased))
-        {
-            gMessageLib->SendSystemMessage(L"You are not diseased.", playerObject);
-            return;
-        }
-        else
-        {
-            playerObject->toggleStateOff(CreatureState_Diseased);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "stop_diseased"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 13:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Swimming);
         break;
-    case 13: //Fire State
-        if (playerObject->checkState(CreatureState_OnFire))
-        {
-            gMessageLib->SendSystemMessage(L"You're not on fire.", playerObject);
-            return;
-        }
-        else
-        {
-            playerObject->toggleStateOff(CreatureState_OnFire);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "stop_fire"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 14:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_SittingOnChair);
         break;
-    case 13: //Bleeding State
-        if (playerObject->checkState(CreatureState_Bleeding))
-        {
-            gMessageLib->SendSystemMessage(L"You are not bleeding.", playerObject);
-            return;
-        }
-        else
-        {
-            playerObject->toggleStateOff(CreatureState_Bleeding);
-            gMessageLib->SendSystemMessage(::common::OutOfBand("dot_message", "stop_bleeding"), playerObject);
-            gMessageLib->sendStateUpdate(playerObject);
-        }
+        case 15:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Crafting);
         break;
+        case 16:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_GlowingJedi);
+        break;
+        case 17:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_MaskScent);
+        break;
+        case 18:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Poisoned);
+        break;
+        case 19:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Bleeding);
+        break;
+        case 20:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Diseased);
+        break;
+        case 21:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_OnFire);
+        break;
+        case 22:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_RidingMount);
+        break;
+        case 23:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_MountedCreature);
+        break;
+        case 24:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Blinded);
+        break;
+        case 25:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Dizzy);
+        break;
+        case 26:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Intimidated);
+        break;
+        case 27:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Immobilized);
+        break;
+        case 28:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_Frozen);
+        break;
+        case 29:
+        gStateManager.setCurrentActionState(playerObject, CreatureState_ClearState);
+    }
 }
+
 void CharacterBuilderTerminal::_handleStructureMenu(PlayerObject* playerObject, uint32 action,int32 element,BString inputStr,UIWindow* window)
 {
     switch(element)
@@ -1820,8 +1682,7 @@ void CharacterBuilderTerminal::_handleArmorMenu(PlayerObject* playerObject, uint
             gUIManager->createNewListBox(this,"handleUbeseArmorMenu","Ubese Armor","Select a category.",mUbeseArmorMenu,playerObject,SUI_Window_CharacterBuilder_ListBox_UbeseArmorMenu);
         }
         break;
-    default:
-        break;
+    default:break;
     }
 }
 void CharacterBuilderTerminal::_handleHarvesterMenu(PlayerObject* playerObject, uint32 action,int32 element,BString inputStr,UIWindow* window)
@@ -1861,7 +1722,6 @@ void CharacterBuilderTerminal::_handleHarvesterMenu(PlayerObject* playerObject, 
     default:
         break;
     }
-
 }
 void CharacterBuilderTerminal::_handleHouseMenu(PlayerObject* playerObject, uint32 action,int32 element,BString inputStr,UIWindow* window)
 {
@@ -2154,7 +2014,7 @@ void CharacterBuilderTerminal::_handleBoneArmorMenu(PlayerObject* player, uint32
     switch(element)
     {
     case 0:
-    {
+        {
         GiveItem(player,1131);
         GiveItem(player,615);
         GiveItem(player,608);
@@ -2164,8 +2024,8 @@ void CharacterBuilderTerminal::_handleBoneArmorMenu(PlayerObject* player, uint32
         GiveItem(player,705);
         GiveItem(player,1001);
         GiveItem(player,870);
-    }
-    break;
+        }
+        break;
     case 1:
         GiveItem(player,870);
         break;
@@ -2205,7 +2065,7 @@ void CharacterBuilderTerminal::_handleCompositeArmorMenu(PlayerObject* player, u
     switch(element)
     {
     case 0:
-    {
+        {
         GiveItem(player,518);
         GiveItem(player,784);
         GiveItem(player,1195);
@@ -2215,8 +2075,8 @@ void CharacterBuilderTerminal::_handleCompositeArmorMenu(PlayerObject* player, u
         GiveItem(player,601);
         GiveItem(player,978);
         GiveItem(player,1107);
-    }
-    break;
+        }
+        break;
     case 1:
         GiveItem(player,518);
         break;
@@ -2253,7 +2113,7 @@ void CharacterBuilderTerminal::_handleUbeseArmorMenu(PlayerObject* player, uint3
     switch(element)
     {
     case 0:
-    {
+        {
         GiveItem(player,1249);
         GiveItem(player,711);
         GiveItem(player,1281);
@@ -2262,8 +2122,8 @@ void CharacterBuilderTerminal::_handleUbeseArmorMenu(PlayerObject* player, uint3
         GiveItem(player,1232);
         GiveItem(player,1196);
         GiveItem(player,1296);
-    }
-    break;
+        }
+        break;
     case 1:
         GiveItem(player,1249);
         break;
@@ -2667,7 +2527,7 @@ void CharacterBuilderTerminal::handleObjectMenuSelect(uint8 messageType,Object* 
         // bring up the terminal window
         if(playerObject && playerObject->isConnected())
         {
-            if(playerObject->getSurveyState() || playerObject->getSamplingState() || playerObject->isIncapacitated() || playerObject->isDead() || playerObject->checkState(CreatureState_Combat))
+            if(playerObject->getSurveyState() || playerObject->getSamplingState() || playerObject->isIncapacitated() || playerObject->isDead() || playerObject->states.checkState(CreatureState_Combat))
             {
                 return;
             }
@@ -2679,10 +2539,6 @@ void CharacterBuilderTerminal::handleObjectMenuSelect(uint8 messageType,Object* 
                 gUIManager->createNewListBox(this,"handleMainMenu","Main menu","Select a category.", mMainMenu,playerObject,SUI_Window_CharacterBuilderMainMenu_ListBox,SUI_LB_OK,this->getId());
             }
         }
-    }
-    else
-    {
-        gLogger->log(LogManager::NOTICE,"TravelTerminal: Unhandled MenuSelect: %u",messageType);
     }
 }
 

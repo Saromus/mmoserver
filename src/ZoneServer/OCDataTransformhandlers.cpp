@@ -45,7 +45,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ZoneTree.h"
 
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -66,7 +65,6 @@ void ObjectController::handleDataTransform(Message* message,bool inRangeUpdate)
 
     if (!player)
     {
-        gLogger->log(LogManager::DEBUG,"ObjectController::handleDataTransform Object is NOT A PLAYER, id = %"PRIu64"", mObject->getId());
         return;
     }
 
@@ -109,7 +107,7 @@ void ObjectController::handleDataTransform(Message* message,bool inRangeUpdate)
     // stop entertaining ???
     // important is, that if we move we change our posture to NOT skill animating anymore!
     // so only stop entertaining when we are performing and NOT skillanimationg
-    if(player->getPerformingState() != PlayerPerformance_None && player->getPosture() != CreaturePosture_SkillAnimating)
+    if(player->getPerformingState() != PlayerPerformance_None && player->states.getPosture() != CreaturePosture_SkillAnimating)
     {
         gEntertainerManager->stopEntertaining(player);
     }
@@ -130,7 +128,7 @@ void ObjectController::handleDataTransform(Message* message,bool inRangeUpdate)
         }
         else
         {
-            gLogger->log(LogManager::DEBUG,"Error removing %"PRIu64" from cell(%"PRIu64")",player->getId(),player->getParentId());
+			DLOG(INFO) << "Error removing" << player->getId() << " from cell " << player->getParentId();
         }
 
         // we are outside again
@@ -141,7 +139,7 @@ void ObjectController::handleDataTransform(Message* message,bool inRangeUpdate)
 
         // add us to the qtree
 
-        if(QTRegion* newRegion = mSI->getQTRegion((double)pos.x,(double)pos.z))
+        if(std::shared_ptr<QTRegion>newRegion = mSI->getQTRegion((double)pos.x,(double)pos.z))
         {
             player->setSubZoneId((uint32)newRegion->getId());
             player->setSubZone(newRegion);
@@ -151,8 +149,8 @@ void ObjectController::handleDataTransform(Message* message,bool inRangeUpdate)
         {
             // we should never get here !
             // it basically means we left the map
-            gLogger->log(LogManager::DEBUG,"ObjController::handleDataTransform: could not find zone region in map");
-            gLogger->log(LogManager::DEBUG,"ObjController:: probably a bot : %i64u",static_cast<int>(player->getId()));
+            DLOG(INFO) << "ObjController::handleDataTransform: could not find zone region in map";
+            DLOG(INFO) << "ObjController:: probably a bot : " << player->getId();
 
             // hammertime !
             //muglies botter sometimes sends us weird positions
@@ -187,13 +185,12 @@ void ObjectController::handleDataTransform(Message* message,bool inRangeUpdate)
             //do an intersectsWithQuery of objects in the si to find our new region -
             //CAVE shouldnt it be a contains query ?
             //what do we do if several regions overlap ?
-            if(QTRegion* newRegion = mSI->getQTRegion((double)pos.x,(double)pos.z))
+            if(std::shared_ptr<QTRegion> newRegion = mSI->getQTRegion((double)pos.x,(double)pos.z))
             {
                 updateAll = true;
 
-                gLogger->log(LogManager::DEBUG,"ObjController::DataTransform: Changing subzone");
                 // remove from old
-                if(QTRegion* oldRegion = player->getSubZone())
+                if(std::shared_ptr<QTRegion> oldRegion = player->getSubZone())
                 {
                     oldRegion->mTree->removeObject(player);
                     //If our player is mounted lets update his mount aswell
@@ -226,9 +223,8 @@ void ObjectController::handleDataTransform(Message* message,bool inRangeUpdate)
             else
             {
                 // we should never get here !
-                gLogger->log(LogManager::DEBUG,"ObjController::DataTransform: could not find zone region in map");
-
-                gLogger->log(LogManager::DEBUG,"ObjController:: probably a bot : %I64u",static_cast<int>(player->getId()));
+                DLOG(INFO) << "ObjController::handleDataTransform: could not find zone region in map";
+	            DLOG(INFO) << "ObjController:: probably a bot : " << player->getId();
 
                 // hammertime !
                 // muglies botter sometimes sends us weird positions  with X or Y far out of possible regions
@@ -359,7 +355,7 @@ void ObjectController::handleDataTransformWithParent(Message* message,bool inRan
         speed  = message->getFloat();
 
         // stop entertaining, if we were
-        if(player->getPerformingState() != PlayerPerformance_None && player->getPosture() != CreaturePosture_SkillAnimating)
+        if(player->getPerformingState() != PlayerPerformance_None && player->states.getPosture() != CreaturePosture_SkillAnimating)
         {
             gEntertainerManager->stopEntertaining(player);
         }
@@ -383,7 +379,7 @@ void ObjectController::handleDataTransformWithParent(Message* message,bool inRan
                 }
                 else
                 {
-                    gLogger->log(LogManager::DEBUG,"Error removing %"PRIu64" from cell(%"PRIu64")",player->getId(),oldParentId);
+					DLOG(INFO) << "Error removing "<<player->getId() << " from cell" << oldParentId;
                 }
             }
             else
@@ -393,7 +389,7 @@ void ObjectController::handleDataTransformWithParent(Message* message,bool inRan
                 // remove us from qt
                 if(player->getSubZoneId())
                 {
-                    if(QTRegion* region = gWorldManager->getQTRegion(player->getSubZoneId()))
+                    if(std::shared_ptr<QTRegion> region = gWorldManager->getQTRegion(player->getSubZoneId()))
                     {
                         player->setSubZone(NULL);
                         player->setSubZoneId(0);
@@ -434,7 +430,7 @@ void ObjectController::handleDataTransformWithParent(Message* message,bool inRan
             }
             else
             {
-                gLogger->log(LogManager::DEBUG,"Error adding %"PRIu64" to cell(%"PRIu64")",player->getId(),parentId);
+                DLOG(INFO) << "Error adding "<<player->getId() << " from cell" << parentId;
             }
         }
 
@@ -552,7 +548,7 @@ void ObjectController::_findInRangeObjectsOutside(bool updateAll)
 
     if(player->getSubZoneId())
     {
-        if(QTRegion* region = gWorldManager->getQTRegion(player->getSubZoneId()))
+        if(std::shared_ptr<QTRegion>region = gWorldManager->getQTRegion(player->getSubZoneId()))
         {
             Anh_Math::Rectangle qRect = Anh_Math::Rectangle(player->mPosition.x - viewingRange,player->mPosition.z - viewingRange,viewingRange * 2,viewingRange * 2);
 
@@ -694,7 +690,6 @@ void ObjectController::_findInRangeObjectsInside(bool updateAll)
     // make sure we got a cell
     if (!playerCell)
     {
-        gLogger->log(LogManager::DEBUG,"ERROR: No playerCell.");
         return;
     }
 
@@ -705,7 +700,6 @@ void ObjectController::_findInRangeObjectsInside(bool updateAll)
     if (!building)
     {
 
-        gLogger->log(LogManager::DEBUG,"ERROR: No building.");
         return;
     }
 
@@ -718,7 +712,7 @@ void ObjectController::_findInRangeObjectsInside(bool updateAll)
         mSI->getObjectsInRange(player,&mInRangeObjects,(ObjType_Player | ObjType_Tangible | ObjType_NPC | ObjType_Creature | ObjType_Building | ObjType_Structure),viewingRange);
 
         // query the qtree based on the buildings world position
-        if (QTRegion* region = mSI->getQTRegion(building->mPosition.x,building->mPosition.z))
+        if (std::shared_ptr<QTRegion> region = mSI->getQTRegion(building->mPosition.x,building->mPosition.z))
         {
             Anh_Math::Rectangle qRect = Anh_Math::Rectangle(building->mPosition.x - viewingRange,building->mPosition.z - viewingRange,viewingRange * 2,viewingRange * 2);
 
@@ -737,7 +731,7 @@ void ObjectController::_findInRangeObjectsInside(bool updateAll)
         mSI->getObjectsInRange(player,&mInRangeObjects,(ObjType_Tangible | ObjType_Player | ObjType_Creature | ObjType_NPC),viewingRange);
 
         // query the qtree based on the buildings world position
-        if (QTRegion* region = mSI->getQTRegion(building->mPosition.x,building->mPosition.z))
+        if (std::shared_ptr<QTRegion>region = mSI->getQTRegion(building->mPosition.x,building->mPosition.z))
         {
             Anh_Math::Rectangle qRect = Anh_Math::Rectangle(building->mPosition.x - viewingRange,building->mPosition.z - viewingRange,viewingRange * 2,viewingRange * 2);
 
@@ -763,7 +757,6 @@ bool ObjectController::_updateInRangeObjectsInside()
     // make sure we got a cell
     if (!playerCell)
     {
-        gLogger->log(LogManager::DEBUG,"Error getting cell %"PRIu64" for %"PRIu64" type %u",player->getParentId(),player->getId(),player->getType());
         return true;	// We are done, nothing we can do...
     }
 
@@ -802,7 +795,6 @@ bool ObjectController::_updateInRangeObjectsInside()
                 }
                 else
                 {
-                    gLogger->log(LogManager::DEBUG,"Error getting cell %"PRIu64" for %"PRIu64" type %u",object->getParentId(),object->getId(),object->getType());
                 }
             }
             if (validObject)

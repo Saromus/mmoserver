@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "WorldManager.h"
 #include "ZoneTree.h"
 #include "MessageLib/MessageLib.h"
-#include "utils/rand.h"
+#include "Utils/rand.h"
 
 #include <cassert>
 
@@ -73,7 +73,6 @@ LairObject::LairObject(uint64 templateId) : AttackableStaticNpc()
 LairObject::~LairObject()
 {
     // mRadialMenu.reset();
-    gLogger->log(LogManager::DEBUG,"LairObject::~LairObject() DESTRUCTED\n");
 }
 
 //=============================================================================
@@ -105,7 +104,6 @@ void LairObject::addKnownObject(Object* object)
 {
     if(checkKnownObjects(object))
     {
-        gLogger->log(LogManager::DEBUG,"AttackableCreature::addKnownObject %I64u couldnt be added to %I64u already in it", object->getId(), this->getId());
         return;
     }
 
@@ -189,7 +187,7 @@ void LairObject::handleEvents(void)
             else
             {
                 // We have no target.
-                this->setTarget(NULL);
+                this->setTarget(0);
 
             }
 
@@ -227,7 +225,7 @@ void LairObject::handleEvents(void)
             else
             {
                 // We have no target.
-                this->setTarget(NULL);
+                this->setTarget(0);
 
             }
             // THE solution...
@@ -285,7 +283,6 @@ uint64 LairObject::handleState(uint64 timeOverdue)
 
     default:
     {
-        gLogger->log(LogManager::NOTICE,"LairObject: UNKNOWN state");
     }
     break;
 
@@ -448,7 +445,6 @@ void LairObject::makePeaceWithDefendersOutOfRange(void)
 void LairObject::spawn(void)
 {
     gLairSpawnCounter++;
-    gLogger->log(LogManager::DEBUG,"Spawned lair # %"PRIu64" (%"PRIu64")", gLairSpawnCounter, gLairSpawnCounter - gLairDeathCounter);
 
     // Update the world about my presence.
     if (this->getParentId())
@@ -462,12 +458,11 @@ void LairObject::spawn(void)
         }
         else
         {
-            gLogger->log(LogManager::DEBUG,"LairObject::spawn: couldn't find cell %"PRIu64"", this->getParentId());
         }
     }
     else
     {
-        if (QTRegion* region = gWorldManager->getSI()->getQTRegion(this->mPosition.x, this->mPosition.z))
+        if (std::shared_ptr<QTRegion> region = gWorldManager->getSI()->getQTRegion(this->mPosition.x, this->mPosition.z))
         {
             this->setSubZoneId((uint32)region->getId());
             region->mTree->addObject(this);
@@ -544,7 +539,7 @@ bool LairObject::playerInRange(float range)
     // Make Set ready,
     // inRangeObjects.clear();
     // objectSetIt = mInRangeObjects.begin();	// Will point to end of Set
-    if (QTRegion* region = gWorldManager->getSI()->getQTRegion(this->mPosition.x, this->mPosition.z))
+    if (std::shared_ptr<QTRegion> region = gWorldManager->getSI()->getQTRegion(this->mPosition.x, this->mPosition.z))
     {
         Anh_Math::Rectangle qRect = Anh_Math::Rectangle(this->mPosition.x - range, this->mPosition.z - range, range * 2, range * 2);
         region->mTree->getObjectsInRange(this, &inRangeObjects, ObjType_Player, &qRect);

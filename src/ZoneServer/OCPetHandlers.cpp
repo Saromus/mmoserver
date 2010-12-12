@@ -38,7 +38,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "WorldConfig.h"
 #include "WorldManager.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -51,7 +50,7 @@ void ObjectController::_handleMount(uint64 targetId,Message* message,ObjectContr
     // And some parameter validation...
     if (targetId == 0)
     {
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleMount : Cannot find vehicle ID :(");
+        DLOG(INFO) << "ObjectController::_handleMount : Cannot find vehicle ID :(";
         return;
     }
 
@@ -73,7 +72,6 @@ void ObjectController::_handleMount(uint64 targetId,Message* message,ObjectContr
                     //The /mount command can work up to 32m on live
                     if(glm::distance(vehicle->body()->mPosition, player->mPosition) <= 32)	{
                         //change locomotion
-                        player->setLocomotion(kLocomotionDrivingVehicle);
                         vehicle->MountPlayer();
                     }	else {
                         gMessageLib->SendSystemMessage(L"Your target is too far away to mount.", player);
@@ -81,7 +79,7 @@ void ObjectController::_handleMount(uint64 targetId,Message* message,ObjectContr
                 }
                 else
                 {
-                    gLogger->log(LogManager::DEBUG,"ObjectController::_handleMount : Cannot find vehicle");
+                    DLOG(INFO) << "ObjectController::_handleMount : Cannot find vehicle";
                 }
             }
         } else {
@@ -120,7 +118,6 @@ void ObjectController::_handleDismount(uint64 targetId,Message* message,ObjectCo
                 // get the pets controller for a swoop its the vehicle
                 if(VehicleController* vehicle = dynamic_cast<VehicleController*>(gWorldManager->getObjectById(pet->controller())))
                 {
-                    player->setLocomotion(kLocomotionStanding);
                     vehicle->DismountPlayer();
                 }
             }

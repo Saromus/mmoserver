@@ -28,10 +28,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef ANH_LOGINSERVER_MESSAGE_H
 #define ANH_LOGINSERVER_MESSAGE_H
 
+#include <cstdint>
+#include <string>
+
 #include "Utils/typedefs.h"
 #include "Utils/bstring.h"
-
-#include "NetworkManager/declspec.h"
 
 enum MessagePath
 {
@@ -50,11 +51,14 @@ enum MessagePath
 
 
 //======================================================================================================================
-class NET_API Message
+class Message
 {
 public:
     Message(void)
-        : mCreateTime(0)
+        : mLogged(false)
+        , mLogTime(0)
+        , mSession(nullptr)
+        , mCreateTime(0)
         , mQueueTime(0)
         , mAccountId(0xffffffff)
         , mSize(0)
@@ -65,9 +69,6 @@ public:
         , mFastpath(false)
         , mPendingDelete(false)
         , mData(0)
-        , mLogged(false)
-        , mLogTime(0)
-        , mSession(NULL)
     {}
 
     void                        Init(int8* data, uint16 len)      {
@@ -282,6 +283,25 @@ public:
         data.initRawBSTR(&mData[mIndex], BSTRType_Unicode16);
         mIndex += data.getLength() * 2 + 4;
         return data.getLength();
+    }
+
+    std::string getStringAnsi() {
+        uint16_t size = getUint16();
+        std::string tmp(&mData[mIndex], &mData[mIndex + size]);
+
+        mIndex += size;
+
+        return tmp;
+    }
+
+    std::u16string getStringUnicode16() {
+    	uint32_t size = getUint32();
+    	std::u16string tmp(reinterpret_cast<char16_t*>(&mData[mIndex]),
+    			reinterpret_cast<char16_t*>(&mData[mIndex]) + size);
+
+    	mIndex += tmp.size() * 2;
+
+    	return tmp;
     }
 
     bool                        mLogged;

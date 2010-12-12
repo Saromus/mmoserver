@@ -26,6 +26,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "ConversationManager.h"
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "ActiveConversation.h"
 #include "Conversation.h"
 #include "NPCObject.h"
@@ -34,7 +40,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "WorldManager.h"
 
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -51,7 +56,7 @@ ConversationManager::ConversationManager(Database* database) :
     mActiveConversationPool(sizeof(ActiveConversation)),
     mDBAsyncPool(sizeof(CVAsyncContainer))
 {
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.malloc()) CVAsyncContainer(ConvQuery_Conversations),"SELECT id FROM conversations ORDER BY id");
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.malloc()) CVAsyncContainer(ConvQuery_Conversations),"SELECT id FROM conversations ORDER BY id");
     
 }
 
@@ -91,7 +96,7 @@ void ConversationManager::handleDatabaseJobComplete(void* ref, DatabaseResult* r
         CVAsyncContainer*	asCont;
         uint32				insertId;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,offsetof(Conversation,mId),4,0);
 
         uint64 count = result->getRowCount();
@@ -99,7 +104,7 @@ void ConversationManager::handleDatabaseJobComplete(void* ref, DatabaseResult* r
         for(uint32 i = 0; i < count; i++)
         {
             conv = new Conversation();
-            result->GetNextRow(binding,conv);
+            result->getNextRow(binding,conv);
 
             insertId = conv->getId();
             mConversations.insert(insertId,conv);
@@ -107,15 +112,13 @@ void ConversationManager::handleDatabaseJobComplete(void* ref, DatabaseResult* r
             asCont = new(mDBAsyncPool.malloc()) CVAsyncContainer(ConvQuery_Pages);
             asCont->mConversation = conv;
 
-            mDatabase->ExecuteSqlAsync(this,asCont,"SELECT * FROM conversation_pages WHERE conversation_id=%u ORDER BY page", insertId);
+            mDatabase->executeSqlAsync(this,asCont,"SELECT * FROM conversation_pages WHERE conversation_id=%u ORDER BY page", insertId);
             
         }
 
-        if(result->getRowCount())
-            gLogger->log(LogManager::NOTICE,"Loaded conversations.");
+        LOG_IF(INFO, count) << "Loaded " << count << " conversations";
 
-
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
@@ -125,14 +128,14 @@ void ConversationManager::handleDatabaseJobComplete(void* ref, DatabaseResult* r
         CVAsyncContainer*	asCont;
         uint32				batchId;
 
-        DataBinding*		pageBinding = mDatabase->CreateDataBinding(5);
+        DataBinding*		pageBinding = mDatabase->createDataBinding(5);
         pageBinding->addField(DFT_uint32,offsetof(ConversationPage,mId),4,1);
         pageBinding->addField(DFT_bstring,offsetof(ConversationPage,mCustomText),512,2);
         pageBinding->addField(DFT_bstring,offsetof(ConversationPage,mStfFile),255,3);
         pageBinding->addField(DFT_bstring,offsetof(ConversationPage,mStfVariable),255,4);
         pageBinding->addField(DFT_uint32,offsetof(ConversationPage,mAnimation),4,6);
 
-        DataBinding*	batchBinding = mDatabase->CreateDataBinding(1);
+        DataBinding*	batchBinding = mDatabase->createDataBinding(1);
         batchBinding->addField(DFT_uint32,0,4,5);
 
         uint32 count = static_cast<uint32>(result->getRowCount());
@@ -140,13 +143,13 @@ void ConversationManager::handleDatabaseJobComplete(void* ref, DatabaseResult* r
         for(uint64 i = 0; i< count; i++)
         {
             page = new ConversationPage();
-            result->GetNextRow(pageBinding,page);
+            result->getNextRow(pageBinding,page);
 
             page->mCustomText.convert(BSTRType_Unicode16);
 
-            result->ResetRowIndex(static_cast<int>(i));
+            result->resetRowIndex(static_cast<int>(i));
 
-            result->GetNextRow(batchBinding,&batchId);
+            result->getNextRow(batchBinding,&batchId);
 
             asyncContainer->mConversation->mPages.push_back(page);
 
@@ -155,7 +158,7 @@ void ConversationManager::handleDatabaseJobComplete(void* ref, DatabaseResult* r
             asCont = new(mDBAsyncPool.malloc()) CVAsyncContainer(ConvQuery_Page_OptionBatch);
             asCont->mConversationPage = page;
 
-            mDatabase->ExecuteSqlAsync(this,asCont,"SELECT conversation_options.id,conversation_options.customText,conversation_options.stf_file,"
+            mDatabase->executeSqlAsync(this,asCont,"SELECT conversation_options.id,conversation_options.customText,conversation_options.stf_file,"
                                        "conversation_options.stf_variable,conversation_options.event,conversation_options.pageLink "
                                        "FROM "
                                        "conversation_option_batches "
@@ -165,15 +168,15 @@ void ConversationManager::handleDatabaseJobComplete(void* ref, DatabaseResult* r
            
         }
 
-        mDatabase->DestroyDataBinding(pageBinding);
-        mDatabase->DestroyDataBinding(batchBinding);
+        mDatabase->destroyDataBinding(pageBinding);
+        mDatabase->destroyDataBinding(batchBinding);
     }
     break;
 
     case ConvQuery_Page_OptionBatch:
     {
         ConversationOption*	option;
-        DataBinding*		binding = mDatabase->CreateDataBinding(6);
+        DataBinding*		binding = mDatabase->createDataBinding(6);
 
         binding->addField(DFT_uint32,offsetof(ConversationOption,mId),4,0);
         binding->addField(DFT_bstring,offsetof(ConversationOption,mCustomText),512,1);
@@ -188,7 +191,7 @@ void ConversationManager::handleDatabaseJobComplete(void* ref, DatabaseResult* r
         {
             option = new ConversationOption();
 
-            result->GetNextRow(binding,option);
+            result->getNextRow(binding,option);
 
             option->mCustomText.convert(BSTRType_Unicode16);
 
@@ -196,7 +199,7 @@ void ConversationManager::handleDatabaseJobComplete(void* ref, DatabaseResult* r
         }
 
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
@@ -235,61 +238,61 @@ ActiveConversation* ConversationManager::getActiveConversation(uint64 id)
 
 void ConversationManager::startConversation(NPCObject* npc,PlayerObject* player)
 {
-    //we can't converse whilst in combat
-    /* commented out for preview as borked. client ctd ftl
-    if(player->checkState(CreatureState_Combat))
-    {
-    	stopConversation(player,true);
-    	gMessageLib->sendSystemMessage(player,"You may not start a Conversation whilst in Combat!");
-    }*/
+	//we can't converse whilst in combat
+	/* commented out for preview as borked. client ctd ftl
+	if(player->states.checkState(CreatureState_Combat))
+	{
+		stopConversation(player,true);
+		gMessageLib->sendSystemMessage(player,"You may not start a Conversation whilst in Combat!");
+	}*/
 
-    // make sure theres no conversation running yet
-    if(getActiveConversation(player->getId()) != NULL)
-    {
-        stopConversation(player);
-    }
+	// make sure theres no conversation running yet
+	if(getActiveConversation(player->getId()) != NULL)
+	{
+		stopConversation(player);
+	}
 
-    // initialize a new one
-    Conversation*		conv			= getConversation(npc->getInternalAttribute<uint32>("base_conversation"));
-    ActiveConversation*	av				= new(mActiveConversationPool.malloc()) ActiveConversation(conv,player,npc);
-    // ConversationPage*	currentPage		= av->getCurrentPage();
+	// initialize a new one
+	Conversation*		conv			= getConversation(npc->getInternalAttribute<uint32>("base_conversation"));
+	ActiveConversation*	av				= new(mActiveConversationPool.malloc()) ActiveConversation(conv,player,npc);
+	// ConversationPage*	currentPage		= av->getCurrentPage();
 
-    mActiveConversations.insert(std::make_pair(player->getId(),av));
+	mActiveConversations.insert(std::make_pair(player->getId(),av));
 
-    // In case of npc trainers, they may not always open a dialog, they just chat in spatial. (like traniers that you can not train from yet)
-    // We need a way to abort the dialog.
-    // Pre process npc conversation.
-    if (av->preProcessConversation())
-    {
-        ConversationPage* currentPage = av->getCurrentPage();
+	// In case of npc trainers, they may not always open a dialog, they just chat in spatial. (like traniers that you can not train from yet)
+	// We need a way to abort the dialog.
+	// Pre process npc conversation.
+	if (av->preProcessConversation())
+	{
+		ConversationPage* currentPage = av->getCurrentPage();
 
-        // Get the options dialog data.
-        av->prepareFilteredOptions();
+		// Get the options dialog data.
+		av->prepareFilteredOptions();
 
-        gMessageLib->sendStartNPCConversation(npc,player);
+		gMessageLib->sendStartNPCConversation(npc,player);
 
-        if(currentPage->mAnimation)
-        {
-            if (gWorldConfig->isInstance())
-            {
-                // We are running in an instance.
-                gMessageLib->sendCreatureAnimation(npc,gWorldManager->getNpcConverseAnimation(currentPage->mAnimation), player);
-            }
-            else
-            {
-                gMessageLib->sendCreatureAnimation(npc,gWorldManager->getNpcConverseAnimation(currentPage->mAnimation));
-            }
-        }
+		if(currentPage->mAnimation)
+		{
+			if (gWorldConfig->isInstance())
+			{
+				// We are running in an instance.
+				gMessageLib->sendCreatureAnimation(npc,gWorldManager->getNpcConverseAnimation(currentPage->mAnimation), player);
+			}
+			else
+			{
+				gMessageLib->sendCreatureAnimation(npc,gWorldManager->getNpcConverseAnimation(currentPage->mAnimation));
+			}
+		}
 
-        gMessageLib->sendNPCDialogMessage(av,player);
-
-        gMessageLib->sendNPCDialogOptions(av->getFilteredOptions(),player);
-    }
-    else
-    {
-        // We terminate (do not start) this conversation.
-        stopConversation(player);
-    }
+		gMessageLib->sendNPCDialogMessage(av,player);
+		
+		gMessageLib->sendNPCDialogOptions(av->getFilteredOptions(),player);
+	}
+	else
+	{
+		// We terminate (do not start) this conversation.
+		stopConversation(player);
+	}
 }
 
 //=========================================================================================
@@ -322,7 +325,7 @@ void ConversationManager::updateConversation(uint32 selectId,PlayerObject* playe
 
     if(!av)
     {
-        gLogger->log(LogManager::DEBUG,"ConversationManager::updateConversation: could not find conversation for %"PRIu64,player->getId());
+    	LOG(ERROR) << "Could not find conversation intended for player [" << player->getId() << "]";
         return;
     }
 

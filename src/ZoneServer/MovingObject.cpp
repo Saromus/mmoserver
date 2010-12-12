@@ -88,7 +88,7 @@ void MovingObject::updatePositionOutside(uint64 parentId, const glm::vec3& newPo
         }
         else
         {
-            gLogger->log(LogManager::NOTICE,"Error removing %"PRIu64" from cell(%"PRIu64")",this->getId(),this->getParentId());
+			LOG(WARNING) << "Error removing " << this->getId() << " from cell " << this->getParentId();
         }
 
         // now set our new ParentId
@@ -104,7 +104,7 @@ void MovingObject::updatePositionOutside(uint64 parentId, const glm::vec3& newPo
 
         // add us to the qtree
 
-        if (QTRegion* newRegion = gWorldManager->getSI()->getQTRegion((double)this->mPosition.x,(double)this->mPosition.z))
+        if (std::shared_ptr<QTRegion> newRegion = gWorldManager->getSI()->getQTRegion((double)this->mPosition.x,(double)this->mPosition.z))
         {
             this->setSubZoneId((uint32)newRegion->getId());
             newRegion->mTree->addObject(this);
@@ -112,7 +112,7 @@ void MovingObject::updatePositionOutside(uint64 parentId, const glm::vec3& newPo
         else
         {
             // we should never get here !
-            gLogger->log(LogManager::DEBUG,"NPCObject::updatePosition: could not find zone region in map");
+            DLOG(INFO) << "NPCObject::updatePosition: could not find zone region in map";
         }
     }
     else
@@ -121,7 +121,7 @@ void MovingObject::updatePositionOutside(uint64 parentId, const glm::vec3& newPo
 
         // get the qt of the new position
         // if (QTRegion* newRegion = gWorldManager->getSI()->getQTRegion((double)this->mPosition.x,(double)this->mPosition.z))
-        if (QTRegion* newRegion = gWorldManager->getSI()->getQTRegion((double)newPosition.x, (double)newPosition.z))
+        if (std::shared_ptr<QTRegion> newRegion = gWorldManager->getSI()->getQTRegion((double)newPosition.x, (double)newPosition.z))
         {
             // we didnt change so update the old one
             if((uint32)newRegion->getId() == this->getSubZoneId())
@@ -140,7 +140,7 @@ void MovingObject::updatePositionOutside(uint64 parentId, const glm::vec3& newPo
             else
             {
                 // remove from old
-                if (QTRegion* oldRegion = gWorldManager->getQTRegion(this->getSubZoneId()))
+                if (std::shared_ptr<QTRegion> oldRegion = gWorldManager->getQTRegion(this->getSubZoneId()))
                 {
                     oldRegion->mTree->removeObject(this);
                 }
@@ -178,7 +178,7 @@ void MovingObject::updatePositionInCell(uint64 parentId, const glm::vec3& newPos
             }
             else
             {
-                gLogger->log(LogManager::NOTICE,"Error removing %"PRIu64" from cell(%"PRIu64")",this->getId(),oldParentId);
+                LOG(WARNING) << "Error removing " << this->getId() << " from cell " << this->getParentId();
             }
         }
         else
@@ -187,7 +187,7 @@ void MovingObject::updatePositionInCell(uint64 parentId, const glm::vec3& newPos
             // We just entered a building.
             if (this->getSubZoneId())
             {
-                if (QTRegion* region = gWorldManager->getQTRegion(this->getSubZoneId()))
+                if (std::shared_ptr<QTRegion> region = gWorldManager->getQTRegion(this->getSubZoneId()))
                 {
                     this->setSubZoneId(0);
                     region->mTree->removeObject(this);
@@ -206,7 +206,7 @@ void MovingObject::updatePositionInCell(uint64 parentId, const glm::vec3& newPos
         }
         else
         {
-            gLogger->log(LogManager::NOTICE,"Error adding %"PRIu64" to cell(%"PRIu64")",this->getId(),parentId);
+            LOG(WARNING) << "Error adding " << this->getId() << " from cell " << this->getParentId();
         }
         // update the player
         this->setParentId(parentId);

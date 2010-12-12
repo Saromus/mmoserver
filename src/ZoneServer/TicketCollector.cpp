@@ -35,10 +35,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "UIManager.h"
 #include "WorldManager.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 
 #include <time.h>
-#include "utils/rand.h"
+#include "Utils/rand.h"
 
 //=============================================================================
 
@@ -62,29 +61,17 @@ TicketCollector::~TicketCollector()
 
 void TicketCollector::handleObjectMenuSelect(uint8 messageType,Object* srcObject)
 {
-    if(messageType == radId_itemUse)
-    {
-        PlayerObject* playerObject = dynamic_cast<PlayerObject*>(srcObject);
+	if(messageType == radId_itemUse)
+	{
+		PlayerObject* playerObject = dynamic_cast<PlayerObject*>(srcObject);
+		
+		// don't use while incapped or dead or in combat
+		if(playerObject->isIncapacitated() || playerObject->isDead() || playerObject->states.checkState(CreatureState_Combat))
+		{
+			return;
+		}
 
-        if(!playerObject)
-        {
-            gLogger->log(LogManager::DEBUG,"TicketCollector: no player");
-            return;
-        }
-
-        if(!mShuttle)
-        {
-            gLogger->log(LogManager::DEBUG,"TicketCollector: no shuttle");
-            return;
-        }
-
-        // don't use while incapped or dead or in combat
-        if(playerObject->isIncapacitated() || playerObject->isDead() || playerObject->checkState(CreatureState_Combat))
-        {
-            return;
-        }
-
-        // in range check for shuttle not for the droid
+		// in range check for shuttle not for the droid
         if(playerObject->getParentId() != mParentId || (glm::distance(playerObject->mPosition, mShuttle->mPosition) > 25.0f))
         {
             gMessageLib->SendSystemMessage(::common::OutOfBand("travel", "boarding_too_far"), playerObject);
@@ -103,7 +90,7 @@ void TicketCollector::handleObjectMenuSelect(uint8 messageType,Object* srcObject
         }
     }
     else
-        gLogger->log(LogManager::DEBUG,"TravelTerminal: Unhandled MenuSelect: %u",messageType);
+        DLOG(INFO) << "TravelTerminal: Unhandled MenuSelect: " << messageType;
 }
 
 //=============================================================================
@@ -215,7 +202,7 @@ void TicketCollector::handleUIEvent(uint32 action,int32 element,BString inputStr
                     }
                     else
                     {
-                        gLogger->log(LogManager::DEBUG,"TicketCollector: Error getting TravelPoint");
+                        DLOG(INFO) << "TicketCollector: Error getting TravelPoint";
                     }
                     break;
                 }
@@ -273,7 +260,7 @@ void TicketCollector::travelRequest(TravelTicket* ticket,PlayerObject* playerObj
             }
             else
             {
-                gLogger->log(LogManager::DEBUG,"TicketCollector: Error getting TravelPoint\n");
+                DLOG(INFO) << "TicketCollector: Error getting TravelPoint";
             }
         }
     }

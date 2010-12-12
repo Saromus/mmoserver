@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ZoneTree.h"
 #include "ZoneServer/ZoneOpcodes.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
+
 
 
 
@@ -83,8 +83,8 @@ void TravelTicket::handleObjectMenuSelect(uint8 messageType,Object* srcObject)
     {
         PlayerObject*	player	= dynamic_cast<PlayerObject*>(srcObject);
 
-        if(player->getPosture() == CreaturePosture_SkillAnimating)
-        {
+		if(player->states.getPosture() == CreaturePosture_SkillAnimating)
+		{
             gMessageLib->SendSystemMessage(::common::OutOfBand("error_message", "wrong_state"), player);
             return;
         }

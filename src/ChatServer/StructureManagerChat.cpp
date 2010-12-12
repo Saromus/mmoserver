@@ -32,7 +32,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "ZoneServer/TangibleEnums.h"
 
-#include "Common/LogManager.h"
+// Fix for issues with glog redefining this constant
+#ifdef _WIN32
+#undef ERROR
+#endif
+
+#include <glog/logging.h>
+
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DataBinding.h"
 #include "DatabaseManager/DatabaseResult.h"
@@ -85,7 +91,6 @@ StructureManagerChatHandler::StructureManagerChatHandler(Database* database, Mes
     mTimerQueueProcessTimeLimit = 10;
 
     //move to Handle dispatch message at some time
-    uint32 ServerTimeInterval = 1;
 
     //TODO
 
@@ -139,7 +144,6 @@ void StructureManagerChatHandler::Shutdown()
 void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 {
     StructureManagerAsyncContainer* asynContainer = (StructureManagerAsyncContainer*)ref;
-    Player* player(0);
 
     switch(asynContainer->mQueryType)
     {
@@ -153,7 +157,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
     {
         structure st;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(9);
+        DataBinding* binding = mDatabase->createDataBinding(9);
         binding->addField(DFT_uint64,offsetof(structure,owner),8,0);
         binding->addField(DFT_bstring,offsetof(structure,file),64,1);
         binding->addField(DFT_bstring,offsetof(structure,dir),64,2);
@@ -164,15 +168,16 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
         binding->addField(DFT_uint32,offsetof(structure,maint),4,7);
         binding->addField(DFT_uint64,offsetof(structure,lastMail),8,8);
 
-        uint64 count;
+        if (result->getRowCount()) {
+        	return;
+        }
 
-        count = result->getRowCount();
-        result->GetNextRow(binding,&st);
+        result->getNextRow(binding,&st);
 
         if(st.lastMail < (gTradeManagerChat->getGlobalTickCount() + (24*3600*1000)))
         {
             //last Mail less than 24hours no need to send it again
-            mDatabase->DestroyDataBinding(binding);
+            mDatabase->destroyDataBinding(binding);
             return;
 
         }
@@ -200,13 +205,13 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         gChatManager->sendSystemMailMessage(mail,st.owner);
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
         int8 sql[250];
         // Now update the time of the last EMail
-        sprintf(sql,"UPDATE structures SET structures.lastMail = %I64u WHERE ID = %I64u", gTradeManagerChat->getGlobalTickCount(), asynContainer->harvesterID);
+        sprintf(sql,"UPDATE structures SET structures.lastMail = %"PRIu64" WHERE ID = %"PRIu64"", gTradeManagerChat->getGlobalTickCount(), asynContainer->harvesterID);
 
-        mDatabase->ExecuteSqlAsync(0,0,sql);
+        mDatabase->executeAsyncSql(sql);
 
     }
     break;
@@ -221,7 +226,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
     {
         structure st;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(9);
+        DataBinding* binding = mDatabase->createDataBinding(9);
         binding->addField(DFT_uint64,offsetof(structure,owner),8,0);
         binding->addField(DFT_bstring,offsetof(structure,file),64,1);
         binding->addField(DFT_bstring,offsetof(structure,dir),64,2);
@@ -232,14 +237,16 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
         binding->addField(DFT_uint32,offsetof(structure,condition),4,7);
         binding->addField(DFT_uint64,offsetof(structure,lastMail),8,8);
 
-        uint64 count;
-        count = result->getRowCount();
-        result->GetNextRow(binding,&st);
+        if (!result->getRowCount()) {
+           	return;
+        }
+
+        result->getNextRow(binding,&st);
 
         if(st.lastMail < (gTradeManagerChat->getGlobalTickCount() + (24*3600*1000)))
         {
             //last Mail less than 24hours no need to send it again
-            mDatabase->DestroyDataBinding(binding);
+            mDatabase->destroyDataBinding(binding);
             return;
 
         }
@@ -267,13 +274,13 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         gChatManager->sendSystemMailMessage(mail,st.owner);
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
         int8 sql[250];
         // Now update the time of the last EMail
-        sprintf(sql,"UPDATE structures SET structures.lastMail = %I64u WHERE ID = %I64u", gTradeManagerChat->getGlobalTickCount(), asynContainer->harvesterID);
+        sprintf(sql,"UPDATE structures SET structures.lastMail = %"PRIu64" WHERE ID = %"PRIu64"", gTradeManagerChat->getGlobalTickCount(), asynContainer->harvesterID);
 
-        mDatabase->ExecuteSqlAsync(0,0,sql);
+        mDatabase->executeAsyncSql(sql);
 
     }
     break;
@@ -288,7 +295,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         structure st;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(7);
+        DataBinding* binding = mDatabase->createDataBinding(7);
         binding->addField(DFT_uint64,offsetof(structure,owner),8,0);
         binding->addField(DFT_bstring,offsetof(structure,file),64,1);
         binding->addField(DFT_bstring,offsetof(structure,dir),64,2);
@@ -297,14 +304,16 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
         binding->addField(DFT_bstring,offsetof(structure,planet),32,5);
         binding->addField(DFT_uint64,offsetof(structure,lastMail),8,6);
 
-        uint64 count;
-        count = result->getRowCount();
-        result->GetNextRow(binding,&st);
+        if (!result->getRowCount()) {
+        	return;
+        }
+
+        result->getNextRow(binding,&st);
 
         if(st.lastMail < (gTradeManagerChat->getGlobalTickCount() + (24*3600*1000)))
         {
             //last Mail less than 24hours no need to send it again
-            mDatabase->DestroyDataBinding(binding);
+            mDatabase->destroyDataBinding(binding);
             return;
 
         }
@@ -332,13 +341,13 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         gChatManager->sendSystemMailMessage(mail,st.owner);
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
         int8 sql[250];
         // Now update the time of the last EMail
-        sprintf(sql,"UPDATE structures SET structures.lastMail = %I64u WHERE ID = %I64u", gTradeManagerChat->getGlobalTickCount(), asynContainer->harvesterID);
+        sprintf(sql,"UPDATE structures SET structures.lastMail = %"PRIu64" WHERE ID = %"PRIu64"", gTradeManagerChat->getGlobalTickCount(), asynContainer->harvesterID);
 
-        mDatabase->ExecuteSqlAsync(0 ,0 ,sql);
+        mDatabase->executeSqlAsync(0 ,0 ,sql);
 
 
     }
@@ -351,11 +360,12 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
     case STRMQuery_DoneStructureMaintenance:
     {
         uint32 exitCode;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
 
-        uint64 count;
-        count = result->getRowCount();
+        if (!result->getRowCount()) {
+           	return;
+        }
 
         //return codes :
         // 0 everything ok
@@ -364,7 +374,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
         // 3 condition is zero
 
 
-        result->GetNextRow(binding,&exitCode);
+        result->getNextRow(binding,&exitCode);
 
         if(exitCode == 1)// 1 structure is out of maintenance
         {
@@ -372,11 +382,11 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
             int8 sql[500];
 
             //inform the owner on the maintenance issue
-            sprintf(sql,"SELECT s.owner, st.stf_file, st.stf_name, s.x, s.z, p.name, s.lastMail FROM structures s INNER JOIN structure_type_data st ON (s.type = st.type) INNER JOIN planet p ON (p.planet_id = s.zone)WHERE ID = %I64u",asynContainer->harvesterID);
+            sprintf(sql,"SELECT s.owner, st.stf_file, st.stf_name, s.x, s.z, p.name, s.lastMail FROM structures s INNER JOIN structure_type_data st ON (s.type = st.type) INNER JOIN planet p ON (p.planet_id = s.zone)WHERE ID = %"PRIu64"",asynContainer->harvesterID);
             StructureManagerAsyncContainer* asyncContainer = new StructureManagerAsyncContainer(STRMQuery_StructureMailOOFMaint,0);
             asyncContainer->harvesterID = asynContainer->harvesterID;
 
-            mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+            mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
         }
 
@@ -386,11 +396,11 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
             int8 sql[500];
 
             //start by using power
-            sprintf(sql,"SELECT s.owner, st.stf_file, st.stf_name, s.x, s.z, p.name, st.max_condition, s.condition, s.lastMail FROM structures s INNER JOIN structure_type_data st ON (s.type = st.type) INNER JOIN planet p ON (p.planet_id = s.zone)WHERE ID = %I64u",asynContainer->harvesterID);
+            sprintf(sql,"SELECT s.owner, st.stf_file, st.stf_name, s.x, s.z, p.name, st.max_condition, s.condition, s.lastMail FROM structures s INNER JOIN structure_type_data st ON (s.type = st.type) INNER JOIN planet p ON (p.planet_id = s.zone)WHERE ID = %"PRIu64"",asynContainer->harvesterID);
             StructureManagerAsyncContainer* asyncContainer = new StructureManagerAsyncContainer(STRMQuery_StructureMailDamage,0);
             asyncContainer->harvesterID = asynContainer->harvesterID;
 
-            mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+            mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
         }
 
@@ -400,11 +410,11 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
             int8 sql[500];
 
             //start by using power
-            sprintf(sql,"SELECT s.owner, st.stf_file, st.stf_name, s.x, s.z, p.name, st.max_condition, st.maint_cost_wk, s.lastMail FROM structures s INNER JOIN structure_type_data st ON (s.type = st.type) INNER JOIN planet p ON (p.planet_id = s.zone)WHERE ID = %I64u",asynContainer->harvesterID);
+            sprintf(sql,"SELECT s.owner, st.stf_file, st.stf_name, s.x, s.z, p.name, st.max_condition, st.maint_cost_wk, s.lastMail FROM structures s INNER JOIN structure_type_data st ON (s.type = st.type) INNER JOIN planet p ON (p.planet_id = s.zone)WHERE ID = %"PRIu64"",asynContainer->harvesterID);
             StructureManagerAsyncContainer* asyncContainer = new StructureManagerAsyncContainer(STRMQuery_StructureMailCondZero,0);
             asyncContainer->harvesterID = asynContainer->harvesterID;
 
-            mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+            mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
         }
 
@@ -417,7 +427,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
         }
 
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
     }
     break;
@@ -425,11 +435,12 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
     case STRMQuery_DoneHarvesterUsePower:
     {
         uint32 exitCode;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
 
-        uint64 count;
-        count = result->getRowCount();
+        if (!result->getRowCount()) {
+           	return;
+        }
 
         //return codes :
         // 0 everything ok
@@ -438,7 +449,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
         // 3 unspecified db error
 
 
-        result->GetNextRow(binding,&exitCode);
+        result->getNextRow(binding,&exitCode);
 
         // cant notify zone when no player is online
         // zone will update harvesterstatus once per hour
@@ -448,11 +459,11 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
         if(exitCode == 3)
         {
             //unspecified db error
-            gLogger->log(LogManager::NOTICE,"StructureManagerChat::HarvesterPowerUsage %I64u unspecified db error",asynContainer->harvesterID);
+            LOG(WARNING) << "StructureManagerChat::HarvesterPowerUsage "<< asynContainer->harvesterID <<" unspecified db error" ;
         }
 
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
     }
     break;
@@ -460,7 +471,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
     case STRMQuery_DoneFactoryUpdate:
     {
         uint32 exitCode;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
 
         uint64 count;
@@ -475,7 +486,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         for(uint64 i=0; i <count; i++)
         {
-            result->GetNextRow(binding,&exitCode);
+            result->getNextRow(binding,&exitCode);
 
             if(exitCode == 1)
             {
@@ -488,12 +499,11 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
             if(exitCode == 3)
             {
                 //resource never existed in the first place
-                gLogger->log(LogManager::DEBUG,"StructureMabagerChat::Factory %I64u general error",asynContainer->harvesterID);
             }
 
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
 
     }
@@ -502,7 +512,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
     case STRMQuery_DoneHarvestUpdate:
     {
         uint32 exitCode;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
 
         uint64 count;
@@ -517,27 +527,27 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         for(uint64 i=0; i <count; i++)
         {
-            result->GetNextRow(binding,&exitCode);
+            result->getNextRow(binding,&exitCode);
 
             if(exitCode == 1)
             {
                 //resource never existed in the first place
-                gLogger->log(LogManager::DEBUG,"StructureMabagerChat::Harvester %I64u hopper full",asynContainer->harvesterID);
+				DLOG(INFO ) << "StructureMabagerChat::Harvester "<<asynContainer->harvesterID << " hopper full";
             }
             if(exitCode == 2)
             {
                 //resource never existed in the first place
-                gLogger->log(LogManager::DEBUG,"StructureMabagerChat::Harvester %I64u resourcechange",asynContainer->harvesterID);
+                DLOG(INFO) << "StructureMabagerChat::Harvester "<< asynContainer->harvesterID << " resourcechange";
             }
             if(exitCode == 3)
             {
                 //resource never existed in the first place
-                gLogger->log(LogManager::DEBUG,"StructureMabagerChat::Harvester %I64u harvested an invalid resource",asynContainer->harvesterID);
+               DLOG(INFO) << "StructureMabagerChat::Harvester "<< asynContainer->harvesterID <<" harvested an invalid resource";
             }
 
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
     }
     break;
@@ -545,7 +555,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
     case STRMQuery_MaintenanceUpdate:
     {
         uint64 harvesterID;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint64,0,8);
 
         uint64 count;
@@ -553,27 +563,27 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         for(uint64 i=0; i <count; i++)
         {
-            result->GetNextRow(binding,&harvesterID);
+            result->getNextRow(binding,&harvesterID);
 
             int8 sql[100];
 
             // then use maintenance
-            sprintf(sql,"SELECT sf_HarvesterUseMaintenance(%I64u)", harvesterID);
+            sprintf(sql,"SELECT sf_HarvesterUseMaintenance(%"PRIu64")", harvesterID);
             StructureManagerAsyncContainer* asyncContainer = new StructureManagerAsyncContainer(STRMQuery_DoneStructureMaintenance,0);
             asyncContainer->harvesterID = harvesterID;
 
-            mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+            mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
     case STRMQuery_PowerUpdate:
     {
         uint64 harvesterID;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint64,0,8);
 
         uint64 count;
@@ -581,16 +591,16 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         for(uint64 i=0; i <count; i++)
         {
-            result->GetNextRow(binding,&harvesterID);
+            result->getNextRow(binding,&harvesterID);
 
             int8 sql[100];
 
             //start by using power
-            sprintf(sql,"SELECT sf_HarvesterUsePower(%I64u)",harvesterID);
+            sprintf(sql,"SELECT sf_HarvesterUsePower(%"PRIu64")",harvesterID);
             StructureManagerAsyncContainer* asyncContainer = new StructureManagerAsyncContainer(STRMQuery_DoneHarvesterUsePower,0);
             asyncContainer->harvesterID = harvesterID;
 
-            mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+            mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
             //return codes :
             // 0 everything ok
@@ -600,7 +610,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
     }
     break;
@@ -608,7 +618,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
     case STRMQuery_FactoryUpdate:
     {
         uint64 factoryID;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint64,0,8);
 
         uint64 count;
@@ -616,16 +626,16 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         for(uint64 i=0; i <count; i++)
         {
-            result->GetNextRow(binding,&factoryID);
+            result->getNextRow(binding,&factoryID);
 
             int8 sql[100];
 
             //now harvest
-            sprintf(sql,"SELECT sf_FactoryProduce(%I64u)",factoryID);
+            sprintf(sql,"SELECT sf_FactoryProduce(%"PRIu64")",factoryID);
             StructureManagerAsyncContainer* asyncContainer = new StructureManagerAsyncContainer(STRMQuery_DoneFactoryUpdate,0);
             asyncContainer->harvesterID = factoryID;
 
-            mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+            mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
             //return codes :
             // 0 everything ok
@@ -635,14 +645,14 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
     }
 
     case STRMQuery_HopperUpdate:
     {
         uint64 harvesterID;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint64,0,8);
 
         uint64 count;
@@ -650,16 +660,16 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         for(uint64 i=0; i <count; i++)
         {
-            result->GetNextRow(binding,&harvesterID);
+            result->getNextRow(binding,&harvesterID);
 
             int8 sql[100];
 
             //now harvest
-            sprintf(sql,"SELECT sf_HarvestResource(%I64u)",harvesterID);
+            sprintf(sql,"SELECT sf_HarvestResource(%"PRIu64")",harvesterID);
             StructureManagerAsyncContainer* asyncContainer = new StructureManagerAsyncContainer(STRMQuery_DoneHarvestUpdate,0);
             asyncContainer->harvesterID = harvesterID;
 
-            mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+            mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
             //return codes :
             // 0 everything ok
@@ -669,7 +679,7 @@ void StructureManagerChatHandler::handleDatabaseJobComplete(void* ref,DatabaseRe
 
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
     }
     break;
@@ -733,7 +743,6 @@ void StructureManagerChatHandler::processTimerEvents()
         break;
 
         default:
-            gLogger->log(LogManager::DEBUG,"WorldManager::processTimerEvents: Unknown Timer %u",id);
             break;
         }
 
@@ -754,7 +763,7 @@ void StructureManagerChatHandler::handleCheckHarvesterPower()
     int8 sql[100];
     sprintf(sql,"SELECT h.ID FROM harvesters h WHERE h.active > 0 ");
 
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+    mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
 }
 
@@ -772,7 +781,7 @@ void StructureManagerChatHandler::handleCheckHarvesterHopper()
     int8 sql[100];
     sprintf(sql,"SELECT h.ID FROM harvesters h WHERE h.active > 0 ");
 
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+    mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
 }
 
@@ -789,7 +798,7 @@ void StructureManagerChatHandler::handleFactoryUpdate()
     int8 sql[100];
     sprintf(sql,"SELECT f.ID FROM factories f WHERE f.active > 0 ");
 
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+    mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
 }
 
@@ -806,7 +815,7 @@ void StructureManagerChatHandler::handleCheckHarvesterMaintenance()
     int8 sql[100];
     sprintf(sql,"SELECT s.ID FROM structures s");
 
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+    mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
 }
 
@@ -825,16 +834,6 @@ void StructureManagerChatHandler::Process()
 void StructureManagerChatHandler::ProcessAddHarvesterHopperUpdate(Message* message,DispatchClient* client)
 {
     mPlayerAccountMap = mChatManager->getPlayerAccountMap();
-    Player* player;
-    PlayerAccountMap::iterator accIt = mPlayerAccountMap.find(client->getAccountId());
-
-    if(accIt != mPlayerAccountMap.end())
-        player = (*accIt).second;
-    else
-    {
-        gLogger->log(LogManager::DEBUG,"StructureManagerChatHandler::ProcessAddHarvesterHopperUpdate Error getting player from account map %u",client->getAccountId());
-        return;
-    }
 
     uint64	harvesterID		= message->getUint64();
     uint8   activation		= message->getUint8();

@@ -28,52 +28,28 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef ANH_DATABASEMANAGER_DATABINDINGFACTORY_H
 #define ANH_DATABASEMANAGER_DATABINDINGFACTORY_H
 
+#include <cstdint>
 
-#include "Utils/typedefs.h"
-#include "DatabaseManager/declspec.h"
+#include <boost/noncopyable.hpp>
 #include <boost/pool/pool.hpp>
 
-
-//======================================================================================================================
-
 class DataBinding;
-class DataField;
+struct DataField;
 
-//======================================================================================================================
-
-class DBMANAGER_API DataBindingFactory
-{
+class DataBindingFactory : private boost::noncopyable {
 public:
+    DataBindingFactory();
+    ~DataBindingFactory();
 
-    DataBindingFactory(void);
-    ~DataBindingFactory(void);
+    DataBinding* createDataBinding(uint16_t fieldCount);
+    void destroyDataBinding(DataBinding* binding);
 
-    DataBinding*	CreateDataBinding(uint16 fieldCount);
-    void			DestroyDataBinding(DataBinding* binding);
-
-    bool			releasePoolMemory() {
-        return(mDataBindingPool.release_memory());
+    bool releasePoolMemory() {
+        return(binding_pool_.release_memory());
     }
 
 private:
-
-    // Win32 complains about stl during linkage, disable the warning.
-#ifdef _WIN32
-#pragma warning (disable : 4251)
-#endif
-    boost::pool<boost::default_user_allocator_malloc_free>	mDataBindingPool;
-    // Re-enable the warning.
-#ifdef _WIN32
-#pragma warning (default : 4251)
-#endif
+    boost::pool<boost::default_user_allocator_malloc_free>	binding_pool_;
 };
 
-//======================================================================================================================
-
 #endif // ANH_DATABASEMANAGER_DATABINDINGFACTORY_H
-
-
-
-
-
-

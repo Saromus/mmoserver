@@ -29,20 +29,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PingServer.h"
 
-#include "Common/LogManager.h"
+// Fix for issues with glog redefining this constant
+#ifdef ERROR
+#undef ERROR
+#endif
+
+#include <glog/logging.h>
 
 #include "Common/ConfigManager.h"
 #include <boost/thread/thread.hpp>
 
 #include "Utils/utils.h"
 
-#if defined(__GNUC__)
-// GCC implements tr1 in the <tr1/*> headers. This does not conform to the TR1
-// spec, which requires the header without the tr1/ prefix.
-#include <tr1/functional>
-#else
 #include <functional>
-#endif
 
 #define RECEIVE_BUFFER 512
 
@@ -83,11 +82,11 @@ void PingServer::AsyncReceive()
     socket_.async_receive_from(
         boost::asio::buffer(receive_buffer_),
         remote_endpoint_,
-        std::tr1::bind(
+        std::bind(
             &PingServer::HandleReceive,
             this,
-            std::tr1::placeholders::_1,
-            std::tr1::placeholders::_2
+            std::placeholders::_1,
+            std::placeholders::_2
         )
     );
 }
@@ -98,7 +97,7 @@ void PingServer::HandleReceive(const boost::system::error_code& error, size_t by
 
     // Check if an error occurred.
     if (error && error != boost::asio::error::message_size) {
-        gLogger->log(LogManager::NOTICE, "Error reading from socket: %s", error.message().c_str());
+        LOG(WARNING) << "Error reading from socket: " << error.message().c_str();
 
         // Otherwise return the ping response to the sender.
     } else {
@@ -106,11 +105,11 @@ void PingServer::HandleReceive(const boost::system::error_code& error, size_t by
         socket_.async_send_to(
             boost::asio::buffer(&receive_buffer_[0], bytesReceived),
             remote_endpoint_,
-            std::tr1::bind(
+            std::bind(
                 &PingServer::HandleSend,
                 this,
-                std::tr1::placeholders::_1,
-                std::tr1::placeholders::_2
+                std::placeholders::_1,
+                std::placeholders::_2
             )
         );
     }
@@ -128,6 +127,16 @@ void PingServer::HandleSend(const boost::system::error_code& error, size_t bytes
 //======================================================================================================================
 int main(int argc, char* argv[])
 {
+    // Initialize the google logging.
+    google::InitGoogleLogging(argv[0]);
+
+	#ifndef _WIN32
+		google::InstallFailureSignalHandler();
+	#endif
+
+    FLAGS_log_dir = "./logs";
+    FLAGS_stderrthreshold = 1;
+
     //set stdout buffers to 0 to force instant flush
     setvbuf( stdout, NULL, _IONBF, 0);
 
@@ -137,8 +146,8 @@ int main(int argc, char* argv[])
         std::cout << "Unable to find configuration file: " << CONFIG_DIR << "PingServer.cfg" << std::endl;
         exit(-1);
     }
-
-    try {
+    
+    /*try {
         LogManager::Init(
             static_cast<LogManager::LOG_PRIORITY>(gConfig->read<int>("ConsoleLog_MinPriority", 6)),
             static_cast<LogManager::LOG_PRIORITY>(gConfig->read<int>("FileLog_MinPriority", 6)),
@@ -146,18 +155,18 @@ int main(int argc, char* argv[])
     } catch (...) {
         std::cout << "Unable to open log file for writing" << std::endl;
         exit(-1);
-    }
+    }*/
 
-    gLogger->log(LogManager::INFORMATION, "PingServer - Build %s", ConfigManager::getBuildString().c_str());
+    LOG(WARNING) <<  "PingServer - Build " << ConfigManager::getBuildString().c_str();
 
     // Read in the address and port to start the ping server on.
     int port            = gConfig->read<int>("BindPort");
 
     // Start the ping server.
     PingServer ping_server(port);
-    gLogger->log(LogManager::INFORMATION, "PingServer listening on port %d", port);
+    LOG(WARNING) << "PingServer listening on port " << port;
 
-    gLogger->log(LogManager::CRITICAL, "Welcome to your SWGANH Experience!");
+    LOG(WARNING) << "Welcome to your SWGANH Experience!";
 
     while (true) {
         // Check for incoming messages and handle them.

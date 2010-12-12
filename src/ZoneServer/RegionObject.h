@@ -52,17 +52,17 @@ public:
     RegionObject();
     virtual ~RegionObject();
 
-    BString				getRegionName() {
+    std::string				getRegionName() {
         return mRegionName;
     }
-    void				setRegionName(const BString name) {
+    void				setRegionName(const std::string name) {
         mRegionName = name;
     }
 
-    BString				getNameFile() {
+    std::string				getNameFile() {
         return mNameFile;
     }
-    void				setNameFile(const BString namefile) {
+    void				setNameFile(const std::string namefile) {
         mNameFile = namefile;
     }
 
@@ -97,14 +97,16 @@ public:
     virtual void		update() {}
     virtual void		onObjectEnter(Object* object) {}
     virtual void		onObjectLeave(Object* object) {}
+    
+    std::shared_ptr<RegionObject> getSharedFromThis();
 
 protected:
-
+    
     RegionType			mRegionType;
     float				mWidth;
     float				mHeight;
-    BString				mRegionName;
-    BString				mNameFile;
+    std::string			mRegionName;
+    std::string			mNameFile;
     bool				mActive;
 };
 

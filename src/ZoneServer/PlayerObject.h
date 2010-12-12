@@ -44,8 +44,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ForceRunEvent.h"
 #include "ForceMeditateEvent.h"
 #include "MeditateEvent.h"
-#include "Common/DispatchClient.h"
 #include "NetworkManager/DispatchClient.h"
+#include "Common/Event.h"
 #include <map>
 
 class BazaarTerminal;
@@ -83,123 +83,73 @@ public:
     PlayerObject();
     ~PlayerObject();
 
-    DispatchClient*		getClient() const {
-        return mClient;
-    }
-    void				setClient(DispatchClient* client) {
-        mClient = client;
-    }
+    DispatchClient*		getClient() const { return mClient; }
+    void				setClient(DispatchClient* client){ mClient = client; }
 
-    Tutorial*			getTutorial() const {
-        return mTutorial;
-    }
+    Tutorial*			getTutorial() const { return mTutorial; }
     void				stopTutorial();
     void				startTutorial();
 
     virtual void		prepareCustomRadialMenu(CreatureObject* creatureObject, uint8 itemCount);
-    uint32				getAccountId() const {
-        return mAccountId;
-    }
+    uint32				getAccountId() const{ return mAccountId; }
 
-    PlayerConnState		getConnectionState() {
-        return mConnState;
-    }
-    void				setConnectionState(PlayerConnState state) {
-        mConnState = state;
-    }
-    bool				isConnected() const {
-        return(mConnState == PlayerConnState_Connected);
-    }
-    bool				isLinkDead() {
-        return(mConnState == PlayerConnState_LinkDead);
-    }
-    bool				isBeingDestroyed() {
-        return(mConnState == PlayerConnState_Destroying);
-    }
+    PlayerConnState		getConnectionState(){ return mConnState; }
+    void				setConnectionState(PlayerConnState state){ mConnState = state; }
+    bool				isConnected() const { return(mConnState == PlayerConnState_Connected); }
+    bool				isLinkDead(){ return(mConnState == PlayerConnState_LinkDead); }
+    bool				isBeingDestroyed(){ return(mConnState == PlayerConnState_Destroying); }
 
     /*! Returns the current player's time left to timeout after disconnect
-     *
-     * \returns pointer to uint32 holding seconds to timeout
-     */
-    uint32*				getDisconnectTime() {
-        return &mDConnTime;
-    }
-
+        *
+        * \returns pointer to uint32 holding seconds to timeout
+        */
+    uint32*				getDisconnectTime(){ return &mDConnTime; }
+        
     /*! sets the current player's time to timeout on disconnect as initialized by Worldmanager
-     *
-     * \sets timeout time in seconds
-     * @sets timeout time in seconds
-     */
-    void				setDisconnectTime(uint32 time) {
-        mDConnTime = time;
-    }
+        *
+        * \sets timeout time in seconds
+        * @sets timeout time in seconds
+        */
+    void				setDisconnectTime(uint32 time){ mDConnTime = time; }
 
-    uint32				getClientTickCount() {
-        return mClientTickCount;
-    }
-    void				setClientTickCount(uint32 tickCount) {
-        mClientTickCount = tickCount;
-    }
+    uint32				getClientTickCount(){ return mClientTickCount; }
+    void				setClientTickCount(uint32 tickCount){ mClientTickCount = tickCount; }
 
-    uint32				getSaveTimer() {
-        return mPlayerSaveTimer;
-    }
-    void				setSaveTimer(uint32 saveTimer) {
-        mPlayerSaveTimer = saveTimer;
-    }
+    uint32				getSaveTimer(){return mPlayerSaveTimer;}
+    void				setSaveTimer(uint32 saveTimer){mPlayerSaveTimer = saveTimer;}
 
-    BString				getTitle() const {
-        return mTitle;
-    }
-    void				setTitle(const BString title) {
-        mTitle = title;
-    }
+    BString				getTitle() const { return mTitle; }
+    void				setTitle(const BString title){ mTitle = title; }
 
     /*! Returns the current player's PlayerObjectId Not to confuse with the ObjectId
-     *
-     * \returns uint64 holding the PlayerObjectId
-     */
-    uint64				getPlayerObjId() {
-        return mPlayerObjId;
-    }
+        *
+        * \returns uint64 holding the PlayerObjectId
+        */
+    uint64				getPlayerObjId(){ return mPlayerObjId; }
 
     /*! sets the current player's PlayerObjectId Not to confuse with the ObjectId
-     *
-     * \sets PlayerObjectID
-     */
-    void				setPlayerObjId(uint64 id) {
-        mPlayerObjId = id;
-    }
+        *
+        * \sets PlayerObjectID
+        */
+    void				setPlayerObjId(uint64 id){ mPlayerObjId = id; }
 
-    void				setTravelPoint(TravelTerminal* tp) {
-        mTravelPoint = tp;
-    }
-    TravelTerminal*		getTravelPoint() {
-        return mTravelPoint;
-    }
+    void				setTravelPoint(TravelTerminal* tp){ mTravelPoint = tp; }
+    TravelTerminal*		getTravelPoint(){ return mTravelPoint; }
 
     /*! Returns the current player's Datapad
-     *
-     * \returns pointer to the Datapad
-     */
-    Datapad*			getDataPad() {
-        return mDataPad;
-    }
-
+        *
+        * \returns pointer to the Datapad
+        */
+    Datapad*			getDataPad(){return mDataPad;}
+        
     /*! sets the current player's Datapad
-     *
-     * \sets mDataPad* to
-     */
-    void				setDataPad(Datapad* pad) {
-        mDataPad = pad;
-    }
+        *
+        * \sets mDataPad* to 
+        */
+    void				setDataPad(Datapad* pad){mDataPad = pad;}
 
-    void				setMotdReceived(bool b) {
-        mMotdReceived = b;
-    }
-    bool				getMotdReceived() {
-        return mMotdReceived;
-    }
+    void				setMotdReceived(bool b){ mMotdReceived = b; }
+    bool				getMotdReceived(){ return mMotdReceived; }
 
     bool				checkXpType(uint32 xpType);
 
@@ -218,435 +168,208 @@ public:
     void				addXpCapType(uint32 xpType,int32 value = 0);
     bool				UpdateXpCap(uint32 xpType,int32 value);
 
-    XPList*				getXpList() {
-        return &mXpList;
-    }
-    XPList*				getXpCapList() {
-        return &mXpCapList;
-    };
+    XPList*				getXpList(){ return &mXpList; }
+    XPList*				getXpCapList() { return &mXpCapList; };
 
-    Stomach*			getStomach() {
-        return mStomach;
-    }
+    Stomach*			getStomach(){ return mStomach; }
 
-    uint32				getJediState() {
-        return mJediState;
-    }
-    void				setJediState(uint32 js) {
-        mJediState = js;
-    }
+    uint32				getJediState(){ return mJediState; }
+    void				setJediState(uint32 js){ mJediState = js; }
 
     // survey
-    bool				getSurveyState() {
-        return mSampleNode.mPendingSurvey;
-    }
-    void				setSurveyState(bool state) {
-        mSampleNode.mPendingSurvey = state;
-    }
+    bool				getSurveyState(){ return mSampleNode.mPendingSurvey; }
+    void				setSurveyState(bool state){ mSampleNode.mPendingSurvey = state; }
 
     // sample
-    bool				getSamplingState() {
-        return mSampleNode.mPendingSample;
-    }
-    void				setSamplingState(bool state) {
-        mSampleNode.mPendingSample = state;
-    }
-    uint64				getNextSampleTime() {
-        return mSampleNode.mNextSampleTime;
-    }
-    void				setNextSampleTime(uint64 time) {
-        mSampleNode.mNextSampleTime = time;
-    }
-    SampleNode*			getSampleData() {
-        return &mSampleNode;
-    }
+    bool				getSamplingState(){ return mSampleNode.mPendingSample; }
+    void				setSamplingState(bool state){ mSampleNode.mPendingSample = state; }
+    uint64				getNextSampleTime(){ return mSampleNode.mNextSampleTime; }
+    void				setNextSampleTime(uint64 time){ mSampleNode.mNextSampleTime = time; }
+    SampleNode*			getSampleData(){return &mSampleNode;}
 
     // Charsheet
-    uint32				getPlayerMatch(uint8 num) {
-        return mPlayerMatch[num];
-    }
-    void				setPlayerMatch(uint8 num,uint32 match) {
-        mPlayerMatch[num] = match;
-    }
+    uint32				getPlayerMatch(uint8 num){ return mPlayerMatch[num]; }
+    void				setPlayerMatch(uint8 num,uint32 match){ mPlayerMatch[num] = match; }
 
-    uint8				getCsrTag() {
-        return mCsrTag;
-    }
-    void				setCsrTag(uint8 csrTag) {
-        mCsrTag = csrTag;
-    }
+    uint8				getCsrTag(){ return mCsrTag; }
+    void				setCsrTag(uint8 csrTag){ mCsrTag = csrTag; }
 
-    void				togglePlayerFlagOn(uint32 flag) {
-        mPlayerFlags = mPlayerFlags | flag;
-    }
-    void				togglePlayerFlagOff(uint32 flag) {
-        mPlayerFlags = mPlayerFlags & ~flag;
-    }
-    void				togglePlayerFlag(uint32 flag) {
-        mPlayerFlags = mPlayerFlags ^ flag;
-    }
-    bool				checkPlayerFlag(uint32 flag) {
-        return((mPlayerFlags & flag) == flag);
-    }
-    bool				checkPlayerFlags(uint64 flags) {
-        return((mPlayerFlags & flags) == flags);
-    }
-    uint32				getPlayerFlags() const {
-        return mPlayerFlags;
-    }
-    void				setPlayerFlags(uint32 flags) {
-        mPlayerFlags = flags;
-    }
+    void				togglePlayerFlagOn(uint32 flag){ mPlayerFlags = mPlayerFlags | flag; }
+    void				togglePlayerFlagOff(uint32 flag){ mPlayerFlags = mPlayerFlags & ~flag; }
+    void				togglePlayerFlag(uint32 flag){ mPlayerFlags = mPlayerFlags ^ flag; }
+    bool				checkPlayerFlag(uint32 flag){ return((mPlayerFlags & flag) == flag); }
+    bool				checkPlayerFlags(uint64 flags){ return((mPlayerFlags & flags) == flags); }
+    uint32				getPlayerFlags() const { return mPlayerFlags; }
+    void				setPlayerFlags(uint32 flags){ mPlayerFlags = flags; }
 
-    void				togglePlayerCustomFlagOn(uint32 flag) {
-        mPlayerCustomFlags = mPlayerCustomFlags | flag;
-    }
-    void				togglePlayerCustomFlagOff(uint32 flag) {
-        mPlayerCustomFlags = mPlayerCustomFlags & ~flag;
-    }
-    void				togglePlayerCustomFlag(uint32 flag) {
-        mPlayerCustomFlags = mPlayerCustomFlags ^ flag;
-    }
-    bool				checkPlayerCustomFlag(uint32 flag) {
-        return((mPlayerCustomFlags & flag) == flag);
-    }
-    bool				checkPlayerCustomFlags(uint64 flags) {
-        return((mPlayerCustomFlags & flags) == flags);
-    }
-    uint32				getPlayerCustomFlags() const {
-        return mPlayerCustomFlags;
-    }
-    void				setPlayerCustomFlags(uint32 flags) {
-        mPlayerCustomFlags = flags;
-    }
+    void				togglePlayerCustomFlagOn(uint32 flag){ mPlayerCustomFlags = mPlayerCustomFlags | flag; }
+    void				togglePlayerCustomFlagOff(uint32 flag){ mPlayerCustomFlags = mPlayerCustomFlags & ~flag; }
+    void				togglePlayerCustomFlag(uint32 flag){ mPlayerCustomFlags = mPlayerCustomFlags ^ flag; }
+    bool				checkPlayerCustomFlag(uint32 flag){ return((mPlayerCustomFlags & flag) == flag); }
+    bool				checkPlayerCustomFlags(uint64 flags){ return((mPlayerCustomFlags & flags) == flags); }
+    uint32				getPlayerCustomFlags() const { return mPlayerCustomFlags; }
+    void				setPlayerCustomFlags(uint32 flags){ mPlayerCustomFlags = flags; }
 
-    BadgesList*			getBadges() {
-        return &mBadgeList;
-    }
+    BadgesList*			getBadges(){ return &mBadgeList;}
     bool				checkBadges(uint32 badgeId);
     void				addBadge(uint32 badgeId);
 
-    void				setBiography(const BString bio) {
-        mBiography = bio;
-    }
-    BString				getBiography() {
-        return mBiography;
-    }
+    void				setBiography(const BString bio){ mBiography = bio; }
+    BString				getBiography(){ return mBiography; }
 
-    void				setMarriage(const BString marriage) {
-        mMarriage = marriage;
-    }
-    BString				getMarriage() {
-        return mMarriage;
-    }
+    void				setMarriage(const BString marriage){ mMarriage = marriage; }
+    BString				getMarriage(){ return mMarriage; }
 
-    uint32				getBornyear() {
-        return mBornyear;
-    }
-    void				setBornyear(uint32 bornyear) {
-        mBornyear = bornyear;
-    }
+    uint32				getBornyear(){ return mBornyear; }
+    void				setBornyear(uint32 bornyear){ mBornyear = bornyear; }
 
-    int8				getBindPlanet() {
-        return mBindPlanet;
-    }
-    void				setBindPlanet(int8 planetId) {
-        mBindPlanet = planetId;
-    }
+    int8				getBindPlanet(){ return mBindPlanet; }
+    void				setBindPlanet(int8 planetId){ mBindPlanet = planetId; }
 
-    int8				getHomePlanet() {
-        return mHomePlanet;
-    }
-    void				setHomePlanet(int8 planetId) {
-        mHomePlanet = planetId;
-    }
+    int8				getHomePlanet(){ return mHomePlanet; }
+    void				setHomePlanet(int8 planetId){ mHomePlanet = planetId; }
 
-    const glm::vec3&	getBindCoords() {
-        return mBindCoords;
-    }
-    void				setBindCoords(const glm::vec3& coords) {
-        mBindCoords = coords;
-    }
+    const glm::vec3&	getBindCoords(){ return mBindCoords; }
+    void				setBindCoords(const glm::vec3& coords){ mBindCoords = coords; }
 
-    const glm::vec3&	getHomeCoords() {
-        return mHomeCoords;
-    }
-    void				setHomeCoords(const glm::vec3& coords) {
-        mHomeCoords = coords;
-    }
+    const glm::vec3&	getHomeCoords(){ return mHomeCoords; }
+    void				setHomeCoords(const glm::vec3& coords){ mHomeCoords = coords; }
 
+    // Event handler
+    bool                handleActionStateUpdate(::common::IEventPtr triggered_event);
+    bool                handlePostureUpdate(::common::IEventPtr triggered_event);
+    bool                handleLocomotionUpdate(::common::IEventPtr triggered_event);
+        
     // UI Windows
     void				handleUIEvent(uint32 action,int32 element,BString inputStr,UIWindow* window);
-    UIWindowList*		getUIWindowList() {
-        return &mUIWindowList;
-    }
-    void				addUIWindow(uint32 id) {
-        mUIWindowList.push_back(id);
-    }
+    UIWindowList*		getUIWindowList(){ return &mUIWindowList; }
+    void				addUIWindow(uint32 id){ mUIWindowList.push_back(id); }
     bool				removeUIWindow(uint32 id);
     void				clearAllUIWindows();
     void				resetUICallbacks(Object* object);
     //checks whether we have a certain window already open
     bool				checkUIWindow(BString text);
 
-    ContactMap*			getFriendsList() {
-        return &mFriendsList;
-    }
-    void				addFriend(BString name) {
-        mFriendsList.insert(std::make_pair(name.getCrc(),name.getAnsi()));
-    }
+    ContactMap*			getFriendsList(){ return &mFriendsList; }
+    void				addFriend(BString name){ mFriendsList.insert(std::make_pair(name.getCrc(),name.getAnsi())); }
     bool				removeFriend(uint32 nameCrc);
     bool				checkFriendList(uint32 nameCrc);
 
-    ContactMap*			getIgnoreList() {
-        return &mIgnoreList;
-    }
-    void				addIgnore(BString name) {
-        mIgnoreList.insert(std::make_pair(name.getCrc(),name.getAnsi()));
-    }
+    ContactMap*			getIgnoreList(){ return &mIgnoreList; }
+    void				addIgnore(BString name){ mIgnoreList.insert(std::make_pair(name.getCrc(),name.getAnsi())); }
 
     bool				removeIgnore(uint32 nameCrc);
     bool				checkIgnoreList(uint32 nameCrc) const;
 
-    uint32				getFriendsListUpdateCounter() {
-        return mFriendsListUpdateCounter;
-    }
-    void				advanceFriendsListUpdateCounter(uint32 count) {
-        mFriendsListUpdateCounter += count;
-    }
-    uint32				getIgnoresListUpdateCounter() {
-        return mIgnoresListUpdateCounter;
-    }
-    void				advanceIgnoresListUpdateCounter(uint32 count) {
-        mIgnoresListUpdateCounter += count;
-    }
+    uint32				getFriendsListUpdateCounter(){ return mFriendsListUpdateCounter; }
+    void				advanceFriendsListUpdateCounter(uint32 count){ mFriendsListUpdateCounter += count; }
+    uint32				getIgnoresListUpdateCounter(){ return mIgnoresListUpdateCounter; }
+    void				advanceIgnoresListUpdateCounter(uint32 count){ mIgnoresListUpdateCounter += count; }
 
-    bool				getContactListUpdatePending() {
-        return mContactListUpdatePending;
-    }
-    void				setContactListUpdatePending(bool b) {
-        mContactListUpdatePending = b;
-    }
+    bool				getContactListUpdatePending(){ return mContactListUpdatePending; }
+    void				setContactListUpdatePending(bool b){ mContactListUpdatePending = b; }
 
     virtual	void		handleObjectMenuSelect(uint8 messageType,Object* srcObject);
     // Healing
     Object*				getHealingTarget(PlayerObject* Player) const;
     // Entertainment
     EMLocationType		getPlayerLocation();
-    uint64				getPlacedInstrumentId() {
-        return mPlacedInstrument;
-    }
-    void				setPlacedInstrumentId(uint64 id) {
-        mPlacedInstrument = id;
-    }
-    uint64				getEntertainerWatchToId() {
-        return mEntertainerWatchToId;
-    }
-    void				setEntertainerWatchToId(uint64 entertainer) {
-        mEntertainerWatchToId = entertainer;
-    }
-    uint64				getEntertainerTaskId() {
-        return mEntertainerTaskId;
-    }
-    void				setEntertainerTaskId(uint64 entertainerTaskId) {
-        mEntertainerTaskId = entertainerTaskId;
-    }
-    uint64				getEntertainerPauseId() {
-        return mEntertainerPauseId;
-    }
-    void				setEntertainerPauseId(uint64 entertainerPauseId) {
-        mEntertainerPauseId = entertainerPauseId;
-    }
+    uint64				getPlacedInstrumentId(){return mPlacedInstrument;}
+    void				setPlacedInstrumentId(uint64 id){mPlacedInstrument = id;}
+    uint64				getEntertainerWatchToId(){return mEntertainerWatchToId;}
+    void				setEntertainerWatchToId(uint64 entertainer){mEntertainerWatchToId = entertainer;}
+    uint64				getEntertainerTaskId(){return mEntertainerTaskId;}
+    void				setEntertainerTaskId(uint64 entertainerTaskId){mEntertainerTaskId = entertainerTaskId;}
+    uint64				getEntertainerPauseId(){return mEntertainerPauseId;}
+    void				setEntertainerPauseId(uint64 entertainerPauseId){mEntertainerPauseId = entertainerPauseId;}
 
-    void				setActiveInstrumentId(uint64 instrumentId) {
-        mSelectedInstrument = instrumentId;
-    }
-    uint64				getActiveInstrumentId(void) {
-        return mSelectedInstrument;
-    }
+    void				setActiveInstrumentId(uint64 instrumentId) {mSelectedInstrument = instrumentId;}
+    uint64				getActiveInstrumentId(void) {return mSelectedInstrument;}
 
-    BuffMap*			getEntertainerBuffMap() {
-        return &mEntertainerBuffMap;
-    }
-    AudienceList*		getAudienceList() {
-        return &mAudienceList;
-    }
-    DenyServiceList*	getDenyAudienceList() {
-        return &mDenyAudienceList;
-    }
+    BuffMap*			getEntertainerBuffMap(){return &mEntertainerBuffMap;}
+    AudienceList*		getAudienceList() { return &mAudienceList; }
+    DenyServiceList*	getDenyAudienceList(){ return &mDenyAudienceList; }
 
-    uint8				getFlourishCount() {
-        return mFlourishCount;
-    }
-    void				setFlourishCount(uint8 flourishCount) {
-        mFlourishCount = flourishCount;
-    }
+    uint8				getFlourishCount(){return mFlourishCount;}
+    void				setFlourishCount(uint8 flourishCount){mFlourishCount = flourishCount;}
 
-    uint8				getGroupMusicXp() {
-        return static_cast<uint8>(mGroupXp);
-    }
-    void				setGroupMusicXp(uint8 groupXp) {
-        mGroupXp = groupXp;
-    }
+    uint8				getGroupMusicXp(){return static_cast<uint8>(mGroupXp);}
+    void				setGroupMusicXp(uint8 groupXp){mGroupXp = groupXp;}
     // sounds
     // simple check to determine what food consumption sound to play. drink doesn't work currently
     void				playFoodSound(bool food, bool drink);
     // ID
-    void				setImageDesignerTaskId(uint64 taskId) {
-        mImageDesignerId = taskId;
-    }
+    void				setImageDesignerTaskId(uint64 taskId){mImageDesignerId = taskId;}
     bool				UpdateIdAttributes(BString attribute,float value);
     bool				UpdateIdColors(BString attribute,uint16 value);
-    AttributesList*		getIdAttributesList() {
-        return &mIDAttributesList;
-    }
-    ColorList*			getIdColorList() {
-        return &mIDColorList;
-    }
-    void				SetImageDesignSession(IDSession theSession) {
-        mIDSession = theSession;
-    }
-    IDSession 			getImageDesignSession() {
-        return mIDSession;
-    }
-    uint32				getHoloEmote() {
-        return mHoloEmote;
-    }
-    void				setHoloEmote(uint32 emote) {
-        mHoloEmote = emote;
-    }
+    AttributesList*		getIdAttributesList(){return &mIDAttributesList;}
+    ColorList*			getIdColorList(){return &mIDColorList;}
+    void				SetImageDesignSession(IDSession theSession){mIDSession = theSession;}
+    IDSession 			getImageDesignSession(){return mIDSession;}
+    uint32				getHoloEmote(){ return mHoloEmote; }
+    void				setHoloEmote(uint32 emote){ mHoloEmote = emote; }
+        
+    uint8				getHoloCharge(){ return mHoloCharge; }
+    void				setHoloCharge(uint8 charge){ mHoloCharge = charge; }
+    bool				decHoloCharge(){ if(mHoloCharge == 0) return false; mHoloCharge--; return true; }
 
-    uint8				getHoloCharge() {
-        return mHoloCharge;
-    }
-    void				setHoloCharge(uint8 charge) {
-        mHoloCharge = charge;
-    }
-    bool				decHoloCharge() {
-        if(mHoloCharge == 0) return false;
-        mHoloCharge--;
-        return true;
-    }
-
-    uint64				getIDPartner() {
-        return mIDPartner;
-    }
-    void				setIDPartner(uint64 id) {
-        mIDPartner= id;
-    }
+    uint64				getIDPartner(){ return mIDPartner; }
+    void				setIDPartner(uint64 id){ mIDPartner= id; }
 
     // trade
     void				giveBankCredits(uint32 amount);
     void	            giveInventoryCredits(uint32 amount);
-    Trade*				getTrade() {
-        return mTrade;
-    }
-    void				setTradePartner(uint64 id) {
-        mTradePartner = id;
-    }
-    uint64				getTradePartner() {
-        return mTradePartner;
-    }
-    bool				getTradeStatus() {
-        return mTrading;
-    }
-    void				setTradeStatus(bool tradeStatus) {
-        mTrading = tradeStatus;
-    }
+    Trade*				getTrade(){return mTrade;}
+    void				setTradePartner(uint64 id){mTradePartner = id;}
+    uint64				getTradePartner(){return mTradePartner;}
+    bool				getTradeStatus(){return mTrading;}
+    void				setTradeStatus(bool tradeStatus){mTrading = tradeStatus;}
     bool				deductCredits(int32 amount);
     bool				testCash(int32 amount);
     bool				testBank(int32 amount);
     bool				checkDeductCredits(int32 amount);
 
-    void				setGender(bool gender) {
-        mFemale = gender;
-    }
-    bool				getGender() {
-        return mFemale;
-    }
+    void				setGender(bool gender){mFemale = gender;}
+    bool				getGender(){return mFemale;}
 
     //mounts
-    bool				checkIfMounted() {
-        return mMounted;
-    }
-    void				setMounted(bool mounted) {
-        mMounted = mounted;
-    }
+    bool				checkIfMounted() { return mMounted; }
+    void				setMounted(bool mounted) { mMounted = mounted; }
 
-    MountObject*		getMount() {
-        return mMount;
-    }
-    void				setMount(MountObject* mount) {
-        mMount = mount;
-    }
+    MountObject*		getMount() { return mMount; }
+    void				setMount(MountObject* mount) { mMount = mount; }
 
-    bool				checkIfMountCalled() {
-        return mMountCalled;
-    }
-    void				setMountCalled(bool mount_called) {
-        mMountCalled = mount_called;
-    }
+    bool				checkIfMountCalled() { return mMountCalled; }
+    void				setMountCalled(bool mount_called) { mMountCalled = mount_called; }
 
     // crafting
     CraftingStation*	getCraftingStation(ObjectSet*	inRangeObjects, ItemType	toolType);
-    uint32				getCraftingStage() {
-        return mCraftingStage;
-    }
-    void				setCraftingStage(uint32 stage) {
-        mCraftingStage = stage;
-    }
-    uint32				getExperimentationFlag() {
-        return mExperimentationFlag;
-    }
-    void				setExperimentationFlag(uint32 expFlag) {
-        mExperimentationFlag = expFlag;
-    }
-    uint32				getExperimentationPoints() {
-        return mExperimentationPoints;
-    }
-    void				setExperimentationPoints(uint32 points) {
-        mExperimentationPoints = points;
-    }
+    uint32				getCraftingStage(){ return mCraftingStage; }
+    void				setCraftingStage(uint32 stage){ mCraftingStage = stage; }
+    uint32				getExperimentationFlag(){ return mExperimentationFlag; }
+    void				setExperimentationFlag(uint32 expFlag){ mExperimentationFlag = expFlag; }
+    uint32				getExperimentationPoints(){ return mExperimentationPoints; }
+    void				setExperimentationPoints(uint32 points){mExperimentationPoints = points; }
     bool				isNearestCraftingStationPrivate(uint64 station);
-    uint64				getNearestCraftingStation() {
-        return mNearestCraftingStation;
-    }
-    void				setNearestCraftingStation(uint64 station) {
-        mNearestCraftingStation = station;
-    }
-    CraftingSession*	getCraftingSession() {
-        return mCraftingSession;
-    }
-    void				setCraftingSession(CraftingSession* craftingSession) {
-        mCraftingSession = craftingSession;
-    }
+    uint64				getNearestCraftingStation(){ return mNearestCraftingStation; }
+    void				setNearestCraftingStation(uint64 station){ mNearestCraftingStation = station; }
+    CraftingSession*	getCraftingSession(){ return mCraftingSession; }
+    void				setCraftingSession(CraftingSession* craftingSession){ mCraftingSession = craftingSession; }
     void				prepareSchematicIds();
     void				addSchematicIds(Skill* skill);
     bool				checkSchematicId(uint64 id);
-    SchematicsIdList*	getSchematicsIdList() {
-        return &mSchematicIdList;
-    }
-    SchematicsIdList*	getFilteredSchematicsIdList() {
-        return &mFilteredSchematicIdList;
-    }
+    SchematicsIdList*	getSchematicsIdList(){ return &mSchematicIdList; }
+    SchematicsIdList*	getFilteredSchematicsIdList(){ return &mFilteredSchematicIdList; }
 
-    SchematicsIdList*	getSchematicsAddList() {
-        return &mSchematicAddList;
-    }
+    SchematicsIdList*	getSchematicsAddList(){ return &mSchematicAddList; }
 
     // groups
     PlayerList			getInRangeGroupMembers(bool self = false) const;
-    uint64				getLastGroupMissionUpdateTime() {
-        return mLastGroupMissionUpdateTime;
-    }
-    void				setLastGroupMissionUpdateTime(uint64 time) {
-        mLastGroupMissionUpdateTime = time;
-    }
+    uint64				getLastGroupMissionUpdateTime(){return mLastGroupMissionUpdateTime;}
+    void				setLastGroupMissionUpdateTime(uint64 time){mLastGroupMissionUpdateTime = time;}
 
     // duels
-    PlayerList*			getDuelList() {
-        return &mDuelList;
-    }
+    PlayerList*			getDuelList(){ return &mDuelList; }
     bool				checkDuelList(PlayerObject* player);
     void				clearDuelList();
     void				addToDuelList(PlayerObject* player);
@@ -657,7 +380,7 @@ public:
     // reset properties on zoning
     void				resetProperties();
 
-    // event functions
+    // old event functions
     void				onSurvey(const SurveyEvent* event);
     void				onSample(const SampleEvent* event);
     void				onLogout(const LogOutEvent* event);
@@ -682,26 +405,15 @@ public:
     void				newPlayerMessage(void);
 
     //Lots
-    uint8				getLots() {
-        return mLots;
-    }
-    void				setLots(uint8 lots) {
-        mLots = lots;
-    }
-
-    bool				checkLots(uint8 check) {
-        int16 intCheck = mLots -check;
-        return (intCheck>=0);
-    }
+    uint8				getLots(){ return mLots; }
+    void				setLots(uint8 lots){ mLots = lots; }
+        
+    bool				checkLots(uint8 check){int16 intCheck = mLots -check;return (intCheck>=0);}
     bool				useLots(uint8 usedLots);
     bool				regainLots(uint8 lots);
-
-    void				setStructurePermissionId(uint64 id) {
-        mPermissionId = id;
-    }
-    uint64				getStructurePermissionId() {
-        return mPermissionId;
-    }
+        
+    void				setStructurePermissionId(uint64 id){mPermissionId = id;}
+    uint64				getStructurePermissionId(){return mPermissionId;}
 
 
     uint32				mXpUpdateCounter;
@@ -710,12 +422,8 @@ public:
     void InitialiseBuffs();
 
     //Missions
-    uint16 *			getMissionIdMask() {
-        return &mMissionIdMask;
-    }
-    void				setmissionIdMask(uint16 mask) {
-        mMissionIdMask = mask;
-    }
+    uint16 *			getMissionIdMask() { return &mMissionIdMask; }
+    void				setmissionIdMask(uint16 mask) { mMissionIdMask = mask; }
 
     // Targetting
     uint64				getCombatTargetId(void);
@@ -724,41 +432,26 @@ public:
     void				disableAutoAttack(void);
     bool				autoAttackEnabled(void);
 
-    bool				HasCamp() {
-        return mHasCamp;
-    }
-    void				setHasCamp(bool val) {
-        mHasCamp = val;
-    }
+    bool				HasCamp(){ return mHasCamp;}
+    void				setHasCamp(bool val){mHasCamp = val;}
 
     //Foraging
-    bool				isForaging() {
-        return mIsForaging;
-    }
-    void				setForaging(bool status) {
-        mIsForaging = status;
-    }
+    bool				isForaging(){ return mIsForaging; }
+    void				setForaging(bool status) { mIsForaging = status; }
 
     //Harvesting
-    int					getPreviousHarvestSelection() {
-        return mPreviousHarvestingSelection;
-    }
-    void				setPreviousHarvestSelection(int newSelection) {
-        mPreviousHarvestingSelection = newSelection;
-    }
+    int					getPreviousHarvestSelection() { return mPreviousHarvestingSelection;}
+    void				setPreviousHarvestSelection(int newSelection){ mPreviousHarvestingSelection = newSelection;}
 
     //Posture
     void				setUpright();
-    void				setSitting(Message* message=NULL);
+    void				setSitting();
     void				setProne();
     void				setCrouched();
 
-    bool				getAcceptBandFlourishes() {
-        return mAcceptsBandFlourishes;
-    }
-    void				setAcceptBandFlourishes(bool b) {
-        mAcceptsBandFlourishes = b;
-    }
+    bool				getAcceptBandFlourishes() {return mAcceptsBandFlourishes;}
+    void				setAcceptBandFlourishes(bool b) { mAcceptsBandFlourishes = b;}
+
 private:
 
     void				_verifyBadges();
@@ -797,9 +490,9 @@ private:
     DispatchClient*		mClient;
     CraftingSession*	mCraftingSession;
     MountObject*		mMount;
-
+                            
     // Default cloningfacility if revive timer expires.
-    BuildingObject*		mNearestCloningFacility;
+    BuildingObject*		mNearestCloningFacility; 
     Stomach*			mStomach;
     Trade*				mTrade;
     TravelTerminal*		mTravelPoint;
@@ -811,7 +504,7 @@ private:
     PlayerConnState		mConnState;
 
     //logs whether weve got an IDsession running at this point
-    IDSession			mIDSession;
+    IDSession			mIDSession; 
     uint64				mIDPartner;
 
     uint64				mCombatTargetId; // The actual target player are hitting, not always the same as the "look-at" target.
@@ -826,9 +519,9 @@ private:
     uint64				mPreDesignatedCloningFacilityId;
     uint64				mSelectedInstrument;
     uint64				mTradePartner;
-
+        
     // ID of the structure were setting the Premission for - as this is no callback and the Objectcontroller doesnt always provide us with an ID
-    uint64				mPermissionId;
+    uint64				mPermissionId;	
 
 
     uint32				mAccountId;
@@ -860,7 +553,7 @@ private:
     bool				mMountCalled;
     bool				mMounted;
     bool				mNewPlayerMessage;
-
+        
     bool				mTrading;
     bool				mIsForaging;
 
@@ -873,6 +566,5 @@ private:
 //=============================================================================
 
 #endif
-
 
 

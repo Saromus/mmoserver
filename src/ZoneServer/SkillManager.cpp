@@ -27,11 +27,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SkillManager.h"
 
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "CreatureObject.h"
 #include "PlayerObject.h"
 #include "UIManager.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -57,27 +61,27 @@ SkillManager::SkillManager(Database* database)
 
     // load skillmods
     //gLogger->log(LogManager::DEBUG,"Start Loading Skill Mods.");
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillMods),"SELECT * FROM skillmods ORDER BY skillmod_id");
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillMods),"SELECT * FROM skillmods ORDER BY skillmod_id");
     
 
     // load skillcommands
     //gLogger->log(LogManager::DEBUG,"Start Loading Skill Commands.");
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillCommands),"SELECT * FROM skillcommands ORDER BY id");
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillCommands),"SELECT * FROM skillcommands ORDER BY id");
     
 
     // load xp types
     //gLogger->log(LogManager::DEBUG,"Start Loading Skill XP Types.");
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_XpTypes),"SELECT * FROM xp_types ORDER BY id");
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_XpTypes),"SELECT * FROM xp_types ORDER BY id");
     
 
     // load skills
     //gLogger->log(LogManager::DEBUG,"Start Loading Skills.");
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_Skills),"SELECT * FROM skills ORDER BY skill_id");
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_Skills),"SELECT * FROM skills ORDER BY skill_id");
     
 
     // load extended skill information (tex)
     //gLogger->log(LogManager::DEBUG,"Start Loading Skill Descriptions.");
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillDescriptions),"SELECT * FROM skills_description ORDER BY skill_id");
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillDescriptions),"SELECT * FROM skills_description ORDER BY skill_id");
     
 }
 
@@ -122,7 +126,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     case SMQuery_SkillMods:
     {
         SMQueryContainer skillMod;
-        DataBinding* binding = mDatabase->CreateDataBinding(2);
+        DataBinding* binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt),4,0);
         binding->addField(DFT_string,offsetof(SMQueryContainer,mName),64,1);
 
@@ -130,19 +134,19 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         mSkillModList.reserve((uint32)count);
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&skillMod);
+            result->getNextRow(binding,&skillMod);
             mSkillModList.push_back(skillMod.mName);
         }
 
-        mDatabase->DestroyDataBinding(binding);
-        //gLogger->log(LogManager::DEBUG,"Finished Loading Skill Mods.");
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< count << " skill mods";
     }
     break;
 
     case SMQuery_SkillCommands:
     {
         SMQueryContainer skillCommand;
-        DataBinding* binding = mDatabase->CreateDataBinding(2);
+        DataBinding* binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt),4,0);
         binding->addField(DFT_string,offsetof(SMQueryContainer,mName),64,1);
 
@@ -150,11 +154,12 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         mSkillCommandList.reserve((uint32)count);
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&skillCommand);
+            result->getNextRow(binding,&skillCommand);
             mSkillCommandList.push_back(skillCommand.mName);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< count << " skill commands";
         //gLogger->log(LogManager::DEBUG,"Finished Loading Skill Commands.");
     }
     break;
@@ -163,7 +168,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     {
         // Build lists for xp_type default cap, xp_type string and the "reader friendly" version of the xp_type string.
         SMQueryContainer xpType;
-        DataBinding* binding = mDatabase->CreateDataBinding(4);
+        DataBinding* binding = mDatabase->createDataBinding(4);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt),4,0);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt2),4,1);
         binding->addField(DFT_string,offsetof(SMQueryContainer,mName),64,2);
@@ -175,13 +180,14 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         mXpTypeListEx.reserve((uint32)count);
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&xpType);
+            result->getNextRow(binding,&xpType);
             mDefaultXpCapList.push_back(xpType.mInt2);
             mXpTypeList.push_back(xpType.mName);
             mXpTypeListEx.push_back(xpType.mName2);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< count << " skill xp types";
         //gLogger->log(LogManager::DEBUG,"Finish Loading Skill XP Types.");
     }
     break;
@@ -189,7 +195,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     case SMQuery_Skills:
     {
         Skill* skill;
-        DataBinding* binding = mDatabase->CreateDataBinding(13);
+        DataBinding* binding = mDatabase->createDataBinding(13);
         binding->addField(DFT_uint32,offsetof(Skill,mId),4,0);
         binding->addField(DFT_bstring,offsetof(Skill,mName),64,1);
         binding->addField(DFT_uint8,offsetof(Skill,mGodOnly),1,2);
@@ -212,7 +218,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         for(uint64 i = 0; i < count; i++)
         {
             skill = new Skill();
-            result->GetNextRow(binding,skill);
+            result->getNextRow(binding,skill);
             mSkillList.push_back(skill);
 
             if(skill->mBadgeId > 0
@@ -225,40 +231,40 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         // query required species
         //gLogger->log(LogManager::DEBUG,"Start Loading Skill Species Requirements.");
-        mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillSpecies),"SELECT * FROM skills_species_required ORDER BY skill_id");
+        mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillSpecies),"SELECT * FROM skills_species_required ORDER BY skill_id");
         
 
         // query skill preclusions
         //gLogger->log(LogManager::DEBUG,"Start Loading Skill Preclusions");
-        mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillPreclusions),"SELECT * FROM skills_preclusions ORDER BY skill_id");
+        mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillPreclusions),"SELECT * FROM skills_preclusions ORDER BY skill_id");
         
 
         // query required skills
         //gLogger->log(LogManager::DEBUG,"Start Loading Skill Requirements.");
-        mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillRequiredSkills),"SELECT * FROM skills_skill_skillsrequired ORDER BY skill_id");
+        mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillRequiredSkills),"SELECT * FROM skills_skill_skillsrequired ORDER BY skill_id");
         
 
         // query skill commands
         //gLogger->log(LogManager::DEBUG,"Start Loading Skill Commands Granted.");
-        mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillSkillCommands),"SELECT * FROM skills_skillcommands ORDER BY skill_id");
+        mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillSkillCommands),"SELECT * FROM skills_skillcommands ORDER BY skill_id");
         
 
         // query skill mods
         //gLogger->log(LogManager::DEBUG,"Start Loading Skill Mods Granted");
-        mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillSkillMods),"SELECT * FROM skills_skillmods ORDER BY skill_id");
+        mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillSkillMods),"SELECT * FROM skills_skillmods ORDER BY skill_id");
         
 
         // query skill schematic groups
         //gLogger->log(LogManager::DEBUG,"Start Loading Skill Schematics Granted");
-        mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillSkillSchematicGroups),"SELECT * FROM skills_schematicsgranted ORDER BY skill_id");
+        mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillSkillSchematicGroups),"SELECT * FROM skills_schematicsgranted ORDER BY skill_id");
         
 
         // query skill xp types
         //gLogger->log(LogManager::DEBUG,"Start Loading Skill XP Types");
-        mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillSkillXpTypes),"SELECT * FROM skills_base_xp_groups ORDER BY skill_id");
+        mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) SMAsyncContainer(SMQuery_SkillSkillXpTypes),"SELECT * FROM skills_base_xp_groups ORDER BY skill_id");
         
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
         //gLogger->log(LogManager::DEBUG,"Finished Loading %u Skills.",result->getRowCount());
     }
@@ -268,7 +274,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     {
         SMQueryContainer iCont;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(2);
+        DataBinding* binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt),4,0);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt2),4,1);
 
@@ -276,12 +282,13 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&iCont);
+            result->getNextRow(binding,&iCont);
             SkillList::iterator it = mSkillList.begin()+(iCont.mInt-1);
             (*it)->mSpeciesRequired.push_back(iCont.mInt2);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< count << " skill species requirements";
         //gLogger->log(LogManager::DEBUG,"Finish Loading Skill Species Requirements.");
     }
     break;
@@ -290,7 +297,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     {
         SMQueryContainer iCont;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(2);
+        DataBinding* binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt),4,0);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt2),4,1);
 
@@ -298,12 +305,13 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&iCont);
+            result->getNextRow(binding,&iCont);
             SkillList::iterator it = mSkillList.begin()+(iCont.mInt-1);
             (*it)->mSkillPrecusions.push_back(iCont.mInt2);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< count << " skill precisions";
         //gLogger->log(LogManager::DEBUG,"Finish Loading Skill Preclusions.");
     }
     break;
@@ -312,7 +320,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     {
         SMQueryContainer iCont;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(2);
+        DataBinding* binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt),4,0);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt2),4,1);
 
@@ -320,12 +328,13 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&iCont);
+            result->getNextRow(binding,&iCont);
             SkillList::iterator it = mSkillList.begin()+(iCont.mInt-1);
             (*it)->mSkillsRequired.push_back(iCont.mInt2);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< count << " skill requirements";
         //gLogger->log(LogManager::DEBUG,"Finished Loading Skill Requirements.");
     }
     break;
@@ -334,7 +343,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     {
         SMQueryContainer iCont;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(2);
+        DataBinding* binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt),4,0);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt2),4,1);
 
@@ -342,12 +351,13 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&iCont);
+            result->getNextRow(binding,&iCont);
             SkillList::iterator it = mSkillList.begin()+(iCont.mInt-1);
             (*it)->mSkillXpTypesList.push_back(iCont.mInt2);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< count << " skill xp types";
         //gLogger->log(LogManager::DEBUG,"Finish Loading Skill XP Types.");
     }
     break;
@@ -356,7 +366,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     {
         SMQueryContainer iCont;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(2);
+        DataBinding* binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt),4,0);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt2),4,1);
 
@@ -364,12 +374,13 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&iCont);
+            result->getNextRow(binding,&iCont);
             SkillList::iterator it = mSkillList.begin()+(iCont.mInt-1);
             (*it)->mCommands.push_back(iCont.mInt2);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< count << " granted skill commands";
         //gLogger->log(LogManager::DEBUG,"Finish Loading Skill Commands Granted.");
     }
     break;
@@ -378,7 +389,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     {
         SMQueryContainer iCont;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(2);
+        DataBinding* binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt),4,0);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt2),4,1);
 
@@ -386,12 +397,13 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&iCont);
+            result->getNextRow(binding,&iCont);
             SkillList::iterator it = mSkillList.begin()+(iCont.mInt-1);
             (*it)->mSchematics.push_back(iCont.mInt2);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< count << " granted skill schematics";
         //gLogger->log(LogManager::DEBUG,"Finish Loading Skill Schematics Granted.");
     }
     break;
@@ -400,7 +412,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     {
         SMQueryContainer iCont;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(3);
+        DataBinding* binding = mDatabase->createDataBinding(3);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt),4,0);
         binding->addField(DFT_uint32,offsetof(SMQueryContainer,mInt2),4,1);
         binding->addField(DFT_int32,offsetof(SMQueryContainer,mInt3),4,2);
@@ -409,12 +421,13 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&iCont);
+            result->getNextRow(binding,&iCont);
             SkillList::iterator it = mSkillList.begin()+(iCont.mInt-1);
             (*it)->mSkillMods.push_back(std::make_pair(iCont.mInt2,iCont.mInt3));
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< count << " granted skill mods";
         //gLogger->log(LogManager::DEBUG,"Finish Loading Skill Mods Granted.");
     }
     break;
@@ -427,7 +440,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
             BString skillInfo;
         };
 
-        DataBinding* binding = mDatabase->CreateDataBinding(2);
+        DataBinding* binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_uint32,offsetof(SkillDescriptions,skillId),4,0);
         binding->addField(DFT_bstring,offsetof(SkillDescriptions,skillInfo),512,1);
 
@@ -436,12 +449,13 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         for (uint64 i = 0; i < rowCount; i++)
         {
             SkillDescriptions *skillDescription = new SkillDescriptions;
-            result->GetNextRow(binding,skillDescription);
+            result->getNextRow(binding,skillDescription);
 
             // Store data...
             mSkillInfoList.push_back(std::make_pair(skillDescription->skillId, skillDescription->skillInfo));
         }
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
+        LOG(INFO) << "Loaded "<< rowCount << " skill descriptions";
         //gLogger->log(LogManager::DEBUG,"Finish Loading Skill Descriptions.");
     }
     break;
@@ -452,7 +466,7 @@ void SkillManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
     if(++mLoadCounter == mTotalLoadCount)
     {
-        gLogger->log(LogManager::NOTICE,"Loaded all Skill Data.");
+        LOG(INFO) << "Loaded all skill mod data";
     }
 
     mDBAsyncPool.ordered_free(asyncContainer);
@@ -470,13 +484,13 @@ bool SkillManager::learnSkill(uint32 skillId,CreatureObject* creatureObject,bool
 
     if (skill == NULL)
     {
-        gLogger->log(LogManager::DEBUG,"SkillManager::learnSkill: could not find skill %u",skillId);
+        LOG(ERROR) << "Could not find skill [" << skillId << "]";
         return false;
     }
 
     if (creatureObject->checkSkill(skillId))
     {
-        gLogger->log(LogManager::DEBUG,"SkillManager::learnSkill: %"PRIu64" already got skill %u",creatureObject->getId(),skillId);
+        LOG(ERROR) << "Object [" << creatureObject->getId() << "] already has skill [" << skillId << "]";
         return false;
     }
 
@@ -497,7 +511,7 @@ bool SkillManager::learnSkill(uint32 skillId,CreatureObject* creatureObject,bool
         //finding all the new schems for the skill!
         //player->addSchematicIds(skill);
 
-        mDatabase->ExecuteSqlAsync(NULL,NULL,"INSERT INTO character_skills VALUES (%"PRIu64",%u)",player->getId(),skillId);
+        mDatabase->executeSqlAsync(NULL,NULL,"INSERT INTO character_skills VALUES (%"PRIu64",%u)",player->getId(),skillId);
         
 
         creatureObject->prepareSkillMods();
@@ -542,7 +556,7 @@ bool SkillManager::learnSkill(uint32 skillId,CreatureObject* creatureObject,bool
             (void)player->UpdateXp(skill->mXpType, newXpCost);
 
             // gLogger->log(LogManager::DEBUG,"SkillManager::learnSkill: Removing %i xp of type %u", -newXpCost, skill->mXpType);
-            mDatabase->ExecuteSqlAsync(NULL,NULL,"UPDATE character_xp SET value=value+%i WHERE xp_id=%u AND character_id=%"PRIu64"",newXpCost, skill->mXpType, player->getId());
+            mDatabase->executeSqlAsync(NULL,NULL,"UPDATE character_xp SET value=value+%i WHERE xp_id=%u AND character_id=%"PRIu64"",newXpCost, skill->mXpType, player->getId());
             
             gMessageLib->sendXpUpdate(skill->mXpType,player);
         }
@@ -808,18 +822,18 @@ void SkillManager::dropSkill(uint32 skillId,CreatureObject* creatureObject, bool
 
     if(skill == NULL)
     {
-        gLogger->log(LogManager::DEBUG,"SkillManager::dropSkill: could not find skill %u",skillId);
+    	LOG(ERROR) << "Could not find skill [" << skillId << "]";
         return;
     }
 
     if(!(creatureObject->checkSkill(skillId)))
     {
-        gLogger->log(LogManager::DEBUG,"SkillManager::dropSkill: %"PRIu64" hasn't got skill %u",creatureObject->getId(),skillId);
+    	LOG(ERROR) << "Object [" << creatureObject->getId() << "] does not have skill [" << skillId << "]";
         return;
     }
 
     if(!(creatureObject->removeSkill(skill)))
-        gLogger->log(LogManager::DEBUG,"SkillManager::dropSkill: failed removing %u from %"PRIu64"",skillId,creatureObject->getId());
+    	LOG(ERROR) << "Failed removing skill [" << skillId << "] from object [" << creatureObject->getId() << "]";
 
     creatureObject->prepareSkillMods();
     creatureObject->prepareSkillCommands();
@@ -830,7 +844,7 @@ void SkillManager::dropSkill(uint32 skillId,CreatureObject* creatureObject, bool
 
         player->prepareSchematicIds();
 
-        mDatabase->ExecuteSqlAsync(NULL,NULL,"DELETE FROM character_skills WHERE character_id=%"PRIu64" AND skill_id=%u",player->getId(),skillId);
+        mDatabase->executeSqlAsync(NULL,NULL,"DELETE FROM character_skills WHERE character_id=%"PRIu64" AND skill_id=%u",player->getId(),skillId);
         
 
         gMessageLib->sendSkillDeltasCreo1(skill,SMSkillRemove,player);
@@ -945,7 +959,7 @@ void SkillManager::initExperience(PlayerObject* playerObject)
                 playerObject->addXpType(xpType);
 
                 // Create entry in DB.
-                mDatabase->ExecuteSqlAsync(NULL,NULL,"INSERT INTO character_xp VALUES (%"PRIu64",%u,0)",playerObject->getId(),xpType);
+                mDatabase->executeSqlAsync(NULL,NULL,"INSERT INTO character_xp VALUES (%"PRIu64",%u,0)",playerObject->getId(),xpType);
                 
 
                 // Add this type of xp cap.
@@ -1121,13 +1135,13 @@ void SkillManager::addExperience(uint32 xpType,int32 valueDiff,PlayerObject* pla
 
         if (!(playerObject->UpdateXp(xpType, newXpBoost)))
         {
-            gLogger->log(LogManager::DEBUG,"SkillManager::addExperience: could not find xptype %u for %"PRIu64"",xpType,playerObject->getId());
+        	LOG(WARNING) << "Could not find xp type [" << xpType << "] for object [" << playerObject->getId() << "]";
             return;
         }
         // gLogger->log(LogManager::DEBUG,"SkillManager::addExperience: XP cap = %u", xpCap);
         // gLogger->log(LogManager::DEBUG,"SkillManager::addExperience: Adding %u xp of type %u to database", newXpBoost, xpType);
 
-        mDatabase->ExecuteSqlAsync(NULL,NULL,"UPDATE character_xp SET value=value+%i WHERE character_id=%"PRIu64" AND xp_id=%u", newXpBoost, playerObject->getId(), xpType);
+        mDatabase->executeSqlAsync(NULL,NULL,"UPDATE character_xp SET value=value+%i WHERE character_id=%"PRIu64" AND xp_id=%u", newXpBoost, playerObject->getId(), xpType);
         
 
         // ...THEN we get any messages of new skills qualifications.

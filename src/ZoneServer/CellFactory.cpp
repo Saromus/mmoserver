@@ -26,6 +26,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "CellFactory.h"
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "CellObject.h"
 #include "CreatureEnums.h"
 #include "CreatureObject.h"
@@ -33,7 +39,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ObjectFactory.h"
 #include "Shuttle.h"
 #include "WorldManager.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -91,7 +96,7 @@ void CellFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         QueryContainerBase* asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(asyncContainer->mOfCallback,CellFQuery_Objects,asyncContainer->mClient);
         asContainer->mObject = cell;
 
-        mDatabase->ExecuteSqlAsync(this,asContainer,"(SELECT \'terminals\',id FROM terminals WHERE parent_id = %"PRIu64")"
+        mDatabase->executeSqlAsync(this,asContainer,"(SELECT \'terminals\',id FROM terminals WHERE parent_id = %"PRIu64")"
                                    " UNION (SELECT \'containers\',id FROM containers WHERE parent_id = %"PRIu64")"
                                    " UNION (SELECT \'ticket_collectors\',id FROM ticket_collectors WHERE (parent_id=%"PRIu64"))"
                                    " UNION (SELECT \'persistent_npcs\',id FROM persistent_npcs WHERE parentId=%"PRIu64")"
@@ -108,7 +113,7 @@ void CellFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         CellObject* cell = dynamic_cast<CellObject*>(asyncContainer->mObject);
         Type1_QueryContainer queryContainer;
 
-        DataBinding*	binding = mDatabase->CreateDataBinding(2);
+        DataBinding*	binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_bstring,offsetof(Type1_QueryContainer,mString),64,0);
         binding->addField(DFT_uint64,offsetof(Type1_QueryContainer,mId),8,1);
 
@@ -122,7 +127,7 @@ void CellFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
             for(uint32 i = 0; i < count; i++)
             {
-                result->GetNextRow(binding,&queryContainer);
+                result->getNextRow(binding,&queryContainer);
 
                 if(strcmp(queryContainer.mString.getAnsi(),"terminals") == 0)
                     gObjectFactory->requestObject(ObjType_Tangible,TanGroup_Terminal,0,this,queryContainer.mId,asyncContainer->mClient);
@@ -143,7 +148,7 @@ void CellFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         else
             asyncContainer->mOfCallback->handleObjectReady(cell,asyncContainer->mClient);
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
@@ -158,7 +163,7 @@ void CellFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
 void CellFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,uint16 subGroup,uint16 subType,DispatchClient* client)
 {
-    mDatabase->ExecuteSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,CellFQuery_MainData,client),"SELECT id,parent_id FROM cells WHERE id = %"PRIu64"", id);
+    mDatabase->executeSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,CellFQuery_MainData,client),"SELECT id,parent_id FROM cells WHERE id = %"PRIu64"", id);
     
 }
 
@@ -166,7 +171,7 @@ void CellFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,uint
 
 void CellFactory::requestStructureCell(ObjectFactoryCallback* ofCallback,uint64 id,uint16 subGroup,uint16 subType,DispatchClient* client)
 {
-    mDatabase->ExecuteSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,CellFQuery_MainData,client),"SELECT id,parent_id FROM structure_cells WHERE id = %"PRIu64"", id);
+    mDatabase->executeSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,CellFQuery_MainData,client),"SELECT id,parent_id FROM structure_cells WHERE id = %"PRIu64"", id);
     
 }
 
@@ -174,12 +179,14 @@ void CellFactory::requestStructureCell(ObjectFactoryCallback* ofCallback,uint64 
 
 CellObject* CellFactory::_createCell(DatabaseResult* result)
 {
+    if (!result->getRowCount()) {
+    	return nullptr;
+    }
+
     CellObject* cellObject = new CellObject();
     cellObject->setCapacity(500);
 
-    uint64 count = result->getRowCount();
-
-    result->GetNextRow(mCellBinding,(void*)cellObject);
+    result->getNextRow(mCellBinding,(void*)cellObject);
 
     return cellObject;
 }
@@ -188,7 +195,7 @@ CellObject* CellFactory::_createCell(DatabaseResult* result)
 
 void CellFactory::_setupDatabindings()
 {
-    mCellBinding = mDatabase->CreateDataBinding(2);
+    mCellBinding = mDatabase->createDataBinding(2);
     mCellBinding->addField(DFT_uint64,offsetof(CellObject,mId),8,0);
     mCellBinding->addField(DFT_uint64,offsetof(CellObject,mParentId),8,1);
 }
@@ -197,7 +204,7 @@ void CellFactory::_setupDatabindings()
 
 void CellFactory::_destroyDatabindings()
 {
-    mDatabase->DestroyDataBinding(mCellBinding);
+    mDatabase->destroyDataBinding(mCellBinding);
 }
 
 //=============================================================================
@@ -207,7 +214,7 @@ void CellFactory::handleObjectReady(Object* object,DispatchClient* client)
     InLoadingContainer* ilc = _getObject(object->getParentId());
 
     if (! ilc) {//Crashbug fix: http://paste.swganh.org/viewp.php?id=20100627114151-8f7df7f74013af71c0d0b00bc240770d
-        gLogger->log(LogManager::WARNING,"CellFactory::handleObjectReady could not locate ILC for objectParentId:%I64u",object->getParentId());
+        LOG(WARNING) << "Could not locate InLoadingContainer for object parent id [" << object->getParentId() << "]";
         return;
     }
 
@@ -259,7 +266,7 @@ void CellFactory::handleObjectReady(Object* object,DispatchClient* client)
     if(cell->getLoadCount() == cell->getObjects()->size())
     {
         if(!(_removeFromObjectLoadMap(cell->getId())))
-            gLogger->log(LogManager::DEBUG,"CellFactory: Failed removing object from loadmap");
+            LOG(WARNING) << "Failed removing object from loadmap";
 
         ilc->mOfCallback->handleObjectReady(cell,ilc->mClient);
 

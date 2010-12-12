@@ -53,9 +53,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ZoneServer/ZoneOpcodes.h"
 #include "ZoneServer/ZoneTree.h"
 
-#include "Common/LogManager.h"
-
-#include "Common/ByteBuffer.h"
+#include "Common/byte_buffer.h"
 #include "Common/atMacroString.h"
 #include "NetworkManager/DispatchClient.h"
 #include "NetworkManager/Message.h"
@@ -72,18 +70,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <boost/regex.hpp>  // NOLINT
 #endif
 
+// Fix for issues with glog redefining this constant
+#ifdef ERROR
+#undef ERROR
+#endif
+#include "glog/logging.h"
+
 #ifdef WIN32
-using ::std::regex;
-using ::std::smatch;
-using ::std::regex_search;
-#else
-using ::boost::regex;
-using ::boost::smatch;
-using ::boost::regex_search;
+using std::regex;
+using std::smatch;
+using std::regex_search;
+#else 
+using boost::regex;
+using boost::smatch;
+using boost::regex_search;
 #endif
 
-using ::common::ByteBuffer;
-using ::common::OutOfBand;
+using common::ByteBuffer;
+using common::OutOfBand;
 
 //======================================================================================================================
 //
@@ -145,7 +149,7 @@ void MessageLib::SendSpatialChat_(CreatureObject* const speaking_object, const s
     // Add the ProsePackage to the message if no custom string was set.
     if (!custom_message.length()) {
         const ByteBuffer* attachment = prose_message.Pack();
-        mMessageFactory->addData(attachment->Data(), attachment->Size());
+        mMessageFactory->addData(attachment->data(), attachment->size());
     } else {
         mMessageFactory->addUint32(0);
     }
@@ -232,13 +236,29 @@ void MessageLib::sendperformFlourish(PlayerObject* playerObject,uint32 flourish)
 
     _sendToInRange(mMessageFactory->EndMessage(),playerObject,5);
 }
-
 //======================================================================================================================
 //
 // animate a creature
 //
 
-void MessageLib::sendCreatureAnimation(CreatureObject* srcObject,BString animation)
+void MessageLib::sendCreatureAnimation(CreatureObject* srcObject, const std::string& animation)
+{
+    mMessageFactory->StartMessage();
+    mMessageFactory->addUint32(opObjControllerMessage);
+    mMessageFactory->addUint32(0x0000001B);
+    mMessageFactory->addUint32(opSendAnimation);
+    mMessageFactory->addUint64(srcObject->getId());
+    mMessageFactory->addUint32(0);
+    mMessageFactory->addString(animation);
+
+    _sendToInRange(mMessageFactory->EndMessage(),srcObject,5);
+}
+//======================================================================================================================
+//
+// animate a creature
+//
+
+void MessageLib::sendCreatureAnimation(CreatureObject* srcObject, BString animation)
 {
     mMessageFactory->StartMessage();
     mMessageFactory->addUint32(opObjControllerMessage);
@@ -256,7 +276,7 @@ void MessageLib::sendCreatureAnimation(CreatureObject* srcObject,BString animati
 // animate a creature, used by tutorial
 //
 
-void MessageLib::sendCreatureAnimation(CreatureObject* srcObject,BString animation, PlayerObject* player)
+void MessageLib::sendCreatureAnimation(CreatureObject* srcObject,const std::string &animation, PlayerObject* player)
 {
     mMessageFactory->StartMessage();
     mMessageFactory->addUint32(opObjControllerMessage);
@@ -281,7 +301,7 @@ void MessageLib::sendSelfPostureUpdate(PlayerObject* playerObject)
     mMessageFactory->addUint32(opPosture);
     mMessageFactory->addUint64(playerObject->getId());
     mMessageFactory->addUint32(0);
-    mMessageFactory->addUint8(playerObject->getPosture());
+    mMessageFactory->addUint8(playerObject->states.getPosture());
     mMessageFactory->addUint8(1);
 
     _sendToInRange(mMessageFactory->EndMessage(),playerObject,5);
@@ -395,7 +415,8 @@ bool MessageLib::sendEmptyObjectMenuResponse(uint64 requestedId,PlayerObject* ta
 
 bool MessageLib::sendStartingLocationList(PlayerObject* player, uint8 tatooine, uint8 corellia, uint8 talus, uint8 rori, uint8 naboo)
 {
-    gLogger->log(LogManager::DEBUG,"Sending Starting Location List\n");
+    //gLogger->log(LogManager::DEBUG,"Sending Starting Location List\n");
+	DLOG(INFO) << "Sending Starting Location List";
 
     if(!(player->isConnected()))
     {
@@ -591,7 +612,7 @@ void MessageLib::sendCombatAction(CreatureObject* attacker,Object* defender,uint
         mMessageFactory->addUint64(0);
     }
 
-    mMessageFactory->addUint8(attacker->getPosture());
+    mMessageFactory->addUint8(attacker->states.getPosture());
     mMessageFactory->addUint8(trail1);
     mMessageFactory->addUint8(trail2);
 
@@ -608,7 +629,7 @@ void MessageLib::sendCombatAction(CreatureObject* attacker,Object* defender,uint
             }
             else
             {
-                mMessageFactory->addUint8(creature->getPosture());
+                mMessageFactory->addUint8(creature->states.getPosture());
             }
         }
         else
@@ -1057,9 +1078,9 @@ bool MessageLib::sendCharacterMatchResults(const PlayerList* const matchedPlayer
             if(region->getRegionType() == Region_City)
             {
                 regionName = "@";
-                regionName << region->getNameFile().getAnsi();
+                regionName << region->getNameFile().c_str();
                 regionName << ":";
-                regionName << region->getRegionName().getAnsi();
+                regionName << region->getRegionName().c_str();
 
                 break;
             }
@@ -1314,7 +1335,6 @@ bool MessageLib::sendDraftSchematicsList(CraftingTool* tool,PlayerObject* player
     SchematicsIdList*			filteredIdList = playerObject->getFilteredSchematicsIdList();
     SchematicsIdList::iterator	schemIt		= schemIdList->begin();
     DraftSchematic*				schematic;
-
     mMessageFactory->StartMessage();
     mMessageFactory->addUint32(opObjControllerMessage);
     mMessageFactory->addUint32(0x0000000B);

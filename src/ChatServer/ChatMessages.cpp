@@ -34,7 +34,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Mail.h"
 #include "Player.h"
 
-#include "Common/LogManager.h"
+// Fix for issues with glog redefining this constant
+#ifdef ERROR
+#undef ERROR
+#endif
+
+#include <glog/logging.h>
 
 #include "Common/atMacroString.h"
 #include "NetworkManager/DispatchClient.h"
@@ -762,7 +767,7 @@ void ChatMessageLib::sendChatOnDestroyRoom(DispatchClient* client, Channel* chan
     else
     {
         // For debugging purpose
-        gLogger->log(LogManager::CRITICAL,"ChatMessageLib::sendChatOnDestroyRoom: ERROR: channel is NULL");
+        LOG(WARNING) << "ChatMessageLib::sendChatOnDestroyRoom: ERROR: channel is NULL";
     }
 }
 
@@ -1078,7 +1083,7 @@ void ChatMessageLib::sendChatQueryRoomResults(DispatchClient* client, Channel* c
         BString test(*(*seconditer).second);
         gMessageFactory->addString(*(ChatManager::getSingletonPtr()->getFirstName(test)));
 #else
-        gMessageFactory->addString(*((*seconditer).second));
+        gMessageFactory->addString(((*seconditer).second));
 #endif
         ++seconditer;
     }
@@ -1094,7 +1099,7 @@ void ChatMessageLib::sendChatQueryRoomResults(DispatchClient* client, Channel* c
         gMessageFactory->addString(*(ChatManager::getSingletonPtr()->getFirstName(test)));
         //gMessageFactory->addString(*(ChatManager::getSingletonPtr()->getFirstName((string &)(*((*seconditer).second)))));
 #else
-        gMessageFactory->addString(*((*seconditer).second));
+        gMessageFactory->addString(((*seconditer).second));
 #endif
         ++seconditer;
     }
@@ -1110,7 +1115,7 @@ void ChatMessageLib::sendChatQueryRoomResults(DispatchClient* client, Channel* c
         gMessageFactory->addString(*(ChatManager::getSingletonPtr()->getFirstName(test)));
         // gMessageFactory->addString(*(ChatManager::getSingletonPtr()->getFirstName((string &)(*((*seconditer).second)))));
 #else
-        gMessageFactory->addString(*((*seconditer).second));
+        gMessageFactory->addString(((*seconditer).second));
 #endif
         ++seconditer;
     }
@@ -1325,7 +1330,7 @@ void ChatMessageLib::sendChatRoomMessage(Channel* channel, BString galaxy, BStri
 
             if (client == NULL)
             {
-                gLogger->log(LogManager::CRITICAL,"sendChatRoomMessage: Client not found for channel %u", channel->getId());
+                LOG(WARNING) << "sendChatRoomMessage: Client not found for channel " <<  channel->getId();
             }
             else
             {

@@ -26,10 +26,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "CharacterLoginHandler.h"
+
+#include <iostream>
+#include <sstream>
+
 #include "BuffManager.h"
 #include "Inventory.h"
 #include "ObjectFactory.h"
 #include "PlayerObject.h"
+#include "StateManager.h"
 #include "TravelMapHandler.h"
 #include "TravelTicket.h"
 #include "Tutorial.h"
@@ -37,7 +42,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "WorldManager.h"
 #include "ZoneOpcodes.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
+
+// Fix for issues with glog redefining this constant
+#ifdef _WIN32
+#undef ERROR
+#endif
+
+#include <glog/logging.h>
+
 #include "DatabaseManager/Database.h"
 #include "NetworkManager/DispatchClient.h"
 #include "NetworkManager/Message.h"
@@ -45,7 +57,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "NetworkManager/MessageFactory.h"
 #include "NetworkManager/MessageOpcodes.h"
 #include "Common/ConfigManager.h"
-#include "utils/rand.h"
+#include "Utils/rand.h"
 
 
 //======================================================================================================================
@@ -107,14 +119,12 @@ void CharacterLoginHandler::_processCmdSceneReady(Message* message, DispatchClie
         }
 
         // send our message of the day
-        BString moT = "welcome to swgAnh";
-        moT	= (int8*)((gWorldConfig->getConfiguration<std::string>("motD",moT.getAnsi())).c_str());
+        std::string motd = gWorldConfig->getConfiguration<std::string>("motD", "Welcome to SWG:ANH");
 
-        moT.convert(BSTRType_Unicode16);
-        if(player && !(player->getMotdReceived()) && moT.getLength())
+        if(player && !(player->getMotdReceived()) && motd.length())
         {
             player->setMotdReceived(true);
-            gMessageLib->SendSystemMessage(moT.getUnicode16(), player);
+            gMessageLib->SendSystemMessage(std::wstring(motd.begin(), motd.end()), player);
         }
 
         // Send newbie info.
@@ -125,8 +135,6 @@ void CharacterLoginHandler::_processCmdSceneReady(Message* message, DispatchClie
         // Fix/workaround for addIgnore (Eruptor)
         // If we send this info to client as soon as we get connected, client will miss the info most of the time.
         // In this case client will end up with an empty "Ignore List" even if the Ignore-list should be populated.
-
-        gLogger->log(LogManager::DEBUG,"CharacterLoginHandler::handleDispatchMessage: opCmdSceneReady");
 
         // Update: The same apply to frindsList.
         gMessageLib->sendFriendListPlay9(player);
@@ -144,30 +152,11 @@ void CharacterLoginHandler::_processCmdSceneReady(Message* message, DispatchClie
         gBuffManager->InitBuffs(player);
 
         // Some info about the current build
-        int8 rawData[128];
-        // sprintf(rawData,"Running %s",ConfigManager::getBuildString());
-        sprintf(rawData,"Running build %s created %s", ConfigManager::getBuildNumber().c_str(), ConfigManager::getBuildTime().c_str());
+        std::stringstream ss;
+        ss << "Running build " << ConfigManager::getBuildNumber() << " created " << ConfigManager::getBuildTime();
+        std::string tmp(ss.str());
 
-        BString buildString(rawData);
-        buildString.convert(BSTRType_Unicode16);
-        gMessageLib->SendSystemMessage(buildString.getUnicode16(), player);
-
-        // Temp fix for testing instances at normal planets (Corellia).
-        /*
-        if (player->isConnected())
-        {
-            if (!gWorldConfig->isTutorial())
-            {
-                // Some special message when we are testing...
-                if (gWorldConfig->isInstance())
-                {
-                    gMessageLib->sendSystemMessage(player,L"Welcome to Corellia. This planet is temporarily used for testing of instancing.");
-                    gMessageLib->sendSystemMessage(player,L"You should not see any other players. But if you are in a group, the member of the group should see each other and also be able to interact.");
-                    gMessageLib->sendSystemMessage(player,L"Hard to group with a friend when you can't find him or her? Go back to another planet and group and then come back!");
-                }
-            }
-        }
-        */
+        gMessageLib->SendSystemMessage(std::wstring(tmp.begin(), tmp.end()), player);
     }
 }
 
@@ -214,7 +203,6 @@ void	CharacterLoginHandler::_processSelectCharacter(Message* message, DispatchCl
     }
     else if(playerObject  && playerObject->isBeingDestroyed())
     {
-        gLogger->log(LogManager::DEBUG,"Were being destroyed but want to log in again ");
         //dont quite understand this one - the player is about to be destroyed
         //so just ignore it ????
 
@@ -229,7 +217,7 @@ void	CharacterLoginHandler::_processSelectCharacter(Message* message, DispatchCl
     else if((playerObject = gWorldManager->getPlayerByAccId(client->getAccountId())))
     {
 
-        gLogger->log(LogManager::DEBUG,"same account : new player ");
+        LOG(WARNING) << "same account : new player ";
         // remove old char immidiately
         gWorldManager->removePlayerFromDisconnectedList(playerObject);
 
@@ -248,7 +236,6 @@ void	CharacterLoginHandler::_processSelectCharacter(Message* message, DispatchCl
     // request a load from db
     else
     {
-        gLogger->log(LogManager::DEBUG,"all other cases");
         gObjectFactory->requestObject(ObjType_Player,0,0,this,playerId,client);
     }
 }
@@ -261,16 +248,11 @@ void	CharacterLoginHandler::_processNewbieTutorialResponse(Message* message, Dis
     {
         BString tutorialEventString;
         message->getStringAnsi(tutorialEventString);
-        gLogger->log(LogManager::DEBUG,"%s",tutorialEventString.getAnsi());
         if (gWorldConfig->isTutorial())
         {
             // Notify tutorial
             player->getTutorial()->tutorialResponse(tutorialEventString);
         }
-    }
-    else
-    {
-        gLogger->log(LogManager::DEBUG,"CharacterLoginHandler::handleDispatchMessage (case:opNewbieTutorialResponse): could not find player who was connected %u",client->getAccountId());
     }
 }
 
@@ -342,7 +324,6 @@ void CharacterLoginHandler::handleObjectReady(Object* object,DispatchClient* cli
     break;
 
     default:
-        gLogger->log(LogManager::NOTICE,"CharacterLoginHandler::ObjectFactoryCallback: Unhandled object: %i",object->getType());
         break;
     }
 }
@@ -358,7 +339,7 @@ void CharacterLoginHandler::_processClusterClientDisconnect(Message* message, Di
 
     if (reason == 1)
     {
-        gLogger->log(LogManager::DEBUG,"Removed Player: Total Players on zone : %i",(gWorldManager->getPlayerAccMap())->size());
+        DLOG(INFO) << "Removed Player: Total Players on zone : " << gWorldManager->getPlayerAccMap()->size();
     }
     else
     {
@@ -395,12 +376,9 @@ void CharacterLoginHandler::_processClusterZoneTransferApprovedByTicket(Message*
         destination.y = dstPoint->spawnY;
         destination.z = dstPoint->spawnZ + (gRandom->getRand()%5 - 2);
 
-        gLogger->log(LogManager::DEBUG,"CharacterLoginHandler::_processClusterZoneTransferApprovedByTicket : (x)%f:(z)%f:(y)%f", destination.x, destination.y, destination.z);
-
         // Reset to standing
-        playerObject->setPosture(CreaturePosture_Upright);
-        playerObject->updateMovementProperties();
-
+        gStateManager.setCurrentPostureState(playerObject, CreaturePosture_Upright);
+        
 
         // Delete the ticket then save the position then the player
         CharacterLoadingContainer* asyncContainer = new(CharacterLoadingContainer);
@@ -410,7 +388,7 @@ void CharacterLoginHandler::_processClusterZoneTransferApprovedByTicket(Message*
         asyncContainer->player		= playerObject;
         asyncContainer->callBack	= CLHCallBack_Transfer_Ticket;
 
-        mDatabase->ExecuteSqlAsync(this,asyncContainer,"DELETE FROM items WHERE id = %"PRIu64"", ticket->getId());
+        mDatabase->executeSqlAsync(this,asyncContainer,"DELETE FROM items WHERE id = %"PRIu64"", ticket->getId());
         
 
     }
@@ -428,14 +406,13 @@ void CharacterLoginHandler::_processClusterZoneTransferApprovedByPosition(Messag
     if((playerObject = gWorldManager->getPlayerByAccId(message->getAccountId())) != NULL)
     {
         // reset to standing
-        playerObject->setPosture(CreaturePosture_Upright);
-        playerObject->updateMovementProperties();
+        //playerObject->states.setPosture(CreaturePosture_Upright);
 
         // Save our player.
         gWorldManager->savePlayerSync(playerObject->getAccountId(),false);
 
         // Now update the DB with the new location/planetId
-        mDatabase->DestroyResult(mDatabase->ExecuteSynchSql("UPDATE characters SET parent_id=0,x='%f', y='0', z='%f', planet_id='%u' WHERE id='%I64u';",x,z,planetId,playerObject->getId()));
+        mDatabase->destroyResult(mDatabase->executeSynchSql("UPDATE characters SET parent_id=0,x='%f', y='0', z='%f', planet_id='%u' WHERE id='%"PRIu64"';",x,z,planetId,playerObject->getId()));
         
 
         gMessageLib->sendClusterZoneTransferCharacter(playerObject,planetId);

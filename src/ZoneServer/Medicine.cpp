@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "MessageLib/MessageLib.h"
 #include "DatabaseManager/Database.h"
 #include "ObjectControllerOpcodes.h"
-#include "Utils\rand.h"
+#include "Utils/rand.h"
 
 //consts
 const char* const woundpack = "woundpack";
@@ -300,7 +300,7 @@ bool Medicine::ConsumeUse(PlayerObject* playerObject)
     if(quantity)
     {
         this->setAttribute("counter_uses_remaining",boost::lexical_cast<std::string>(quantity));
-        gWorldManager->getDatabase()->ExecuteSqlAsync(0, 0, "UPDATE item_attributes SET value='%f' WHERE item_id=%"PRIu64" AND attribute_id=%u",quantity,this->getId(),AttrType_CounterUsesRemaining);
+        gWorldManager->getDatabase()->executeSqlAsync(0, 0, "UPDATE item_attributes SET value='%f' WHERE item_id=%"PRIu64" AND attribute_id=%u",quantity,this->getId(),AttrType_CounterUsesRemaining);
      
         //now update the uses display
         gMessageLib->sendUpdateUses(this,playerObject);

@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ObjectControllerOpcodes.h"
 #include "ObjectControllerCommandMap.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
+
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DataBinding.h"
 #include "DatabaseManager/DatabaseResult.h"
@@ -47,7 +47,7 @@ void ObjectController::_handleMeditate(uint64 targetId,Message* message,ObjectCo
 {
     PlayerObject* player = dynamic_cast<PlayerObject*>(mObject);
 
-    if (player->isMeditating())
+    if (player->isMeditating() || player->isForceMeditating())
     {
         gMessageLib->SendSystemMessage(::common::OutOfBand("jedi_spam", "already_in_meditative_state"), player);
         return;
@@ -55,6 +55,7 @@ void ObjectController::_handleMeditate(uint64 targetId,Message* message,ObjectCo
 
     // Begin Meditating
     gMessageLib->SendSystemMessage(::common::OutOfBand("teraskasi", "med_begin"), player);
+    player->togglePlayerCustomFlagOn(PlayerCustomFlag_TerasKasiMeditate);
     player->setMeditateState();
 
     // Schedule Execution

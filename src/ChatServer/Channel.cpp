@@ -30,7 +30,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ChatAvatarId.h"
 #include "Player.h"
 
-#include "Common/LogManager.h"
+// Fix for issues with glog redefining this constant
+#ifdef _WIN32
+#undef ERROR
+#endif
+
+#include <glog/logging.h>
 
 #include "NetworkManager/DispatchClient.h"
 #include "NetworkManager/Message.h"
@@ -258,10 +263,10 @@ void Channel::removeUser(Player* player)
     if(mapiter != mUserMap.end())
     {
         mUserMap.erase(mapiter);
-        gLogger->log(LogManager::DEBUG,"Channel::remove user : removing player from channel user map : %s", player->getName().getAnsi());
+        DLOG(INFO) << "Channel::remove user : removing player from channel user map : " << player->getName().getAnsi();
     }
     else
-        gLogger->log(LogManager::DEBUG,"Channel::remove user : Can't find player on channel user map : %s",  player->getName().getAnsi());
+        DLOG(INFO) << "Channel::remove user : Can't find player on channel user map : " <<  player->getName().getAnsi();
 }
 
 //======================================================================================================================
@@ -296,19 +301,19 @@ ChatAvatarId* Channel::removeUser(BString name)
 
 //======================================================================================================================
 
-void Channel::addModerator(BString* name)
+void Channel::addModerator(BString name)
 {
-    BString* modName = new BString (name->getAnsi());
-    modName->toLower();
-    mModerators.insert(CrcStringPair(modName->getCrc(), modName));
+    BString modName = name;
+    modName.toLower();
+    mModerators.insert(CrcStringPair(modName.getCrc(), modName));
 }
 
 //======================================================================================================================
 
-BString* Channel::removeModerator(BString name)
+BString Channel::removeModerator(BString name)
 {
     NameByCrcMap::iterator iter = mModerators.find(name.getCrc());
-    BString* ret = NULL;
+    BString ret;
     if (iter != mModerators.end())
     {
         ret = (*iter).second;
@@ -336,10 +341,10 @@ bool Channel::isOwner(BString name) const
 
 //======================================================================================================================
 
-BString* Channel::removeInvitedUser(BString name)
+BString Channel::removeInvitedUser(BString name)
 {
     NameByCrcMap::iterator iter = mInvited.find(name.getCrc());
-    BString* ret = NULL;
+    BString ret;
     if (iter != mInvited.end())
     {
         ret = (*iter).second;
@@ -360,10 +365,10 @@ bool Channel::isInvited(BString name) const
 
 //======================================================================================================================
 
-BString* Channel::unBanUser(BString name)
+BString Channel::unBanUser(BString name)
 {
     NameByCrcMap::iterator iter = mBanned.find(name.getCrc());
-    BString* ret = NULL;
+    BString ret;
     if (iter != mBanned.end())
     {
         ret = (*iter).second;
@@ -375,11 +380,11 @@ BString* Channel::unBanUser(BString name)
 
 //======================================================================================================================
 
-void Channel::banUser(BString* name)
+void Channel::banUser(BString name)
 {
-    BString* banName = new BString (name->getAnsi());
-    banName->toLower();
-    mBanned.insert(CrcStringPair(banName->getCrc(), banName));
+    BString banName = name;
+    banName.toLower();
+    mBanned.insert(CrcStringPair(banName.getCrc(), banName));
 }
 
 //======================================================================================================================
@@ -392,11 +397,11 @@ bool Channel::isBanned(BString name) const
 
 //======================================================================================================================
 
-void Channel::addInvitedUser(BString* name)
+void Channel::addInvitedUser(BString name)
 {
-    BString* invName = new BString (name->getAnsi());
-    invName->toLower();
-    mInvited.insert(CrcStringPair(invName->getCrc(), invName));
+    BString invName = name;
+    invName.toLower();
+    mInvited.insert(CrcStringPair(invName.getCrc(), invName));
 }
 
 //======================================================================================================================
@@ -416,7 +421,6 @@ void Channel::clearChannel()
     ChatAvatarIdList::iterator iter = mUsers.begin();
     while (!mUsers.empty())
     {
-        delete (*iter);
         mUsers.erase(iter);
         iter = mUsers.begin();
     }
@@ -424,7 +428,6 @@ void Channel::clearChannel()
     NameByCrcMap::iterator seconditer = mModerators.begin();
     while (!mModerators.empty())
     {
-        delete (*seconditer).second;
         mModerators.erase(seconditer);
         seconditer = mModerators.begin();
     }
@@ -432,7 +435,6 @@ void Channel::clearChannel()
     seconditer = mInvited.begin();
     while (!mInvited.empty())
     {
-        delete (*seconditer).second;
         mInvited.erase(seconditer);
         seconditer = mInvited.begin();
     }
@@ -440,7 +442,6 @@ void Channel::clearChannel()
     seconditer = mBanned.begin();
     while (!mBanned.empty())
     {
-        delete (*seconditer).second;
         mBanned.erase(seconditer);
         seconditer = mBanned.begin();
     }

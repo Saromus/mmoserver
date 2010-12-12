@@ -68,11 +68,9 @@ uint32 PlayerStructure::getCurrentMaintenance()
     if (this->hasAttribute("examine_maintenance"))
     {
         uint32 maintenance = this->getAttribute<uint32>("examine_maintenance");
-        gLogger->log(LogManager::DEBUG,"structure maintenance = %u",  maintenance);
         return maintenance;
     }
 
-    gLogger->log(LogManager::DEBUG,"PlayerStructure::getMaintenance structure maintenance not set!!!!");
     setCurrentMaintenance(0);
     return 0;
 }
@@ -92,8 +90,6 @@ void PlayerStructure::setCurrentMaintenance(uint32 maintenance)
 
 
     this->addAttribute("examine_maintenance",boost::lexical_cast<std::string>(maintenance));
-    gLogger->log(LogManager::DEBUG,"PlayerStructure::setMaintenanceRate structure maintenance rate not set!!!!");
-
 }
 
 //=============================================================================
@@ -104,11 +100,9 @@ uint32 PlayerStructure::getCurrentPower()
     if (this->hasAttribute("examine_power"))
     {
         uint32 power = this->getAttribute<uint32>("examine_power");
-        gLogger->log(LogManager::DEBUG,"structure power = %u",  power);
         return power;
     }
 
-    gLogger->log(LogManager::DEBUG,"PlayerStructure::getCurrentPower structure power not set!!!!");
     setCurrentPower(0);
     return 0;
 }
@@ -129,7 +123,6 @@ void PlayerStructure::setCurrentPower(uint32 power)
 
 
     this->addAttribute("examine_power",boost::lexical_cast<std::string>(power));
-    gLogger->log(LogManager::DEBUG,"PlayerStructure::setCurrentPower structure Power not set!!!!");
 
 }
 
@@ -246,7 +239,7 @@ void PlayerStructure::handleUIEvent(BString strCharacterCash, BString strHarvest
         gStructureManager->deductPower(player,harvesterPowerDelta);
         this->setCurrentPower(getCurrentPower()+harvesterPowerDelta);
 
-        gWorldManager->getDatabase()->ExecuteSqlAsync(0,0,"UPDATE structure_attributes SET value='%u' WHERE structure_id=%"PRIu64" AND attribute_id=384",getCurrentPower(),this->getId());
+        gWorldManager->getDatabase()->executeSqlAsync(0,0,"UPDATE structure_attributes SET value='%u' WHERE structure_id=%"PRIu64" AND attribute_id=384",getCurrentPower(),this->getId());
         
     }
     break;
@@ -288,8 +281,6 @@ void PlayerStructure::handleUIEvent(BString strCharacterCash, BString strHarvest
 
         if(inventoryFunds < 0)
         {
-            gLogger->log(LogManager::DEBUG,"PlayerStructure::PayMaintenance finances screwed up !!!!!!!!");
-            gLogger->log(LogManager::DEBUG,"Player : %I64u !!!!!", player->getId());
             return;
         }
 
@@ -297,16 +288,14 @@ void PlayerStructure::handleUIEvent(BString strCharacterCash, BString strHarvest
 
         if(maintenance < 0)
         {
-            gLogger->log(LogManager::DEBUG,"PlayerStructure::PayMaintenance finances screwed up !!!!!!!!");
-            gLogger->log(LogManager::DEBUG,"Player : %I64u !!!!!", player->getId());
             return;
         }
 
         bank->setCredits(bankFunds);
         inventory->setCredits(inventoryFunds);
 
-        gWorldManager->getDatabase()->DestroyResult(gWorldManager->getDatabase()->ExecuteSynchSql("UPDATE banks SET credits=%u WHERE id=%"PRIu64"",bank->getCredits(),bank->getId()));
-        gWorldManager->getDatabase()->DestroyResult(gWorldManager->getDatabase()->ExecuteSynchSql("UPDATE inventories SET credits=%u WHERE id=%"PRIu64"",inventory->getCredits(),inventory->getId()));
+        gWorldManager->getDatabase()->destroyResult(gWorldManager->getDatabase()->executeSynchSql("UPDATE banks SET credits=%u WHERE id=%"PRIu64"",bank->getCredits(),bank->getId()));
+        gWorldManager->getDatabase()->destroyResult(gWorldManager->getDatabase()->executeSynchSql("UPDATE inventories SET credits=%u WHERE id=%"PRIu64"",inventory->getCredits(),inventory->getId()));
 
         //send the appropriate deltas.
         gMessageLib->sendInventoryCreditsUpdate(player);
@@ -333,7 +322,7 @@ void PlayerStructure::handleUIEvent(BString strCharacterCash, BString strHarvest
             }
 
             //update the remaining damage in the db
-            gWorldManager->getDatabase()->ExecuteSqlAsync(0,0,"UPDATE structures s SET s.condition= %u WHERE s.ID=%"PRIu64"",damage,this->getId());
+            gWorldManager->getDatabase()->executeSqlAsync(0,0,"UPDATE structures s SET s.condition= %u WHERE s.ID=%"PRIu64"",damage,this->getId());
             
             this->setDamage(damage);
 
@@ -342,7 +331,7 @@ void PlayerStructure::handleUIEvent(BString strCharacterCash, BString strHarvest
 
         }
 
-        gWorldManager->getDatabase()->ExecuteSqlAsync(0,0,"UPDATE structure_attributes SET value='%u' WHERE structure_id=%"PRIu64" AND attribute_id=382",maintenance,this->getId());
+        gWorldManager->getDatabase()->executeSqlAsync(0,0,"UPDATE structure_attributes SET value='%u' WHERE structure_id=%"PRIu64" AND attribute_id=382",maintenance,this->getId());
         
 
         this->setCurrentMaintenance(maintenance);
@@ -380,11 +369,9 @@ void PlayerStructure::handleUIEvent(uint32 action,int32 element,BString inputStr
         b.convert(BSTRType_ANSI);
         if(strcmp(b.getAnsi(),"false") == 0)
         {
-            gLogger->log(LogManager::DEBUG,"PlayerStructure:: Button 3 (ok) was pressed!!!!");
             WindowAsyncContainerCommand* asyncContainer = (WindowAsyncContainerCommand*)window->getAsyncContainer();
             if(!asyncContainer)
             {
-                gLogger->log(LogManager::DEBUG,"PlayerStructure:: Handle Add Manufacture Schematic Asynccontainer is NULL!!!!");
                 return;
             }
             if(asyncContainer->SortedList.size())
@@ -408,7 +395,6 @@ void PlayerStructure::handleUIEvent(uint32 action,int32 element,BString inputStr
         }
         else if(strcmp(b.getAnsi(),"true") == 0) //remove schematic pressed
         {
-            gLogger->log(LogManager::DEBUG,"PlayerStructure:: Button 4 (other) was pressed!!!!");
 
             WindowAsyncContainerCommand* asyncContainer = (WindowAsyncContainerCommand*)window->getAsyncContainer();
             SAFE_DELETE(asyncContainer);
@@ -478,15 +464,13 @@ void PlayerStructure::handleUIEvent(uint32 action,int32 element,BString inputStr
         int8	sql[255],end[128],*sqlPointer;
 
         sprintf(sql,"UPDATE structures SET structures.name = '");
-        sprintf(end,"' WHERE structures.ID = %I64u",this->getId());
+        sprintf(end,"' WHERE structures.ID = %"PRIu64"",this->getId());
         sqlPointer = sql + strlen(sql);
-        sqlPointer += gWorldManager->getDatabase()->Escape_String(sqlPointer,inputStr.getAnsi(),inputStr.getLength());
+        sqlPointer += gWorldManager->getDatabase()->escapeString(sqlPointer,inputStr.getAnsi(),inputStr.getLength());
         strcat(sql,end);
 
-        gWorldManager->getDatabase()->ExecuteSqlAsync(0,0,sql);
+        gWorldManager->getDatabase()->executeSqlAsync(0,0,sql);
         
-
-        gLogger->log(LogManager::DEBUG,"PlayerStructure::Rename Structure sql : %s", sql);
 
     }
     break;
@@ -499,7 +483,6 @@ void PlayerStructure::handleUIEvent(uint32 action,int32 element,BString inputStr
             if((this->checkStatesEither(PlayerStructureState_Destroy)))
             {
                 //dont start structure destruction more than once
-                //gLogger->log(LogManager::DEBUG,"PlayerStructureTerminal::handleObjectMenuSelect::structure in the process of being deleted");
                 return;
             }
             this->toggleStateOn(PlayerStructureState_Destroy);

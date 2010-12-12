@@ -30,44 +30,27 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <sstream>
 
-#include "Utils/typedefs.h"
-#include "DatabaseManager/declspec.h"
-
 class DatabaseImplementation;
 class DatabaseCallback;
 class DatabaseResult;
 class Database;
 
-//======================================================================================================================
-
-class DBMANAGER_API Transaction
-{
+class Transaction {
 public:
 
-    Transaction(Database* database,DatabaseCallback* callback,void* ref);
+    Transaction(Database* database, DatabaseCallback* callback, void* ref);
     ~Transaction();
 
-    void		execute();
-    void		addQuery(int8* query,...);
+    void execute();
+    void addQuery(const char* query, ...);
 
 private:
 
-    Database*				mDatabase;
-    DatabaseCallback*		mCallback;
-    void*					mReference;
+    Database* mDatabase;
+    DatabaseCallback* mCallback;
+    void* mReference;
 
-    // Win32 complains about stl during linkage, disable the warning.
-#ifdef _WIN32
-#pragma warning (disable : 4251)
-#endif
-    std::ostringstream		mQueries;
-    // Re-enable the warning.
-#ifdef _WIN32
-#pragma warning (default : 4251)
-#endif
+    std::ostringstream mQueries;
 };
 
-//======================================================================================================================
-
 #endif
-

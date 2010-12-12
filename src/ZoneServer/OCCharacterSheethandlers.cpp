@@ -41,7 +41,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "UIManager.h"
 
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -191,7 +190,6 @@ void ObjectController::_handleRequestBadges(uint64 targetId,Message* message,Obj
 
     if(targetObject == NULL)
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleRequestbages: could not find %"PRIu64"",targetId);
         return;
     }
 
@@ -222,7 +220,6 @@ void ObjectController::_handleRequestBiography(uint64 targetId,Message* message,
 
     if(targetObject == NULL)
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleRequestBiography: could not find %"PRIu64"",targetId);
         return;
     }
 
@@ -248,10 +245,10 @@ void ObjectController::_handleSetBiography(uint64 targetId,Message* message,Obje
     sprintf(sql,"UPDATE character_biography SET biography ='");
     sprintf(end,"' WHERE character_id = %"PRIu64"",player->getId());
     sqlPointer = sql + strlen(sql);
-    sqlPointer += mDatabase->Escape_String(sqlPointer,bio.getAnsi(),bio.getLength());
+    sqlPointer += mDatabase->escapeString(sqlPointer,bio.getAnsi(),bio.getLength());
     strcat(sql,end);
 
-    mDatabase->ExecuteSqlAsync(0,0,sql);
+    mDatabase->executeAsyncSql(sql);
     
 }
 
@@ -293,7 +290,7 @@ void ObjectController::_handleRequestCharacterMatch(uint64 targetId,Message* mes
 
     if(elementCount != 9)
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleRequestCharacterMatch: argument mismatch %"PRIu64"",player->getId());
+        DLOG(INFO) << "ObjController::_handleRequestCharacterMatch: argument mismatch " << player->getId();
         return;
     }
 
@@ -303,7 +300,7 @@ void ObjectController::_handleRequestCharacterMatch(uint64 targetId,Message* mes
 
         if(skill == NULL)
         {
-            gLogger->log(LogManager::DEBUG,"ObjController::_handleRequestCharacterMatch: could not find matching skill for %s",titleStr);
+            DLOG(INFO) << "ObjController::_handleRequestCharacterMatch: could not find matching skill for " << titleStr;
             return;
         }
     }
@@ -357,7 +354,7 @@ void ObjectController::_handleMatch(uint64 targetId,Message* message,ObjectContr
 
     swscanf(matchfield.getUnicode16(),L"%u %u %u %u %u",&i1,&i2,&i3,&i4,&i5);
 
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncContainerPool.malloc()) ObjControllerAsyncContainer(OCQuery_Nope), "UPDATE character_matchmaking set match_1 = %u, match_2 = %u, match_3 = %u, match_4 = %u where character_id = %I64u", i2, i3, i4, i5, matchObject->getId());
+    mDatabase->executeSqlAsync(this,new(mDBAsyncContainerPool.malloc()) ObjControllerAsyncContainer(OCQuery_Nope), "UPDATE character_matchmaking set match_1 = %u, match_2 = %u, match_3 = %u, match_4 = %u where character_id = %"PRIu64"", i2, i3, i4, i5, matchObject->getId());
     
 
     // update the players Object

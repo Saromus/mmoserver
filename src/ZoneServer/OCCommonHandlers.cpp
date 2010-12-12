@@ -63,7 +63,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Utils/clock.h"
 #include "ZoneTree.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DataBinding.h"
 #include "DatabaseManager/DatabaseResult.h"
@@ -92,7 +91,7 @@ void ObjectController::_handleBoardTransport(uint64 targetId,Message* message,Ob
     ObjectSet		inRangeObjects;
     float			boardingRange	= 25.0;
 
-    if(playerObject->getPosture() == CreaturePosture_SkillAnimating)
+    if(playerObject->states.getPosture() == CreaturePosture_SkillAnimating)
     {
         gMessageLib->SendSystemMessage(::common::OutOfBand("error_message", "wrong_state"), playerObject);
         return;
@@ -204,7 +203,6 @@ void ObjectController::_handleOpenContainer(uint64 targetId,Message* message,Obj
     }
     else
     {
-        gLogger->log(LogManager::NOTICE,"ObjectController::_handleOpenContainer: INVALID Object id %"PRIu64"",targetId);
     }
 }
 
@@ -247,24 +245,22 @@ void ObjectController::_handleTransferItem(uint64 targetId,Message* message,Obje
 
     if(swscanf(dataStr.getUnicode16(),L" %"WidePRIu64 L" %u %f %f %f",&targetContainerId,&linkType,&x,&y,&z) != 5)
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::handleTransferItem: Error in parameters");
+        DLOG(INFO) << "ObjController::handleTransferItem: Error in parameters";
         return;
     }
 
     if (!itemObject)
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc: No Object to transfer :(");
+        DLOG(INFO) << "ObjController::_handleTransferItemMisc: No Object to transfer :(";
         //no Object :(
         return;
     }
-
-    gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItem: called item %I64u",itemObject->getId());
 
     TangibleObject* tangible = dynamic_cast<TangibleObject*>(itemObject);
     if(!tangible)
     {
         //no tagible - get out of here
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc: No tangible to transfer :(");
+        DLOG(INFO) << "ObjController::_handleTransferItemMisc: No tangible to transfer :(";
         return;
     }
 
@@ -300,7 +296,6 @@ void ObjectController::_handleTransferItem(uint64 targetId,Message* message,Obje
 
     if (!targetContainerId)
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc:TargetContainer is 0 :(");
         //return;
 
     }
@@ -314,11 +309,9 @@ void ObjectController::_handleTransferItem(uint64 targetId,Message* message,Obje
 
     if(!checkTargetContainer(targetContainerId,itemObject))
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc:TargetContainer is not valid :(");
+        DLOG(INFO) << "ObjController::_handleTransferItemMisc:TargetContainer is not valid :(";
         return;
     }
-
-    gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc:TargetContainer has approved :)");
 
     // get ourselves the current Owner container
     // please note THIS IS ONLY SUCCESFUL FOR TANGIBLE OBJECT BASED CONTAINERS -> no cells
@@ -328,7 +321,7 @@ void ObjectController::_handleTransferItem(uint64 targetId,Message* message,Obje
 
     if(!checkContainingContainer(tangible->getParentId(), playerObject->getId()))
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc:ContainingContainer is not allowing the transfer :(");
+        DLOG(INFO) << "ObjController::_handleTransferItemMisc:ContainingContainer is not allowing the transfer :(";
         return;
 
     }
@@ -336,8 +329,6 @@ void ObjectController::_handleTransferItem(uint64 targetId,Message* message,Obje
     // Remove the object from whatever contains it.
     if(!removeFromContainer(targetContainerId, targetId))
     {
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: remove item %I64u FromContainer %I64u failed :( this ",itemObject->getId(),targetContainerId);
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: This rightly happens when looting corpses as the item gets then regularly created");
         //this we might need to revise somehow we do not always want to loot standard db items, do we ?
 
         return;
@@ -348,7 +339,6 @@ void ObjectController::_handleTransferItem(uint64 targetId,Message* message,Obje
     if (cell)
     {
         // drop in a cell
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: Drop into cell %"PRIu64"", targetContainerId);
 
         //special case temp instrument
         if (item&&item->getItemFamily() == ItemFamily_Instrument)
@@ -372,8 +362,6 @@ void ObjectController::_handleTransferItem(uint64 targetId,Message* message,Obje
         itemObject->mPosition = playerObject->mPosition;
         itemObject->mDirection = playerObject->mDirection;
 
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: Cell added item to cell %I64u ",cell->getId());
-
         //do the db update manually because of the position - unless we get an automated position save in
         itemObject->setParentId(targetContainerId,linkType,playerObject,false);
         itemObject->updateWorldPosition();
@@ -382,11 +370,11 @@ void ObjectController::_handleTransferItem(uint64 targetId,Message* message,Obje
 
         if(rc)
         {
-            mDatabase->ExecuteSqlAsync(0, 0, "UPDATE resource_containers SET parent_id ='%I64u', oY='%f', oZ='%f', oW='%f', x='%f', y='%f', z='%f' WHERE id='%I64u'",itemObject->getParentId(), itemObject->mDirection.y, itemObject->mDirection.z, itemObject->mDirection.w, itemObject->mPosition.x, itemObject->mPosition.y, itemObject->mPosition.z, itemObject->getId());
+            mDatabase->executeSqlAsync(0, 0, "UPDATE resource_containers SET parent_id ='%"PRIu64"', oY='%f', oZ='%f', oW='%f', x='%f', y='%f', z='%f' WHERE id='%"PRIu64"'",itemObject->getParentId(), itemObject->mDirection.y, itemObject->mDirection.z, itemObject->mDirection.w, itemObject->mPosition.x, itemObject->mPosition.y, itemObject->mPosition.z, itemObject->getId());
         }
         else
         {
-            mDatabase->ExecuteSqlAsync(0, 0, "UPDATE items SET parent_id ='%I64u', oY='%f', oZ='%f', oW='%f', x='%f', y='%f', z='%f' WHERE id='%I64u'",itemObject->getParentId(), itemObject->mDirection.y, itemObject->mDirection.z, itemObject->mDirection.w, itemObject->mPosition.x, itemObject->mPosition.y, itemObject->mPosition.z, itemObject->getId());
+            mDatabase->executeSqlAsync(0, 0, "UPDATE items SET parent_id ='%"PRIu64"', oY='%f', oZ='%f', oW='%f', x='%f', y='%f', z='%f' WHERE id='%"PRIu64"'",itemObject->getParentId(), itemObject->mDirection.y, itemObject->mDirection.z, itemObject->mDirection.w, itemObject->mPosition.x, itemObject->mPosition.y, itemObject->mPosition.z, itemObject->getId());
         }
         cell->addObjectSecure(itemObject,playerObject->getKnownPlayers());
 
@@ -397,7 +385,6 @@ void ObjectController::_handleTransferItem(uint64 targetId,Message* message,Obje
 
         gMessageLib->sendDestroyObject(itemObject->getId(),playerObject);
         gMessageLib->sendCreateObject(itemObject,playerObject);
-        //gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: Player : %I64u contained in %I64u",playerObject->getId(),playerObject->getParentId());
 
         return;
     }
@@ -490,7 +477,6 @@ bool ObjectController::checkContainingContainer(uint64 containingContainer, uint
         //Panick
 		// - parent might be the main cell though ...
         //assert(false&&"ObjController::checkContainingContainer: CAN NOT FIND MAIN CONTAINING CONTAINER PARENT ");
-        gLogger->log(LogManager::DEBUG,"ObjController::checkContainingContainer: CAN NOT FIND MAIN CONTAINING CONTAINER PARENT CONTAINER ID%I64u :(",container->getId());
         return false;
     }
 
@@ -514,7 +500,7 @@ bool ObjectController::checkContainingContainer(uint64 containingContainer, uint
                 PlayerObject* player = dynamic_cast<PlayerObject*>(gWorldManager->getObjectById(playerId));
                 if(CellObject* playercell = dynamic_cast<CellObject*>(gWorldManager->getObjectById(player->getParentId())))
                 {
-                    if(BuildingObject* playerparent = dynamic_cast<BuildingObject*>(gWorldManager->getObjectById(playercell->getParentId())))
+                    if(dynamic_cast<BuildingObject*>(gWorldManager->getObjectById(playercell->getParentId())))
                     {
                         //still get in a range check ???
                         return true;
@@ -540,11 +526,6 @@ bool ObjectController::checkContainingContainer(uint64 containingContainer, uint
     //todo handle factory hoppers
 
     //todo handle loot permissions
-    if(CreatureObject* creature = dynamic_cast<CreatureObject*>(mainObject))
-    {
-    }
-
-    gLogger->log(LogManager::DEBUG,"ObjController::checkContainingContainer: COULDNT CAST MAIN CONTAINING CONTAINER PARENT CONTAINER ID%I64u :(",container->getId());
 
     return true;
 }
@@ -558,7 +539,6 @@ bool ObjectController::checkContainingContainer(uint64 containingContainer, uint
 bool ObjectController::checkTargetContainer(uint64 targetContainerId, Object* object)
 {
     PlayerObject*	player			=	dynamic_cast<PlayerObject*>(mObject);
-    Inventory*		inventory		=	dynamic_cast<Inventory*>(player->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
 
     TangibleObject* tangibleItem = dynamic_cast<TangibleObject*>(object);
 
@@ -583,7 +563,7 @@ bool ObjectController::checkTargetContainer(uint64 targetContainerId, Object* ob
     //sanity check -
     if(!targetContainer)
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc: TargetContainer is NOT an ObjectContainer :(");
+        DLOG(INFO) << "ObjController::_handleTransferItemMisc: TargetContainer is NOT an ObjectContainer :(";
         return false;
     }
 
@@ -724,7 +704,6 @@ bool ObjectController::removeFromContainer(uint64 targetContainerId, uint64 targ
     PlayerObject*	playerObject	=	dynamic_cast<PlayerObject*>(mObject);
     Object*			itemObject		=	gWorldManager->getObjectById(targetId);
     Inventory*		inventory		=	dynamic_cast<Inventory*>(playerObject->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
-    TangibleObject* targetContainer =	dynamic_cast<TangibleObject*>(gWorldManager->getObjectById(targetContainerId));
 
     TangibleObject* tangible = dynamic_cast<TangibleObject*>(itemObject);
 
@@ -744,7 +723,7 @@ bool ObjectController::removeFromContainer(uint64 targetContainerId, uint64 targ
 
             if(!inventory->removeObject(itemObject))
             {
-                gLogger->log(LogManager::DEBUG,"ObjectController::removeFromContainer: Internal Error could not remove  %"PRIu64" from %I64u", itemObject->getId(),inventory->getId());
+                DLOG(INFO) << "ObjectController::removeFromContainer: Internal Error could not remove  " <<  itemObject->getId() << " from " << inventory->getId();
                 return false;
             }
             return true;
@@ -779,14 +758,13 @@ bool ObjectController::removeFromContainer(uint64 targetContainerId, uint64 targ
             (creatureInventory = dynamic_cast<Inventory*>(unknownCreature->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory))) &&
             (creatureInventory->getId() == itemObject->getParentId()))
     {
-        gLogger->log(LogManager::DEBUG,"Transfer item from creature inventory to player inventory (looting)");
         // gMessageLib->sendContainmentMessage(targetId,itemObject->getParentId(),-1,playerObject);
 
         gMessageLib->sendDestroyObject(targetId,playerObject);
 
         if(!creatureInventory->removeObject(itemObject))
         {
-            gLogger->log(LogManager::DEBUG,"ObjectController::removeFromContainer: Internal Error could not remove  %"PRIu64" from creature inventory %I64u", itemObject->getId(),creatureInventory->getId());
+            DLOG(INFO) << "ObjectController::removeFromContainer: Internal Error could not remove  " <<  itemObject->getId() << " from " << creatureInventory->getId();
             return false;
         }
 
@@ -810,10 +788,8 @@ bool ObjectController::removeFromContainer(uint64 targetContainerId, uint64 targ
 
 
     CellObject* cell;
-    if(cell = dynamic_cast<CellObject*>(gWorldManager->getObjectById(itemObject->getParentId())))
+    if((cell = dynamic_cast<CellObject*>(gWorldManager->getObjectById(itemObject->getParentId()))))
     {
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: pick up from cell %"PRIu64"", itemObject->getParentId());
-
         // Stop playing if we pick up the (permanently placed) instrument we are playing
         if (item && (item->getItemFamily() == ItemFamily_Instrument))
         {
@@ -899,21 +875,17 @@ void ObjectController::_handleTransferItemMisc(uint64 targetId,Message* message,
     float			x,y,z;
     CellObject*		cell;
 
-    gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc: Entered");
-
     //gMessageLib->sendSystemMessage(playerObject,L"","error_message","insufficient_permissions");
 
     message->getStringUnicode16(dataStr);
 
     if(swscanf(dataStr.getUnicode16(),L"%"WidePRIu64 L" %u %f %f %f",&targetContainerId,&linkType,&x,&y,&z) != 5)
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc: Error in parameters");
         return;
     }
 
     if (!itemObject)
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc: No Object to transfer :(");
         return;
     }
 
@@ -921,7 +893,6 @@ void ObjectController::_handleTransferItemMisc(uint64 targetId,Message* message,
     if(!tangible)
     {
         //no tagible - get out of here
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc: No tangible to transfer :(");
         return;
     }
 
@@ -957,7 +928,6 @@ void ObjectController::_handleTransferItemMisc(uint64 targetId,Message* message,
 
     if (!targetContainerId)
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc:TargetContainer is 0 :(");
         //return;
 
     }
@@ -970,16 +940,13 @@ void ObjectController::_handleTransferItemMisc(uint64 targetId,Message* message,
 
     if(!checkTargetContainer(targetContainerId,itemObject))
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc:TargetContainer is not valid :(");
+        DLOG(INFO) << "ObjController::_handleTransferItemMisc:TargetContainer is not valid :(";
         return;
     }
 
-    ObjectContainer* parentContainer = dynamic_cast<ObjectContainer*>(gWorldManager->getObjectById(tangible->getParentId()));
-
-
     if(!checkContainingContainer(tangible->getParentId(), playerObject->getId()))
     {
-        gLogger->log(LogManager::DEBUG,"ObjController::_handleTransferItemMisc:ContainingContainer is not allowing the transfer :(");
+        DLOG(INFO) << "ObjController::_handleTransferItemMisc:ContainingContainer is not allowing the transfer :(";
         return;
 
     }
@@ -987,7 +954,7 @@ void ObjectController::_handleTransferItemMisc(uint64 targetId,Message* message,
     // Remove the object from whatever contains it.
     if(!removeFromContainer(targetContainerId, targetId))
     {
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: removeFromContainer failed :( this might be caused by looting a corpse though");
+        DLOG(INFO) << "ObjectController::_handleTransferItemMisc: removeFromContainer failed :( this might be caused by looting a corpse though";
         return;
     }
 
@@ -1002,7 +969,6 @@ void ObjectController::_handleTransferItemMisc(uint64 targetId,Message* message,
     if (cell)
     {
         // drop in a cell
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: Drop into cell %"PRIu64"",  targetContainerId);
 
         //special case temp instrument
         if (item&&item->getItemFamily() == ItemFamily_Instrument)
@@ -1025,19 +991,17 @@ void ObjectController::_handleTransferItemMisc(uint64 targetId,Message* message,
 
         itemObject->mPosition = playerObject->mPosition;
 
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: Cell added item to cell %I64u ", cell->getId());
-
         //do the db update manually because of the position - unless we get an automated position save in
         itemObject->setParentId(targetContainerId,linkType,playerObject,false);
 
         ResourceContainer* rc = dynamic_cast<ResourceContainer*>(itemObject);
         if(rc)
         {
-            mDatabase->ExecuteSqlAsync(0,0,"UPDATE resource_containers SET parent_id ='%I64u', oX='%f', oY='%f', oZ='%f', oW='%f', x='%f', y='%f', z='%f' WHERE id='%I64u'",itemObject->getParentId(), itemObject->mDirection.x, itemObject->mDirection.y, itemObject->mDirection.z, itemObject->mDirection.w, itemObject->mPosition.x, itemObject->mPosition.y, itemObject->mPosition.z, itemObject->getId());
+            mDatabase->executeSqlAsync(0,0,"UPDATE resource_containers SET parent_id ='%"PRIu64"', oX='%f', oY='%f', oZ='%f', oW='%f', x='%f', y='%f', z='%f' WHERE id='%"PRIu64"'",itemObject->getParentId(), itemObject->mDirection.x, itemObject->mDirection.y, itemObject->mDirection.z, itemObject->mDirection.w, itemObject->mPosition.x, itemObject->mPosition.y, itemObject->mPosition.z, itemObject->getId());
         }
         else
         {
-            mDatabase->ExecuteSqlAsync(0,0,"UPDATE items SET parent_id ='%I64u', oX='%f', oY='%f', oZ='%f', oW='%f', x='%f', y='%f', z='%f' WHERE id='%I64u'",itemObject->getParentId(), itemObject->mDirection.x, itemObject->mDirection.y, itemObject->mDirection.z, itemObject->mDirection.w, itemObject->mPosition.x, itemObject->mPosition.y, itemObject->mPosition.z, itemObject->getId());
+            mDatabase->executeSqlAsync(0,0,"UPDATE items SET parent_id ='%"PRIu64"', oX='%f', oY='%f', oZ='%f', oW='%f', x='%f', y='%f', z='%f' WHERE id='%"PRIu64"'",itemObject->getParentId(), itemObject->mDirection.x, itemObject->mDirection.y, itemObject->mDirection.z, itemObject->mDirection.w, itemObject->mPosition.x, itemObject->mPosition.y, itemObject->mPosition.z, itemObject->getId());
         }
         //take wm function at one point
         cell->addObjectSecure(itemObject,playerObject->getKnownPlayers());
@@ -1046,8 +1010,6 @@ void ObjectController::_handleTransferItemMisc(uint64 targetId,Message* message,
 
         gMessageLib->sendDestroyObject(itemObject->getId(),playerObject);
         gMessageLib->sendCreateObject(itemObject,playerObject);
-
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: Player : %I64u contained in %I64u", playerObject->getId(),playerObject->getParentId());
 
         return;
     }
@@ -1076,7 +1038,7 @@ void ObjectController::_handleTransferItemMisc(uint64 targetId,Message* message,
         //equip / unequip handles the db side, too
         if(!player->getEquipManager()->EquipItem(item))
         {
-            gLogger->log(LogManager::DEBUG,"ObjectController::_handleTransferItemMisc: Error equipping  %"PRIu64"",  item->getId());
+            DLOG(INFO) << "ObjectController::_handleTransferItemMisc: Error equipping  "<<  item->getId();
             //panik!!!!!!
         }
         return;
@@ -1122,7 +1084,7 @@ void ObjectController::_handlePurchaseTicket(uint64 targetId,Message* message,Ob
 
     float		purchaseRange = gWorldConfig->getConfiguration<float>("Player_TicketTerminalAccess_Distance",(float)10.0);
 
-    if(playerObject->getPosture() == CreaturePosture_SkillAnimating)
+    if(playerObject->states.getPosture() == CreaturePosture_SkillAnimating)
     {
         gMessageLib->SendSystemMessage(::common::OutOfBand("error_message", "wrong_state"), playerObject);
         return;
@@ -1252,7 +1214,6 @@ void ObjectController::_handleGetAttributesBatch(uint64 targetId,Message* messag
 
     if(!elementCount)
     {
-        gLogger->log(LogManager::DEBUG,"ObjectController::_handleAttributesBatch: Error in requestStr");
         return;
     }
 
@@ -1320,7 +1281,6 @@ void ObjectController::_handleGetAttributesBatch(uint64 targetId,Message* messag
             {
                 if(playerObject->getCraftingSession()->getItem()&&playerObject->getCraftingSession()->getItem()->getId() == itemId)
                 {
-                    gLogger->log(LogManager::DEBUG,"ObjectController::_handleAttributesBatch for crafted Item: ID %I64u",itemId);
                     playerObject->getCraftingSession()->getItem()->sendAttributes(playerObject);
                 }
             }
@@ -1382,7 +1342,7 @@ void ObjectController::_endBurstRun(uint64 targetId,Message* message,ObjectContr
 {
     // set locomotion
     PlayerObject* playerObject = (PlayerObject*)mObject;
-    playerObject->setLocomotion(kLocomotionStanding);
+    playerObject->states.setLocomotion(CreatureLocomotion_Standing);
 }
 
 //======================================================================================================================
@@ -1400,7 +1360,7 @@ void ObjectController::_handleSurrenderSkill(uint64 targetId,Message* message,Ob
 
     if(!(skillStr.getLength()))
     {
-        gLogger->log(LogManager::DEBUG,"ObjectController::handleSurrenderSkill: no skillname\n");
+        DLOG(INFO) << "ObjectController::handleSurrenderSkill: no skillname";
         return;
     }
 
@@ -1408,7 +1368,7 @@ void ObjectController::_handleSurrenderSkill(uint64 targetId,Message* message,Ob
 
     if(skill == NULL)
     {
-        gLogger->log(LogManager::DEBUG,"ObjectController::handleSurrenderSkill: could not find skill %s",skillStr.getAnsi());
+        DLOG(INFO)<<"ObjectController::handleSurrenderSkill: could not find skill " << skillStr.getAnsi();
         return;
     }
 
@@ -1474,7 +1434,6 @@ void ObjectController::handleObjectMenuRequest(Message* message)
 
         //the list is cleared and items are destroyed in the message lib
         //for the default response
-        gLogger->log(LogManager::DEBUG,"ObjController::handleObjectMenuRequest: Couldn't find object %"PRIu64"",requestedObjectId);
         return;
     }
 
@@ -1722,8 +1681,7 @@ bool HandleBurstRun(Object* object, Object* target, Message* message, ObjectCont
     gMessageLib->sendUpdateMovementProperties(player);
 
     // Update the player's locomotion to a running state.
-    player->setLocomotion(kLocomotionRunning);
-
+    player->states.setLocomotion(CreatureLocomotion_Running);
     // Toggle the flags for the burst run effect and the cool-down timer on the corresponding command.
     player->togglePlayerCustomFlagOn(PlayerCustomFlag_BurstRunCD);
     player->togglePlayerCustomFlagOn(PlayerCustomFlag_BurstRun);
@@ -1747,8 +1705,8 @@ bool HandleBurstRun(Object* object, Object* target, Message* message, ObjectCont
             gMessageLib->sendUpdateMovementProperties(player);
 
             // Update the player's locomotion to a walking state.
-            player->setLocomotion(kLocomotionWalking);
-
+            player->states.setLocomotion(CreatureLocomotion_Walking);
+            
             // Remove the burst run flag.
             player->togglePlayerCustomFlagOff(PlayerCustomFlag_BurstRun);
 

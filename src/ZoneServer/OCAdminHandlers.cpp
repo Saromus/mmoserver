@@ -32,7 +32,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ZoneOpcodes.h"
 #include "ZoneServer.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "NetworkManager/Message.h"
 #include "NetworkManager/MessageFactory.h"
 #include "Utils/utils.h"
@@ -174,12 +173,12 @@ void ObjectController::_handleAdminSysMsg(uint64 targetId,Message* message,Objec
         // gMessageLib->sendSystemMessage(player, dataStr, true);
 
         dataStr.convert(BSTRType_ANSI);
-        gLogger->log(LogManager::DEBUG,"Admin (%s): %s", player->getFirstName().getAnsi(), dataStr.getAnsi());
+        DLOG(INFO) << "Admin "<< player->getFirstName().getAnsi() <<":" << dataStr.getAnsi();
     }
     else
     {
         dataStr.convert(BSTRType_ANSI);
-        gLogger->log(LogManager::DEBUG,"Admin (anon): %s", dataStr.getAnsi());
+        DLOG(INFO) << "Admin (anon): " <<  dataStr.getAnsi();
     }
 
     int8 rawData[128];
@@ -206,14 +205,16 @@ void ObjectController::_handleAdminSysMsg(uint64 targetId,Message* message,Objec
                 dataStr.substring(ansiData,static_cast<uint16>(index), dataStr.getLength());
 
                 // Now ADD a proper spelled command. It HAS to match the crc.
-                BString newCommandString;
-                newCommandString.setLength(adminCommands[commandIndex].command.getLength() + ansiData.getLength() + 1);
-                sprintf(newCommandString.getAnsi(),"%s %s", adminCommands[commandIndex].command.getAnsi(), ansiData.getAnsi());
+                char* newCommandString = new char[adminCommands[commandIndex].command.getLength() + ansiData.getLength() + 1];
+                sprintf(newCommandString,"%s %s", adminCommands[commandIndex].command.getAnsi(), ansiData.getAnsi());
 
                 // Execute the command.
                 BString opcodeStr(adminCommands[commandIndex].command);
                 opcodeStr.toLower();
-                newCommandString.convert(BSTRType_Unicode16);
+
+				std::string stdnewCommandString(newCommandString);
+				std::wstring wstdnewCommandString(stdnewCommandString.begin(), stdnewCommandString.end());
+				delete[] newCommandString;
 
                 // Now let's parse it BACK to objectcontroller, so we can continue to maintain access rights control as initial designed.
                 gMessageFactory->StartMessage();
@@ -221,7 +222,7 @@ void ObjectController::_handleAdminSysMsg(uint64 targetId,Message* message,Objec
                 gMessageFactory->addUint32(0);						// sequence number, we really need this
                 gMessageFactory->addUint32(opcodeStr.getCrc());		// opCode for new command.
                 gMessageFactory->addUint64(targetId);
-                gMessageFactory->addString(newCommandString);
+                gMessageFactory->addString(wstdnewCommandString);
                 Message* newMessage = gMessageFactory->EndMessage();
                 newMessage->ResetIndex();
                 this->enqueueCommandMessage(newMessage);
@@ -757,24 +758,22 @@ void ObjectController::sendAdminFeedback(BString reply) const
     {
         if (reply.getLength())
         {
-            gLogger->log(LogManager::NOTICE,"Admin (%s): %s", player->getFirstName().getAnsi(), reply.getAnsi());
             reply.convert(BSTRType_Unicode16);
             gMessageLib->SendSystemMessage(reply.getUnicode16(), player, true);
         }
         else
         {
-            gLogger->log(LogManager::NOTICE,"Admin (%s):", player->getFirstName().getAnsi());
+            DLOG(INFO) << "Admin :" << player->getFirstName().getAnsi();
         }
     }
     else
     {
         if (reply.getDataLength())
         {
-            gLogger->log(LogManager::NOTICE,"Admin (anon): %s", reply.getAnsi());
+            DLOG(INFO) << "Admin (anon): " << reply.getAnsi();
         }
         else
         {
-            gLogger->log(LogManager::NOTICE,"Admin (anon):");
         }
     }
 }

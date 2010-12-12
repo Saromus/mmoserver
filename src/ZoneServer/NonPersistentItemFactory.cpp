@@ -26,11 +26,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "NonPersistentItemFactory.h"
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "Food.h"
 #include "ItemFactory.h"
 #include "ObjectFactoryCallback.h"
 #include "WorldManager.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -93,7 +98,7 @@ void NonPersistentItemFactory::handleDatabaseJobComplete(void* ref,DatabaseResul
             QueryNonPersistentItemFactory* asContainer = new(mQueryContainerPool.ordered_malloc()) QueryNonPersistentItemFactory(asyncContainer->mOfCallback,NPQuery_Attributes,asyncContainer->mId);
             asContainer->mObject = item;
 
-            mDatabase->ExecuteSqlAsync(this,asContainer,"SELECT attributes.name,item_family_attribute_defaults.attribute_value,attributes.internal"
+            mDatabase->executeSqlAsync(this,asContainer,"SELECT attributes.name,item_family_attribute_defaults.attribute_value,attributes.internal"
                                        " FROM item_family_attribute_defaults"
                                        " INNER JOIN attributes ON (item_family_attribute_defaults.attribute_id = attributes.id)"
                                        " WHERE item_family_attribute_defaults.item_type_id = %u ORDER BY item_family_attribute_defaults.attribute_order",item->getItemType());
@@ -132,7 +137,7 @@ void NonPersistentItemFactory::requestObject(ObjectFactoryCallback* ofCallback,u
 
 void NonPersistentItemFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id, uint64 newId)
 {
-    mDatabase->ExecuteSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryNonPersistentItemFactory(ofCallback,NPQuery_MainData,newId),
+    mDatabase->executeSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryNonPersistentItemFactory(ofCallback,NPQuery_MainData,newId),
                                "SELECT item_family_attribute_defaults.family_id, item_family_attribute_defaults.item_type_id, item_types.object_string, item_types.stf_name, item_types.stf_file, item_types.stf_detail_file"
                                " FROM item_types"
                                " INNER JOIN item_family_attribute_defaults ON (item_types.id = item_family_attribute_defaults.item_type_id AND item_family_attribute_defaults.attribute_id = 1)"
@@ -144,14 +149,15 @@ void NonPersistentItemFactory::requestObject(ObjectFactoryCallback* ofCallback,u
 
 Item* NonPersistentItemFactory::_createItem(DatabaseResult* result, uint64 newId)
 {
+    if (!result->getRowCount()) {
+    	return nullptr;
+    }
 
     Item*			item;
     ItemIdentifier	itemIdentifier;
 
-    uint64 count = result->getRowCount();
-
-    result->GetNextRow(mItemIdentifierBinding,(void*)&itemIdentifier);
-    result->ResetRowIndex();
+    result->getNextRow(mItemIdentifierBinding,(void*)&itemIdentifier);
+    result->resetRowIndex();
 
     switch(itemIdentifier.mFamilyId)
     {
@@ -174,12 +180,12 @@ Item* NonPersistentItemFactory::_createItem(DatabaseResult* result, uint64 newId
     default:
     {
         item = new Item();
-        gLogger->log(LogManager::DEBUG,"ItemFactory::NonPersistentItemFactory::_createItem unknown Family %u",itemIdentifier.mFamilyId);
+    	LOG(ERROR) << "Created item for unknown family [" << itemIdentifier.mFamilyId << "]";
     }
     break;
     }
 
-    result->GetNextRow(mItemBinding,item);
+    result->getNextRow(mItemBinding,item);
 
     item->setId(newId);
     item->setItemFamily(itemIdentifier.mFamilyId);
@@ -192,13 +198,13 @@ Item* NonPersistentItemFactory::_createItem(DatabaseResult* result, uint64 newId
 
 void NonPersistentItemFactory::_setupDatabindings()
 {
-    mItemBinding = mDatabase->CreateDataBinding(4);
+    mItemBinding = mDatabase->createDataBinding(4);
     mItemBinding->addField(DFT_bstring,offsetof(Item,mModel),256,2);
     mItemBinding->addField(DFT_bstring,offsetof(Item,mName),64,3);
     mItemBinding->addField(DFT_bstring,offsetof(Item,mNameFile),64,4);
     mItemBinding->addField(DFT_bstring,offsetof(Item,mDetailFile),64,5);
 
-    mItemIdentifierBinding = mDatabase->CreateDataBinding(2);
+    mItemIdentifierBinding = mDatabase->createDataBinding(2);
     mItemIdentifierBinding->addField(DFT_uint32,offsetof(ItemIdentifier,mFamilyId),4,0);
     mItemIdentifierBinding->addField(DFT_uint32,offsetof(ItemIdentifier,mTypeId),4,1);
 
@@ -208,8 +214,8 @@ void NonPersistentItemFactory::_setupDatabindings()
 
 void NonPersistentItemFactory::_destroyDatabindings()
 {
-    mDatabase->DestroyDataBinding(mItemBinding);
-    mDatabase->DestroyDataBinding(mItemIdentifierBinding);
+    mDatabase->destroyDataBinding(mItemBinding);
+    mDatabase->destroyDataBinding(mItemIdentifierBinding);
 }
 
 //=============================================================================

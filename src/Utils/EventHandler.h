@@ -28,10 +28,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef ANH_UTILS_EVENTHANDLER_H
 #define ANH_UTILS_EVENTHANDLER_H
 
-#include <boost/ptr_container/ptr_map.hpp>
 #include <typeinfo>
-
-#include "Utils/declspec.h"
+#include <boost/ptr_container/ptr_map.hpp>
 
 
 //======================================================================================================================
@@ -46,7 +44,7 @@ class TypeInfo;
 // Event
 //
 
-class UTILS_API Event
+class Event
 {
 public:
 
@@ -58,7 +56,7 @@ public:
 // HandlerFunctionBase
 //
 
-class UTILS_API HandlerFunctionBase
+class HandlerFunctionBase
 {
 public:
 
@@ -101,7 +99,7 @@ private:
 // EventHandler
 //
 
-class UTILS_API EventHandler
+class EventHandler
 {
 public:
     virtual ~EventHandler();
@@ -113,16 +111,8 @@ public:
 
 private:
 
-    // Win32 complains about stl during linkage, disable the warning.
-#ifdef _WIN32
-#pragma warning (disable : 4251)
-#endif
     typedef boost::ptr_map<const TypeInfo, HandlerFunctionBase> Handlers;
     Handlers mHandlers;
-    // Re-enable the warning.
-#ifdef _WIN32
-#pragma warning (default : 4251)
-#endif
 };
 
 //======================================================================================================================

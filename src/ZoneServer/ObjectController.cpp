@@ -40,11 +40,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "PVHam.h"
 #include "PVPosture.h"
 #include "PVState.h"
+#include "StateManager.h"
 #include "WorldConfig.h"
 #include "WorldManager.h"
 
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
+
+// Fix for issues with glog redefining this constant
+#ifdef ERROR
+#undef ERROR
+#endif
+
+#include <glog/logging.h>
+
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DataBinding.h"
 #include "DatabaseManager/DatabaseResult.h"
@@ -273,7 +281,6 @@ bool ObjectController::_processCommandQueue()
     PlayerObject* player  = dynamic_cast<PlayerObject*>(mObject);
     if (!player)
     {
-        gLogger->log(LogManager::CRITICAL,"ObjectController::_processCommandQueue() Invalid object");
         assert(false && "ObjectController::_processCommandQueue mObject is not a PlayerObject");
         return false;
     }
@@ -325,7 +332,6 @@ bool ObjectController::_processCommandQueue()
             uint64		targetId	= cmdMsg->getTargetId();
             uint32		reply1		= 0;
             uint32		reply2		= 0;
-            bool		consumeHam	= true;
 
             ObjectControllerCmdProperties*	cmdProperties = cmdMsg->getCmdProperties();
 
@@ -350,12 +356,6 @@ bool ObjectController::_processCommandQueue()
                         timeToNextCommand = cmdProperties->mDefaultTime / 2;
                         mUnderrunTime -= timeToNextCommand;
                     }
-                }
-
-                bool internalCommand = false;
-                if (!message)
-                {
-                    internalCommand = true;
                 }
 
                 // keep a pointer to the start
@@ -393,7 +393,7 @@ bool ObjectController::_processCommandQueue()
                         // any listeners to veto the processing of the command (such as validators).
                         // Only process the command if it passed validation.
                         if (gEventDispatcher.Deliver(pre_event).get()) {
-                            bool command_processed = ((*it).second)(mObject, target, message, cmdProperties);
+                            ((*it).second)(mObject, target, message, cmdProperties);
 
                             auto post_event = std::make_shared<PostCommandEvent>(mObject->getId());
                             gEventDispatcher.Deliver(post_event);
@@ -405,21 +405,18 @@ bool ObjectController::_processCommandQueue()
                         if (message && it != gObjControllerCmdMap.end()) {
                             ((*it).second)(this, targetId, message, cmdProperties);
                             //(this->*((*it).second))(targetId,message,cmdProperties);
-                            consumeHam = mHandlerCompleted;
                         } else {
-                            gLogger->log(LogManager::DEBUG,"ObjectController::processCommandQueue: ObjControllerCmdGroup_Common Unhandled Cmd 0x%x for %"PRIu64"",command,mObject->getId());
+                            DLOG(WARNING) << "ObjectController::processCommandQueue: ObjControllerCmdGroup_Common Unhandled Cmd 0"<<command<<" for "<<mObject->getId();
                             //gLogger->hexDump(message->getData(),message->getSize());
-                            consumeHam = false;
                         }
                     }
                 }
                 break;
-
                 case ObjControllerCmdGroup_Attack:
                 {
                     // If player activated combat or me returning fire, the peace is ended, and auto-attack allowed.
-                    player->toggleStateOff(CreatureState_Peace);
-                    gMessageLib->sendStateUpdate(player);
+                    gStateManager.setCurrentActionState(player, CreatureState_Combat);
+                    // TODO: add auto attack to enter combat state.
                     player->enableAutoAttack();
 
                     // CreatureObject* creature = NULL;
@@ -431,8 +428,6 @@ bool ObjectController::_processCommandQueue()
                             // We have lost our target.
                             player->setCombatTargetId(0);
                             player->disableAutoAttack();
-
-                            consumeHam = mHandlerCompleted;
                         }
                         else
                         {
@@ -468,9 +463,7 @@ bool ObjectController::_processCommandQueue()
 
                 default:
                 {
-                    gLogger->log(LogManager::DEBUG,"ObjectController::processCommandQueue: Default Unhandled CmdGroup %u for %"PRIu64"",cmdProperties->mCmdGroup,mObject->getId());
-
-                    consumeHam = false;
+					DLOG(WARNING) << "ObjectController::processCommandQueue: ObjControllerCmdGroup_Common Unhandled Cmd 0"<<cmdProperties->mCmdGroup <<" for "<<mObject->getId();
                 }
                 break;
                 }
@@ -591,7 +584,10 @@ bool ObjectController::_processEventQueue()
 //
 void ObjectController::enqueueCommandMessage(Message* message)
 {
-    uint32	clientTicks		= message->getUint32();
+	// this is required with how we are grabbing the packets
+	// basically think of this as just grabbing the first uint32
+	// value and throwing it away to get to the get stuff...
+	message->getUint32();
     uint32	sequence		= message->getUint32();
     uint32	opcode			= message->getUint32();
     uint64	targetId		= message->getUint64();
@@ -710,7 +706,6 @@ void ObjectController::enqueueAutoAttack(uint64 targetId)
         CreatureObject* creature = dynamic_cast<CreatureObject*>(mObject);
         if (!creature)
         {
-            gLogger->log(LogManager::CRITICAL,"ObjectController::enqueueAutoAttack() Invalid object");
             assert(false && "ObjectController::enqueueAutoAttack mObject is not a CreatureObject");
         }
 
@@ -762,7 +757,7 @@ void ObjectController::enqueueAutoAttack(uint64 targetId)
             if (player)
             {
                 player->disableAutoAttack();
-                gLogger->log(LogManager::DEBUG,"ObjectController::enqueueAutoAttack() Error adding command.");
+                DLOG(INFO) << "ObjectController::enqueueAutoAttack() Error adding command.";
             }
         }
     }
@@ -821,7 +816,7 @@ void ObjectController::removeMsgFromCommandQueueBySequence(uint32 sequence)
     // sanity check
     if (!sequence)
     {
-        gLogger->log(LogManager::DEBUG,"ObjectController::removeMsgFromCommandQueueBySequence No sequence!!!!");
+        DLOG(INFO) << "ObjectController::removeMsgFromCommandQueueBySequence No sequence!!!!";
         return;
     }
 
@@ -1025,72 +1020,28 @@ uint32 ObjectController::getLocoValidator(uint64 locomotion)
     uint32 locoValidator = 0;
     switch(locomotion)
     {
-    case kLocomotionStanding:
-        locoValidator = kLocoValidStanding;
-        break;
-    case kLocomotionSneaking:
-        locoValidator = kLocoValidSneaking;
-        break;
-    case kLocomotionWalking:
-        locoValidator = kLocoValidWalking;
-        break;
-    case kLocomotionRunning:
-        locoValidator = kLocoValidRunning;
-        break;
-    case kLocomotionKneeling:
-        locoValidator = kLocoValidKneeling;
-        break;
-    case kLocomotionCrouchSneaking:
-        locoValidator = kLocoValidCrouchWalking;
-        break;
-    case kLocomotionCrouchWalking:
-        locoValidator = kLocoValidProne;
-        break;
-    case kLocomotionProne:
-        locoValidator = kLocoValidProne;
-        break;
-    case kLocomotionCrawling:
-        locoValidator = kLocoValidCrawling;
-        break;
-    case kLocomotionClimbingStationary:
-        locoValidator = kLocoValidClimbingStationary;
-        break;
-    case kLocomotionClimbing:
-        locoValidator = kLocoValidClimbing;
-        break;
-    case kLocomotionHovering:
-        locoValidator = kLocoValidHovering;
-        break;
-    case kLocomotionFlying:
-        locoValidator = kLocoValidFlying;
-        break;
-    case kLocomotionLyingDown:
-        locoValidator = kLocoValidLyingDown;
-        break;
-    case kLocomotionSitting:
-        locoValidator = kLocoValidSitting;
-        break;
-    case kLocomotionSkillAnimating:
-        locoValidator = kLocoValidSkillAnimating;
-        break;
-    case kLocomotionDrivingVehicle:
-        locoValidator = kLocoValidDrivingVehicle;
-        break;
-    case kLocomotionRidingCreature:
-        locoValidator = kLocoValidRidingCreature;
-        break;
-    case kLocomotionKnockedDown:
-        locoValidator = kLocoValidKnockedDown;
-        break;
-    case kLocomotionIncapacitated:
-        locoValidator = kLocoValidIncapacitated;
-        break;
-    case kLocomotionDead:
-        locoValidator = kLocoValidDead;
-        break;
-    case kLocomotionBlocking:
-        locoValidator = kLocoValidBlocking;
-        break;
+        case CreatureLocomotion_Standing: locoValidator = kLocoValidStanding; break;
+        case CreatureLocomotion_Sneaking: locoValidator = kLocoValidSneaking; break;
+        case CreatureLocomotion_Walking: locoValidator = kLocoValidWalking; break;
+        case CreatureLocomotion_Running: locoValidator = kLocoValidRunning; break;
+        case CreatureLocomotion_Kneeling: locoValidator = kLocoValidKneeling; break;
+        case CreatureLocomotion_CrouchSneaking: locoValidator = kLocoValidCrouchWalking; break;
+        case CreatureLocomotion_CrouchWalking: locoValidator = kLocoValidProne; break;
+        case CreatureLocomotion_Prone: locoValidator = kLocoValidProne; break;
+        case CreatureLocomotion_Crawling: locoValidator = kLocoValidCrawling; break;
+        case CreatureLocomotion_ClimbingStationary: locoValidator = kLocoValidClimbingStationary; break;
+        case CreatureLocomotion_Climbing: locoValidator = kLocoValidClimbing; break;
+        case CreatureLocomotion_Hovering: locoValidator = kLocoValidHovering; break;
+        case CreatureLocomotion_Flying: locoValidator = kLocoValidFlying; break;
+        case CreatureLocomotion_LyingDown: locoValidator = kLocoValidLyingDown; break;
+        case CreatureLocomotion_Sitting: locoValidator = kLocoValidSitting; break;
+        case CreatureLocomotion_SkillAnimating: locoValidator = kLocoValidSkillAnimating; break;
+        case CreatureLocomotion_DrivingVehicle: locoValidator = kLocoValidDrivingVehicle; break;
+        case CreatureLocomotion_RidingCreature: locoValidator = kLocoValidRidingCreature; break;
+        case CreatureLocomotion_KnockedDown: locoValidator = kLocoValidKnockedDown; break;
+        case CreatureLocomotion_Incapacitated: locoValidator = kLocoValidIncapacitated; break;
+        case CreatureLocomotion_Dead: locoValidator = kLocoValidDead; break;
+        case CreatureLocomotion_Blocking: locoValidator = kLocoValidBlocking; break;
     }
 
     return locoValidator;

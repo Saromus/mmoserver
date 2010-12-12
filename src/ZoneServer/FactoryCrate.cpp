@@ -63,18 +63,6 @@ FactoryCrate::~FactoryCrate()
 
 void FactoryCrate::handleObjectMenuSelect(uint8 messageType,Object* srcObject)
 {
-    if(PlayerObject* player = dynamic_cast<PlayerObject*>(srcObject))
-    {
-        switch(messageType)
-        {
-        case radId_itemUse:
-        {
-
-        }
-
-        }
-
-    }
 }
 
 //=============================================================================
@@ -96,13 +84,13 @@ void FactoryCrate::sendAttributes(PlayerObject* playerObject)
 
     gMessageFactory->addUint32(2 + mAttributeMap.size()+iAttributeMap->size());
 
-    BString	tmpValueStr = BString(BSTRType_Unicode16,64);
     BString	value,aStr;
 
-    tmpValueStr.setLength(swprintf(tmpValueStr.getUnicode16(),50,L"%u/%u",mMaxCondition - mDamage,mMaxCondition));
+	wchar_t temp[64];
+    swprintf(temp,50,L"%u/%u",mMaxCondition - mDamage,mMaxCondition);
 
     gMessageFactory->addString(BString("condition"));
-    gMessageFactory->addString(tmpValueStr);
+    gMessageFactory->addString(temp);
 
     AttributeMap::iterator			mapIt;
     AttributeOrderList::iterator	orderIt = mAttributeOrderList.begin();
@@ -207,7 +195,7 @@ int32 FactoryCrate::decreaseContent(uint32 amount)
     }
 
     this->setAttribute("factory_count",boost::lexical_cast<std::string>(newAmount));
-    gWorldManager->getDatabase()->ExecuteSqlAsync(0,0,"UPDATE item_attributes SET value='%i' WHERE item_id=%"PRIu64" AND attribute_id=%u",newAmount,this->getId(),AttrType_factory_count);
+    gWorldManager->getDatabase()->executeSqlAsync(0,0,"UPDATE item_attributes SET value='%i' WHERE item_id=%"PRIu64" AND attribute_id=%u",newAmount,this->getId(),AttrType_factory_count);
     
 
     return newAmount;

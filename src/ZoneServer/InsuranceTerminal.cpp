@@ -36,7 +36,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "WorldConfig.h"
 #include "WorldManager.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 
 
@@ -141,7 +140,7 @@ void InsuranceTerminal::handleObjectMenuSelect(uint8 messageType,Object* srcObje
                             {
                                 // Update attribute.
                                 tangibleObject->setInternalAttribute("insured","1");
-                                gWorldManager->getDatabase()->ExecuteSqlAsync(NULL,NULL,"UPDATE item_attributes SET value=1 WHERE item_id=%"PRIu64" AND attribute_id=%u",tangibleObject->getId(), 1270);
+                                gWorldManager->getDatabase()->executeSqlAsync(NULL,NULL,"UPDATE item_attributes SET value=1 WHERE item_id=%"PRIu64" AND attribute_id=%u",tangibleObject->getId(), 1270);
                                 
 
                                 tangibleObject->setTypeOptions(tangibleObject->getTypeOptions() | 4);
@@ -209,7 +208,6 @@ void InsuranceTerminal::handleObjectMenuSelect(uint8 messageType,Object* srcObje
 
             default:
             {
-                gLogger->log(LogManager::NOTICE,"InsuranceTerminal::handleObjectMenuSelect Unhandled MenuSelect: %u",messageType);
             }
             break;
             }
@@ -222,7 +220,6 @@ void InsuranceTerminal::handleObjectMenuSelect(uint8 messageType,Object* srcObje
 
 void InsuranceTerminal::handleUIEvent(uint32 action,int32 element,BString inputStr,UIWindow* window)
 {
-
     if(window == NULL)
     {
         return;
@@ -230,7 +227,7 @@ void InsuranceTerminal::handleUIEvent(uint32 action,int32 element,BString inputS
 
     PlayerObject* playerObject = window->getOwner(); // window owner
 
-    if(playerObject == NULL || !playerObject->isConnected() || playerObject->getSamplingState() || playerObject->isIncapacitated() || playerObject->isDead()|| playerObject->checkState(CreatureState_Combat))
+    if(playerObject == NULL || !playerObject->isConnected() || playerObject->getSamplingState() || playerObject->isIncapacitated() || playerObject->isDead()|| playerObject->states.checkState(CreatureState_Combat))
     {
         return;
     }
@@ -263,7 +260,6 @@ void InsuranceTerminal::handleUIEvent(uint32 action,int32 element,BString inputS
 
         default:
         {
-            gLogger->log(LogManager::DEBUG,"SUI_Window_Insurance_Newbie_MessageBox Invalid selection!");
         }
         break;
         }
@@ -353,7 +349,7 @@ void InsuranceTerminal::handleUIEvent(uint32 action,int32 element,BString inputS
                     // Update attribute.
                     // string str("insured");
                     tangibleObject->setInternalAttribute("insured","1");
-                    gWorldManager->getDatabase()->ExecuteSqlAsync(NULL,NULL,"UPDATE item_attributes SET value=1 WHERE item_id=%"PRIu64" AND attribute_id=%u",tangibleObject->getId(), 1270);
+                    gWorldManager->getDatabase()->executeSqlAsync(NULL,NULL,"UPDATE item_attributes SET value=1 WHERE item_id=%"PRIu64" AND attribute_id=%u",tangibleObject->getId(), 1270);
 
                     tangibleObject->setTypeOptions(tangibleObject->getTypeOptions() | 4);
 
@@ -412,7 +408,6 @@ void InsuranceTerminal::handleUIEvent(uint32 action,int32 element,BString inputS
 
         default:
         {
-            gLogger->log(LogManager::DEBUG,"SUI_Window_InsureAll_Newbie_MessageBox Invalid selection!");
         }
         break;
         }
@@ -517,7 +512,7 @@ void InsuranceTerminal::handleUIEvent(uint32 action,int32 element,BString inputS
                         // Insure the item.
                         // Update attribute.
                         tangibleObject->setInternalAttribute("insured","1");
-                        gWorldManager->getDatabase()->ExecuteSqlAsync(NULL,NULL,"UPDATE item_attributes SET value=1 WHERE item_id=%"PRIu64" AND attribute_id=%u",tangibleObject->getId(), 1270);
+                        gWorldManager->getDatabase()->executeSqlAsync(NULL,NULL,"UPDATE item_attributes SET value=1 WHERE item_id=%"PRIu64" AND attribute_id=%u",tangibleObject->getId(), 1270);
                         
 
                         tangibleObject->setTypeOptions(tangibleObject->getTypeOptions() | 4);
@@ -549,7 +544,6 @@ void InsuranceTerminal::handleUIEvent(uint32 action,int32 element,BString inputS
 
         default:
         {
-            gLogger->log(LogManager::DEBUG,"SUI_Window_InsuranceAll_MessageBox Invalid selection!");
         }
         break;
         }

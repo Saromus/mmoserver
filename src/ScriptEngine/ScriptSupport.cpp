@@ -40,6 +40,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "MessageLib/MessageLib.h"
 
+// Fix for issues with glog redefining this constant
+#ifdef ERROR
+#undef ERROR
+#endif
+
+#include <glog/logging.h>
+
 
 // const uint64 wompratTemplateId = 47513085687;
 // const uint64 rillTemplateId = 47513085693;
@@ -185,7 +192,7 @@ NPCObject* ScriptSupport::npcGetObject(uint64 id)
 
 uint64 ScriptSupport::npcCreate(uint64 templateId) //, uint64 npcPrivateOwnerId, uint64 cellForSpawn, std::string firstname, std::string lastname, float dirY, float dirW, float posX, float posY, float posZ, uint64 respawnDelay)
 {
-    gLogger->log(LogManager::NOTICE,"ScriptSupport::npcCreate template id %I64u",templateId);
+    DLOG(INFO) << "ScriptSupport::npcCreate template id " << templateId;
 
     uint64 npcId = gWorldManager->getRandomNpNpcIdSequence();
     if (npcId != 0)
@@ -214,7 +221,7 @@ void ScriptSupport::npcSpawnPersistent(NPCObject* npc, uint64 npcId, uint64 cell
     }
     else
     {
-        gLogger->log(LogManager::NOTICE, "ScriptSupport::npcSpawnPersistent: Heightmap is missing, can NOT use dynamic spawned npc's.");
+        LOG(WARNING) << "ScriptSupport::npcSpawnPersistent: Heightmap is missing, can NOT use dynamic spawned npc's.";
     }
 }
 
@@ -247,7 +254,7 @@ void ScriptSupport::npcSpawnGeneral(uint64 npcId, uint64 npcPrivateOwnerId, uint
     if (!npc)
     {
         // Fallback for running in release mode.
-        gLogger->log(LogManager::WARNING, "ScriptSupport::npcSpawnGeneral: Failed to access NPC id %"PRIu64"", npcId);
+        LOG(WARNING) << "ScriptSupport::npcSpawnGeneral: Failed to access NPC id " << npcId;
         return;
     }
 
@@ -433,14 +440,12 @@ void ScriptSupport::npcFormationPosition(NPCObject* npcMember, float xOffset, fl
     float alpha = atan(xOffset/zOffset);
 
     float w = npcMember->mDirection.w;
-    float y = 1.0;
 
     if (w > 0.0)
     {
         if (npcMember->mDirection.y < 0.0)
         {
             w *= -1;
-            y = -1.0;
         }
     }
     float angle = 2.0f*acos(w);
@@ -468,14 +473,12 @@ void ScriptSupport::npcFormationMoveEx(NPCObject* npc, float posX, float posY, f
     float alpha = atan(xOffset/zOffset);
 
     float w = npc->mDirection.w;
-    float y = 1.0;
 
     if (w > 0.0)
     {
         if (npc->mDirection.y < 0.0)
         {
             w *= -1;
-            y = -1.0;
         }
     }
     float angle = 2.0f*acos(w);
@@ -814,7 +817,7 @@ void ScriptSupport::scriptSystemMessage(uint64 playerId, uint64 targetId, std::s
     CreatureObject* creature = dynamic_cast<CreatureObject*>(gWorldManager->getObjectById(targetId));
     if (object && creature && playerObject && playerObject->isConnected())
     {
-        BString msg = (int8*)message.c_str();
+        std::string msg = (int8*)message.c_str();
         // gMessageLib->sendPlayClientEffectLocMessage(msg, object->mPosition, playerObject);
         gMessageLib->sendPlayClientEffectObjectMessage(msg,"",creature,playerObject);
         // "clienteffect/combat_explosion_lair_large.cef"
@@ -823,13 +826,13 @@ void ScriptSupport::scriptSystemMessage(uint64 playerId, uint64 targetId, std::s
 
 bool ScriptSupport::npcInCombat(uint64 npcId)
 {
-    bool inCombat = false;
-    CreatureObject* creature = dynamic_cast<CreatureObject*>(gWorldManager->getObjectById(npcId));
-    if (creature)
-    {
-        inCombat = creature->checkState(CreatureState_Combat);
-    }
-    return inCombat;
+	bool inCombat = false;
+	CreatureObject* creature = dynamic_cast<CreatureObject*>(gWorldManager->getObjectById(npcId));
+	if (creature)
+	{
+		inCombat = creature->states.checkState(CreatureState_Combat);
+	}
+	return inCombat;
 }
 
 bool ScriptSupport::npcIsDead(uint64 npcId)

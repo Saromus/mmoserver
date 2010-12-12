@@ -26,6 +26,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "WorldManager.h"
+
+#include <cassert>
+
+#include "Common/ConfigManager.h"
+#include "DatabaseManager/Database.h"
+#include "DatabaseManager/DataBinding.h"
+#include "DatabaseManager/DatabaseResult.h"
+#include "MessageLib/MessageLib.h"
+#include "ScriptEngine/ScriptEngine.h"
+#include "ScriptEngine/ScriptSupport.h"
+#include "Utils/Scheduler.h"
+#include "Utils/VariableTimeScheduler.h"
+#include "Utils/utils.h"
+#include "NetworkManager/MessageFactory.h"
+
 #include "AdminManager.h"
 #include "Buff.h"
 #include "BuffEvent.h"
@@ -40,46 +55,36 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "CraftingSessionFactory.h"
 #include "CraftingTool.h"
 #include "CreatureSpawnRegion.h"
+#include "FactoryFactory.h"
+#include "FactoryObject.h"
 #include "GroupManager.h"
 #include "GroupObject.h"
+#include "HarvesterFactory.h"
+#include "HarvesterObject.h"
 #include "Heightmap.h"
+#include "Inventory.h"
 #include "MissionManager.h"
+#include "MissionObject.h"
 #include "MountObject.h"
 #include "NpcManager.h"
 #include "NPCObject.h"
+#include "ObjectFactory.h"
 #include "PlayerStructure.h"
+#include "QuadTree.h"
 #include "ResourceManager.h"
 #include "SchematicManager.h"
+#include "Shuttle.h"
 #include "SpawnPoint.h"
-#include "TreasuryManager.h"
 #include "Terminal.h"
+#include "TicketCollector.h"
+#include "TreasuryManager.h"
 #include "WorldConfig.h"
 #include "ZoneOpcodes.h"
 #include "ZoneServer.h"
 #include "ZoneTree.h"
-#include "HarvesterFactory.h"
-#include "HarvesterObject.h"
-#include "FactoryFactory.h"
-#include "FactoryObject.h"
-#include "Inventory.h"
-#include "MissionObject.h"
-#include "ObjectFactory.h"
-#include "QuadTree.h"
-#include "Shuttle.h"
-#include "TicketCollector.h"
-#include "Common/ConfigManager.h"
-#include "DatabaseManager/Database.h"
-#include "DatabaseManager/DataBinding.h"
-#include "DatabaseManager/DatabaseResult.h"
-#include "MessageLib/MessageLib.h"
-#include "ScriptEngine/ScriptEngine.h"
-#include "ScriptEngine/ScriptSupport.h"
-#include "Utils/Scheduler.h"
-#include "Utils/VariableTimeScheduler.h"
-#include "Utils/utils.h"
-#include "NetworkManager/MessageFactory.h"
 
-#include <cassert>
+using std::dynamic_pointer_cast;
+using std::shared_ptr;
 
 //======================================================================================================================
 //
@@ -88,7 +93,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // This function is not used yet.
 uint64 WorldManager::getObjectOwnedBy(uint64 theOwner)
 {
-    gLogger->log(LogManager::DEBUG,"WorldManager::getObjectOwnedBy: Invoked");
     ObjectMap::iterator it = mObjectMap.begin();
     uint64 ownerId = 0;
 
@@ -97,7 +101,6 @@ uint64 WorldManager::getObjectOwnedBy(uint64 theOwner)
         if ( ((*it).second)->getPrivateOwner() == theOwner)
         {
             ownerId = (*it).first;
-            gLogger->log(LogManager::DEBUG,"WorldManager::getObjectOwnedBy: Found an object with id = %"PRIu64"", ownerId);
             break;
         }
         it++;
@@ -118,7 +121,7 @@ bool WorldManager::addObject(Object* object,bool manual)
     //make sure objects arnt added several times!!!!
     if(getObjectById(key))
     {
-        gLogger->log(LogManager::NOTICE,"WorldManager::addObject Object(%I64u) already exists added several times or ID messup ???", key);
+        LOG(INFO) << "WorldManager::addObject Object(" << key<<") already exists added several times or ID messup ???";
         return false;
     }
 
@@ -158,7 +161,7 @@ bool WorldManager::addObject(Object* object,bool manual)
 
         PlayerObject* player = dynamic_cast<PlayerObject*>(object);
 
-        gLogger->log(LogManager::DEBUG,"New Player: %"PRIu64", Total Players on zone : %i",player->getId(),(getPlayerAccMap())->size() + 1);
+        LOG(WARNING) << "New Player: "<<player->getId() <<", Total Players on zone : "<<(getPlayerAccMap())->size() + 1;
         // insert into the player map
         mPlayerAccMap.insert(std::make_pair(player->getAccountId(),player));
 
@@ -173,13 +176,13 @@ bool WorldManager::addObject(Object* object,bool manual)
             }
             else
             {
-                gLogger->log(LogManager::DEBUG,"WorldManager::addObject: couldn't find cell %"PRIu64"",player->getParentId());
+                LOG(WARNING) << "WorldManager::addObject: couldn't find cell " << player->getParentId();
             }
         }
         // query the rtree for the qt region we are in
         else
         {
-            if(QTRegion* region = mSpatialIndex->getQTRegion(player->mPosition.x,player->mPosition.z))
+            if(std::shared_ptr<QTRegion> region = mSpatialIndex->getQTRegion(player->mPosition.x,player->mPosition.z))
             {
                 player->setSubZone(region);
                 player->setSubZoneId((uint32)region->getId());
@@ -188,7 +191,7 @@ bool WorldManager::addObject(Object* object,bool manual)
             else
             {
                 // we should never get here !
-                gLogger->log(LogManager::DEBUG,"WorldManager::addObject: could not find zone region in map");
+                DLOG(INFO) << "WorldManager::addObject: could not find zone region in map";
                 return false;
             }
         }
@@ -203,8 +206,8 @@ bool WorldManager::addObject(Object* object,bool manual)
         player->getStomach()->checkForRegen();
 
         // onPlayerEntered event, notify scripts
-        BString params;
-        params.setLength(sprintf(params.getAnsi(),"%s %s %u",getPlanetNameThis(),player->getFirstName().getAnsi(),static_cast<uint32>(mPlayerAccMap.size())));
+        char params[128];
+        sprintf(params,"%s %s %u",getPlanetNameThis(),player->getFirstName().getAnsi(),static_cast<uint32>(mPlayerAccMap.size()));
 
         mWorldScriptsListener.handleScriptEvent("onPlayerEntered",params);
 
@@ -247,7 +250,7 @@ bool WorldManager::addObject(Object* object,bool manual)
             if(cell)
                 cell->addObjectSecure(object);
             else
-                gLogger->log(LogManager::DEBUG,"WorldManager::addObject couldn't find cell %"PRIu64"",parentId);
+                DLOG(INFO) << "WorldManager::addObject couldn't find cell " << parentId;
         }
     }
     break;
@@ -271,7 +274,7 @@ bool WorldManager::addObject(Object* object,bool manual)
             if(cell)
                 cell->addObjectSecure(creature);
             else
-                gLogger->log(LogManager::DEBUG,"WorldManager::addObject: couldn't find cell %"PRIu64"",parentId);
+                LOG(INFO) << "WorldManager::addObject: couldn't find cell " << parentId;
         }
         else
         {
@@ -281,14 +284,14 @@ bool WorldManager::addObject(Object* object,bool manual)
                 // moving creature, add to QT
             case CreoGroup_Vehicle :
             {
-                if(QTRegion* region = mSpatialIndex->getQTRegion(creature->mPosition.x,creature->mPosition.z))
+                if(std::shared_ptr<QTRegion> region = mSpatialIndex->getQTRegion(creature->mPosition.x,creature->mPosition.z))
                 {
                     creature->setSubZoneId((uint32)region->getId());
                     region->mTree->addObject(creature);
                 }
                 else
                 {
-                    gLogger->log(LogManager::DEBUG,"WorldManager::addObject: could not find zone region in map for creature");
+                    DLOG(INFO) << "WorldManager::addObject: could not find zone region in map for creature";
                     return false;
                 }
 
@@ -309,7 +312,12 @@ bool WorldManager::addObject(Object* object,bool manual)
 
     case ObjType_Region:
     {
-        RegionObject* region = dynamic_cast<RegionObject*>(object);
+        RegionObject* tmp = dynamic_cast<RegionObject*>(object);
+        if (!tmp) {
+            LOG(WARNING) << "Unable to add RegionObject";
+            break;
+        }
+        auto region = std::shared_ptr<RegionObject>(tmp);
 
         mRegionMap.insert(std::make_pair(key,region));
 
@@ -322,13 +330,12 @@ bool WorldManager::addObject(Object* object,bool manual)
 
     case ObjType_Intangible:
     {
-        gLogger->log(LogManager::NOTICE,"Object of type ObjType_Intangible UNHANDLED in WorldManager::addObject:");
+        LOG(INFO) << "Object of type ObjType_Intangible UNHANDLED in WorldManager::addObject:";
     }
     break;
 
     default:
     {
-        gLogger->log(LogManager::CRITICAL,"Unhandled ObjectType in WorldManager::addObject: PRId32",object->getType());
         // Please, when adding new stufff, at least take the time to add a stub for that type.
         // Better fail always, than have random crashes.
         assert(false && "WorldManager::addObject Unhandled ObjectType");
@@ -337,7 +344,20 @@ bool WorldManager::addObject(Object* object,bool manual)
     }
     return true;
 }
+bool WorldManager::addObject(std::shared_ptr<Object> object, bool manual)
+{
+    uint64 key = object->getId();
 
+    mObjectMap.insert(key,object.get());
+
+    auto region = dynamic_pointer_cast<RegionObject>(object);
+
+    mRegionMap.insert(std::make_pair(key,region));
+
+    mSpatialIndex->InsertRegion(key,region->mPosition.x,region->mPosition.z,region->getWidth(),region->getHeight());
+
+    return true;
+}
 
 //======================================================================================================================
 //
@@ -424,7 +444,7 @@ void WorldManager::createObjectinWorld(Object* object)
     // query the according qtree, if we are in one
     if(object->getSubZoneId())
     {
-        if(QTRegion* region = getQTRegion(object->getSubZoneId()))
+        if(std::shared_ptr<QTRegion> region = getQTRegion(object->getSubZoneId()))
         {
 
             Anh_Math::Rectangle qRect;
@@ -550,8 +570,8 @@ void WorldManager::destroyObject(Object* object)
         gWorldManager->removeCreatureStomachToProcess(player->getStomach()->mFoodTaskId);
 
         // move to the nearest cloning center, if we are incapped or dead
-        if(player->getPosture() == CreaturePosture_Incapacitated
-                || player->getPosture() == CreaturePosture_Dead)
+        if(player->states.getPosture() == CreaturePosture_Incapacitated
+                || player->states.getPosture() == CreaturePosture_Dead)
         {
             // bring up the clone selection window
             ObjectSet						inRangeBuildings;
@@ -584,11 +604,11 @@ void WorldManager::destroyObject(Object* object)
                     if(SpawnPoint* sp = nearestBuilding->getRandomSpawnPoint())
                     {
                         // update the database with the new values
-                        gWorldManager->getDatabase()->ExecuteSqlAsync(0,0,"UPDATE characters SET parent_id=%"PRIu64",oX=%f,oY=%f,oZ=%f,oW=%f,x=%f,y=%f,z=%f WHERE id=%"PRIu64"",sp->mCellId
+                        gWorldManager->getDatabase()->executeSqlAsync(0,0,"UPDATE characters SET parent_id=%"PRIu64",oX=%f,oY=%f,oZ=%f,oW=%f,x=%f,y=%f,z=%f WHERE id=%"PRIu64"",sp->mCellId
                                 ,sp->mDirection.x,sp->mDirection.y,sp->mDirection.z,sp->mDirection.w
                                 ,sp->mPosition.x,sp->mPosition.y,sp->mPosition.z
                                 ,player->getId());
-                        
+
                     }
                 }
             }
@@ -597,8 +617,8 @@ void WorldManager::destroyObject(Object* object)
 
 
         // onPlayerLeft event, notify scripts
-        BString params;
-        params.setLength(sprintf(params.getAnsi(),"%s %s %u",getPlanetNameThis(),player->getFirstName().getAnsi(),static_cast<uint32>(mPlayerAccMap.size())));
+        char params[128];
+        sprintf(params,"%s %s %u",getPlanetNameThis(),player->getFirstName().getAnsi(),static_cast<uint32>(mPlayerAccMap.size()));
 
         mWorldScriptsListener.handleScriptEvent("onPlayerLeft",params);
         // gLogger->log(LogManager::DEBUG,"WorldManager::destroyObject: Player Client set to NULL");
@@ -616,12 +636,12 @@ void WorldManager::destroyObject(Object* object)
             }
             else
             {
-                gLogger->log(LogManager::DEBUG,"PlayerObject::destructor: couldn't find cell %"PRIu64"",cellId);
+                DLOG(INFO) << "PlayerObject::destructor: couldn't find cell " <<cellId;
             }
         }
         else if(player->getSubZoneId())
         {
-            if(QTRegion* region = gWorldManager->getQTRegion(player->getSubZoneId()))
+            if(std::shared_ptr<QTRegion> region = gWorldManager->getQTRegion(player->getSubZoneId()))
             {
                 player->setSubZoneId(0);
 
@@ -648,7 +668,7 @@ void WorldManager::destroyObject(Object* object)
             // Not all objects-creatures of this type are points.
             if(creature->getSubZoneId())
             {
-                if(QTRegion* region = getQTRegion(creature->getSubZoneId()))
+                if(std::shared_ptr<QTRegion>region = getQTRegion(creature->getSubZoneId()))
                 {
                     creature->setSubZoneId(0);
                     region->mTree->removeObject(creature);
@@ -700,7 +720,7 @@ void WorldManager::destroyObject(Object* object)
 
         if(object->getSubZoneId())
         {
-            if(QTRegion* region = getQTRegion(object->getSubZoneId()))
+            if(std::shared_ptr<QTRegion> region = getQTRegion(object->getSubZoneId()))
             {
                 object->setSubZoneId(0);
                 region->mTree->removeObject(object);
@@ -735,7 +755,7 @@ void WorldManager::destroyObject(Object* object)
         {
             if(object->getSubZoneId())
             {
-                if(QTRegion* region = getQTRegion(object->getSubZoneId()))
+                if(std::shared_ptr<QTRegion> region = getQTRegion(object->getSubZoneId()))
                 {
                     object->setSubZoneId(0);
                     region->mTree->removeObject(object);
@@ -759,7 +779,7 @@ void WorldManager::destroyObject(Object* object)
 
         }
         else
-            gLogger->log(LogManager::DEBUG,"WorldManager::destroyObject: nearly did not remove: %"PRIu64"s knownObjectList",object->getId());
+            DLOG(INFO) << "WorldManager::destroyObject: nearly did not remove: "<<object->getId() << " knownObjectList";
 
 
         object->destroyKnownObjects();
@@ -804,7 +824,7 @@ void WorldManager::destroyObject(Object* object)
         }
         else
         {
-            gLogger->log(LogManager::DEBUG,"WorldManager::destroyObject: error removing : %"PRIu64"",object->getId());
+            DLOG(INFO) << "WorldManager::destroyObject: error removing : "<<object->getId();
         }
         // destroy known objects
         object->destroyKnownObjects();
@@ -821,7 +841,7 @@ void WorldManager::destroyObject(Object* object)
         }
         else
         {
-            gLogger->log(LogManager::DEBUG,"Worldmanager::destroyObject: Could not find region %"PRIu64"",object->getId());
+            DLOG(INFO) << "Worldmanager::destroyObject: Could not find region " << object->getId();
         }
 
         //camp regions are in here, too
@@ -829,7 +849,7 @@ void WorldManager::destroyObject(Object* object)
         if(itQ != mQTRegionMap.end())
         {
             mQTRegionMap.erase(itQ);
-            gLogger->log(LogManager::DEBUG,"Worldmanager::destroyObject: qt region %"PRIu64"",object->getId());
+            DLOG(INFO) << "Worldmanager::destroyObject: qt region " << object->getId();
         }
 
         object->destroyKnownObjects();
@@ -839,7 +859,7 @@ void WorldManager::destroyObject(Object* object)
 
     case ObjType_Intangible:
     {
-        gLogger->log(LogManager::DEBUG,"Object of type ObjType_Intangible almost UNHANDLED in WorldManager::destroyObject:");
+        DLOG(INFO) << "Object of type ObjType_Intangible almost UNHANDLED in WorldManager::destroyObject:";
 
         // intangibles are controllers / pets in the datapad
         // they are NOT in the world
@@ -852,7 +872,7 @@ void WorldManager::destroyObject(Object* object)
 
     default:
     {
-        gLogger->log(LogManager::CRITICAL,"Unhandled ObjectType in WorldManager::destroyObject: %u",(uint32)(object->getType()));
+        LOG(WARNING) << "Unhandled ObjectType in WorldManager::destroyObject: " << (uint32)(object->getType());
 
         // Please, when adding new stufff, at least take the time to add a stub for that type.
         // Better fail always, than have random crashes.
@@ -873,7 +893,7 @@ void WorldManager::destroyObject(Object* object)
     }
     else
     {
-        gLogger->log(LogManager::CRITICAL,"WorldManager::destroyObject: error removing from objectmap: %"PRIu64"",object->getId());
+        LOG(WARNING) << "WorldManager::destroyObject: error removing from objectmap: " << object->getId();
     }
 }
 
@@ -901,7 +921,7 @@ void WorldManager::eraseObject(uint64 key)
     }
     else
     {
-        gLogger->log(LogManager::DEBUG,"WorldManager::destroyObject: error removing from objectmap: %"PRIu64"",key);
+        DLOG(INFO) << "WorldManager::destroyObject: error removing from objectmap: " << key;
     }
 }
 
@@ -933,7 +953,7 @@ void WorldManager::initObjectsInRange(PlayerObject* playerObject)
     // query the according qtree, if we are in one
     if(playerObject->getSubZoneId())
     {
-        if(QTRegion* region = getQTRegion(playerObject->getSubZoneId()))
+        if(std::shared_ptr<QTRegion> region = getQTRegion(playerObject->getSubZoneId()))
         {
             Anh_Math::Rectangle qRect;
 
@@ -986,30 +1006,6 @@ void WorldManager::initObjectsInRange(PlayerObject* playerObject)
 }
 
 //======================================================================================================================
-
-void WorldManager::_loadAllObjects(uint64 parentId)
-{
-    int8	sql[2048];
-    WMAsyncContainer* asynContainer = new(mWM_DB_AsyncPool.ordered_malloc()) WMAsyncContainer(WMQuery_AllObjectsChildObjects);
-
-    sprintf(sql,"(SELECT \'terminals\',terminals.id FROM terminals INNER JOIN terminal_types ON (terminals.terminal_type = terminal_types.id)"
-            " WHERE (terminal_types.name NOT LIKE 'unknown') AND (terminals.parent_id = %"PRIu64") AND (terminals.planet_id = %"PRIu32"))"
-            " UNION (SELECT \'containers\',containers.id FROM containers INNER JOIN container_types ON (containers.container_type = container_types.id)"
-            " WHERE (container_types.name NOT LIKE 'unknown') AND (containers.parent_id = %"PRIu64") AND (containers.planet_id = %u))"
-            " UNION (SELECT \'ticket_collectors\',ticket_collectors.id FROM ticket_collectors WHERE (parent_id=%"PRIu64") AND (planet_id=%u))"
-            " UNION (SELECT \'persistent_npcs\',persistent_npcs.id FROM persistent_npcs WHERE (parentId=%"PRIu64") AND (planet_id = %"PRIu32"))"
-            " UNION (SELECT \'shuttles\',shuttles.id FROM shuttles WHERE (parentId=%"PRIu64") AND (planet_id = %"PRIu32"))"
-            " UNION (SELECT \'items\',items.id FROM items WHERE (parent_id=%"PRIu64") AND (planet_id = %"PRIu32"))"
-            " UNION (SELECT \'resource_containers\',resource_containers.id FROM resource_containers WHERE (parent_id=%"PRIu64") AND (planet_id = %"PRIu32"))",
-            parentId,mZoneId,parentId,mZoneId,parentId,mZoneId,parentId,mZoneId,parentId
-            ,mZoneId,parentId,mZoneId,parentId,mZoneId);
-
-    mDatabase->ExecuteSqlAsync(this,asynContainer,sql);
-    
-
-    //gConfig->read<float>("FillFactor"
-}
-
 bool WorldManager::_handleGeneralObjectTimers(uint64 callTime, void* ref)
 {
     CreatureObjectDeletionMap::iterator it = mCreatureObjectDeletionMap.begin();

@@ -26,6 +26,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "ResourceContainerFactory.h"
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "ObjectFactoryCallback.h"
 #include "Resource.h"
 #include "ResourceContainer.h"
@@ -34,7 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
-#include "Common/LogManager.h"
+
 #include "Utils/utils.h"
 
 //=============================================================================
@@ -93,7 +99,7 @@ void ResourceContainerFactory::handleDatabaseJobComplete(void* ref,DatabaseResul
             QueryContainerBase* asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(asyncContainer->mOfCallback,RCFQuery_Attributes,asyncContainer->mClient);
             asContainer->mObject = container;
 
-            mDatabase->ExecuteSqlAsync(this,asContainer,"SELECT attributes.name,object_attributes.value,attributes.internal"
+            mDatabase->executeSqlAsync(this,asContainer,"SELECT attributes.name,object_attributes.value,attributes.internal"
                                        " FROM object_attributes"
                                        " INNER JOIN attributes ON (object_attributes.attribute_id = attributes.id)"
                                        " WHERE object_attributes.object_id = %"PRIu64" ORDER BY object_attributes.order",container->getId());
@@ -121,7 +127,7 @@ void ResourceContainerFactory::handleDatabaseJobComplete(void* ref,DatabaseResul
 
 void ResourceContainerFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,uint16 subGroup,uint16 subType,DispatchClient* client)
 {
-    mDatabase->ExecuteSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,RCFQuery_MainData,client),"SELECT * FROM resource_containers WHERE id=%"PRIu64"",id);
+    mDatabase->executeSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,RCFQuery_MainData,client),"SELECT * FROM resource_containers WHERE id=%"PRIu64"",id);
     
 }
 
@@ -129,21 +135,23 @@ void ResourceContainerFactory::requestObject(ObjectFactoryCallback* ofCallback,u
 
 ResourceContainer* ResourceContainerFactory::_createResourceContainer(DatabaseResult* result)
 {
+    if (!result->getRowCount()) {
+    	return nullptr;
+    }
+
     ResourceContainer*	resourceContainer = new ResourceContainer();
 
-    uint64 count = result->getRowCount();
-
-    result->GetNextRow(mResourceContainerBinding,(void*)resourceContainer);
+    result->getNextRow(mResourceContainerBinding,(void*)resourceContainer);
 
     Resource* resource = gResourceManager->getResourceById(resourceContainer->mResourceId);
 
-    if(resource != NULL)
+    if(resource != nullptr)
     {
         resourceContainer->setResource(resource);
         resourceContainer->setModelString((resource->getType())->getContainerModel().getAnsi());
+    } else {
+    	LOG(WARNING) << "Resource not found [" << resourceContainer->mResourceId << "]";
     }
-    else
-        gLogger->log(LogManager::DEBUG,"ResourceContainerFactory::_createResourceContainer: Resource not found %"PRIu64"",resourceContainer->mResourceId);
 
     resourceContainer->mMaxCondition = 100;
 
@@ -156,7 +164,7 @@ ResourceContainer* ResourceContainerFactory::_createResourceContainer(DatabaseRe
 
 void ResourceContainerFactory::_setupDatabindings()
 {
-    mResourceContainerBinding = mDatabase->CreateDataBinding(11);
+    mResourceContainerBinding = mDatabase->createDataBinding(11);
     mResourceContainerBinding->addField(DFT_uint64,offsetof(ResourceContainer,mId),8,0);
     mResourceContainerBinding->addField(DFT_uint64,offsetof(ResourceContainer,mParentId),8,1);
     mResourceContainerBinding->addField(DFT_uint64,offsetof(ResourceContainer,mResourceId),8,2);
@@ -174,7 +182,7 @@ void ResourceContainerFactory::_setupDatabindings()
 
 void ResourceContainerFactory::_destroyDatabindings()
 {
-    mDatabase->DestroyDataBinding(mResourceContainerBinding);
+    mDatabase->destroyDataBinding(mResourceContainerBinding);
 }
 
 //=============================================================================

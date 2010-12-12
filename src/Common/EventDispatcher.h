@@ -41,7 +41,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Utils/ActiveObject.h"
 #include "Utils/Singleton.h"
 #include "Common/Event.h"
-#include "Common/declspec.h"
 
 /*! \brief Common is a catch-all library containing primarily base classes and
  * classes used for maintaining application lifetimes.
@@ -49,7 +48,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 namespace common {
 
 class EventDispatcher;
-#define gEventDispatcher ::utils::Singleton<::common::EventDispatcher>::Instance()
+#define gEventDispatcher utils::Singleton<common::EventDispatcher>::Instance()
 
 typedef std::function<bool (IEventPtr)> EventListenerCallback;
 
@@ -70,7 +69,7 @@ typedef std::priority_queue<IEventPtr, std::vector<IEventPtr>, CompareEventWeigh
  * between different "modules" of code that may or may not be running on separate
  * processes or even separate physical machines.
  */
-class COMMON_API EventDispatcher {
+class EventDispatcher {
 public:
     EventDispatcher();
     explicit EventDispatcher(uint64_t current_time);
@@ -159,15 +158,13 @@ private:
     bool AddEventType_(const EventType& event_type);
     void Disconnect_(const EventType& event_type, const EventListenerType& event_listener_type);
     bool Deliver_(IEventPtr triggered_event);
-
-    // Win32 complains about stl during linkage, disable the warning.
-#ifdef _WIN32
-#pragma warning (disable : 4251)
-#endif
+        
     EventTypeSet event_type_set_;
 
     EventListenerMap event_listener_map_;
 
+    uint64_t current_timestep_;
+    
     // Uses a double buffered queue to prevent events that generate events from creating
     // an infinite loop.
 
@@ -175,17 +172,12 @@ private:
     {
         kNumQueues = 2
     };
-
+        
     EventQueue event_queue_[kNumQueues];
+
     int active_queue_;
-
-    ::boost::atomic<uint64_t> current_timestep_;
-    // Re-enable the warning.
-#ifdef _WIN32
-#pragma warning (default : 4251)
-#endif
-
-    ::utils::ActiveObject active_;
+    
+    utils::ActiveObject active_;
 };
 
 }  // namespace common

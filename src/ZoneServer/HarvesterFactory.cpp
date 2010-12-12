@@ -26,11 +26,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "HarvesterFactory.h"
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "Deed.h"
 #include "HarvesterObject.h"
 #include "ResourceContainerFactory.h"
 #include "WorldManager.h"
-#include "Common/LogManager.h"
+
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -90,18 +96,17 @@ void HarvesterFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
         if(count)
         {
-            DataBinding* binding = mDatabase->CreateDataBinding(2);
+            DataBinding* binding = mDatabase->createDataBinding(2);
             binding->addField(DFT_uint64,offsetof(HarvesterHopperItem,ResourceID),8,0);
             binding->addField(DFT_float,offsetof(HarvesterHopperItem,Quantity),4,1);
 
             HResourceList*	hRList = harvester->getResourceList();
             hRList->resize(hRList->size()+count);
-            HResourceList::iterator it = hRList->begin();
 
             HarvesterHopperItem hopperTemp;
             for(uint64 i=0; i <count; i++)
             {
-                result->GetNextRow(binding,&hopperTemp);
+                result->getNextRow(binding,&hopperTemp);
                 hRList->push_back(std::make_pair(hopperTemp.ResourceID,hopperTemp.Quantity));
             }
 
@@ -111,7 +116,7 @@ void HarvesterFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
         asynContainer->mId		= harvester->getId();
         asynContainer->mObject	= harvester;
 
-        mDatabase->ExecuteSqlAsync(this,asynContainer,"SELECT attributes.name,sa.value,attributes.internal"
+        mDatabase->executeSqlAsync(this,asynContainer,"SELECT attributes.name,sa.value,attributes.internal"
                                    " FROM structure_attributes sa"
                                    " INNER JOIN attributes ON (sa.attribute_id = attributes.id)"
                                    " WHERE sa.structure_id = %"PRIu64" ORDER BY sa.order",harvester->getId());
@@ -131,13 +136,13 @@ void HarvesterFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(mAttributeBinding,(void*)&attribute);
+            result->getNextRow(mAttributeBinding,(void*)&attribute);
             harvester->addInternalAttribute(attribute.mKey,std::string(attribute.mValue.getAnsi()));
         }
 
         harvester->setLoadState(LoadState_Loaded);
 
-        gLogger->log(LogManager::NOTICE,"HarvesterFactory: loaded Harvester %I64u", harvester->getId());
+        LOG(INFO) << "Loaded harvester with id [" << harvester->getId() << "]";
         asyncContainer->mOfCallback->handleObjectReady(harvester,asyncContainer->mClient);
 
     }
@@ -159,7 +164,7 @@ void HarvesterFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
         int8 sql[250];
         sprintf(sql,"SELECT hr.resourceID, hr.quantity FROM harvester_resources hr WHERE hr.ID = '%"PRIu64"' ",harvester->getId());
-        mDatabase->ExecuteSqlAsync(this,asynContainer,sql);
+        mDatabase->executeSqlAsync(this,asynContainer,sql);
      
 
     }
@@ -179,10 +184,11 @@ void HarvesterFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
 void HarvesterFactory::_createHarvester(DatabaseResult* result, HarvesterObject* harvester)
 {
+    if (!result->getRowCount()) {
+       	return;
+    }
 
-    uint64 count = result->getRowCount();
-
-    result->GetNextRow(mHarvesterBinding,harvester);
+    result->getNextRow(mHarvesterBinding,harvester);
 
     harvester->setLoadState(LoadState_Loaded);
     harvester->setType(ObjType_Structure);
@@ -201,7 +207,7 @@ void HarvesterFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id
             "WHERE (s.id = %"PRIu64")",id);
     QueryContainerBase* asynContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,HFQuery_MainData,client,id);
 
-    mDatabase->ExecuteSqlAsync(this,asynContainer,sql2);
+    mDatabase->executeSqlAsync(this,asynContainer,sql2);
     
 }
 
@@ -210,7 +216,7 @@ void HarvesterFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id
 
 void HarvesterFactory::_setupDatabindings()
 {
-    mHarvesterBinding = mDatabase->CreateDataBinding(24);
+    mHarvesterBinding = mDatabase->createDataBinding(24);
     mHarvesterBinding->addField(DFT_uint64,offsetof(HarvesterObject,mId),8,0);
     mHarvesterBinding->addField(DFT_uint64,offsetof(HarvesterObject,mOwner),8,1);
     mHarvesterBinding->addField(DFT_float,offsetof(HarvesterObject,mDirection.x),4,2);
@@ -244,7 +250,7 @@ void HarvesterFactory::_setupDatabindings()
 
 void HarvesterFactory::_destroyDatabindings()
 {
-    mDatabase->DestroyDataBinding(mHarvesterBinding);
+    mDatabase->destroyDataBinding(mHarvesterBinding);
 
 }
 
@@ -257,7 +263,7 @@ void HarvesterFactory::handleObjectReady(Object* object,DispatchClient* client)
 
     InLoadingContainer* ilc = _getObject(object->getParentId());
     if (! ilc) {//ILC sanity check...
-        gLogger->log(LogManager::WARNING,"HarvesterFactory::handleObjectReady could not locate ILC for objectParentId:%I64u",object->getParentId());
+    	LOG(WARNING) << "Could not locate InLoadingContainer for object parent [" << object->getParentId() << "]";
         return;
     }
 
@@ -270,7 +276,7 @@ void HarvesterFactory::handleObjectReady(Object* object,DispatchClient* client)
     if(harvester->decLoadCount() == 0)
     {
         if(!(_removeFromObjectLoadMap(harvester->getId())))
-            gLogger->log(LogManager::DEBUG,"HarvesterFactory: Failed removing object from loadmap");
+        	LOG(WARNING) << "Failed removing object from loadmap";
 
         ilc->mOfCallback->handleObjectReady(harvester,ilc->mClient);
 

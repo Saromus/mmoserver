@@ -26,88 +26,122 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "CharacterAdminHandler.h"
-#include "ChatOpcodes.h"
 
-#include "Common/LogManager.h"
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <sstream>
 
-#include "DatabaseManager/DataBinding.h"
-#include "DatabaseManager/Database.h"
-#include "DatabaseManager/DatabaseResult.h"
+#ifdef WIN32
+#include <regex>
+#else
+#include <boost/regex.hpp>
+#endif
+
+#include <boost/lexical_cast.hpp>
+
+// Fix for issues with glog redefining this constant
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
+#include <cppconn/resultset.h>
+
+#include "Utils/utils.h"
 
 #include "NetworkManager/DispatchClient.h"
 #include "NetworkManager/Message.h"
 #include "NetworkManager/MessageDispatch.h"
 #include "NetworkManager/MessageFactory.h"
 
-#include "Utils/utils.h"
+#include "DatabaseManager/DataBinding.h"
+#include "DatabaseManager/Database.h"
+#include "DatabaseManager/DatabaseResult.h"
 
-#include <boost/lexical_cast.hpp>
+#include "ChatOpcodes.h"
 
-#include <string>
-#include <cassert>
-#include <cstdlib>
-#include <cstring>
+#ifdef WIN32
+using std::wregex;
+using std::wsmatch;
+using std::regex_match;
+#else
+using boost::wregex;
+using boost::wsmatch;
+using boost::regex_match;
+#endif
 
-//======================================================================================================================
-CharacterAdminHandler::CharacterAdminHandler(Database* database, MessageDispatch* dispatch)
+CharacterAdminHandler::CharacterAdminHandler(Database* database, MessageDispatch* dispatch) 
+    : database_(database)
+    , message_dispatch_(dispatch)
 {
-    // Store our members
-    mDatabase = database;
-    mMessageDispatch = dispatch;
-
     // Register our opcodes
-    mMessageDispatch->RegisterMessageCallback(opClientCreateCharacter,std::bind(&CharacterAdminHandler::_processCreateCharacter, this, std::placeholders::_1, std::placeholders::_2));
-    //mMessageDispatch->RegisterMessageCallback(opLagRequest,this);
-    mMessageDispatch->RegisterMessageCallback(opClientRandomNameRequest,std::bind(&CharacterAdminHandler::_processRandomNameRequest, this, std::placeholders::_1, std::placeholders::_2));
-
-    // Load anything we need from the database
+    message_dispatch_->RegisterMessageCallback(opClientCreateCharacter, std::bind(&CharacterAdminHandler::_processCreateCharacter, this, std::placeholders::_1, std::placeholders::_2));
+    message_dispatch_->RegisterMessageCallback(opClientRandomNameRequest, std::bind(&CharacterAdminHandler::_processRandomNameRequest, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 
-//======================================================================================================================
-CharacterAdminHandler::~CharacterAdminHandler(void)
-{
+CharacterAdminHandler::~CharacterAdminHandler() {
     // Unregister our callbacks
-    mMessageDispatch->UnregisterMessageCallback(opClientCreateCharacter);
-    mMessageDispatch->UnregisterMessageCallback(opLagRequest);
-    mMessageDispatch->UnregisterMessageCallback(opClientRandomNameRequest);
+    message_dispatch_->UnregisterMessageCallback(opClientCreateCharacter);
+    message_dispatch_->UnregisterMessageCallback(opLagRequest);
+    message_dispatch_->UnregisterMessageCallback(opClientRandomNameRequest);
 }
 
-//======================================================================================================================
-void CharacterAdminHandler::Process(void)
-{
 
-}
+void CharacterAdminHandler::Process() {}
 
-//======================================================================================================================
-void CharacterAdminHandler::_processRandomNameRequest(Message* message, DispatchClient* client)
-{
-    if(!client)
-    {
+
+void CharacterAdminHandler::_processRandomNameRequest(Message* message, DispatchClient* client) {
+    if(!client) {
         return;
     }
-
-    Message* newMessage;
 
     // If it's not, validate it to the client.
     gMessageFactory->StartMessage();
     gMessageFactory->addUint32(opHeartBeat);
-    newMessage = gMessageFactory->EndMessage();
+    Message* newMessage = gMessageFactory->EndMessage();
 
     // Send our message to the client.
     client->SendChannelAUnreliable(newMessage, client->getAccountId(), CR_Client, 1);
 
     // set our object type string.
-    BString objectType;
-    message->getStringAnsi(objectType);
+    std::string object_type = message->getStringAnsi();
 
-    CAAsyncContainer* asyncContainer = new CAAsyncContainer(CAQuery_RequestName,client);
-    asyncContainer->mObjBaseType = objectType.getAnsi();
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,"SELECT sf_CharacterNameCreate(\'%s\')",objectType.getAnsi());
+    std::stringstream ss;
+
+    ss << "SELECT sf_CharacterNameCreate('" << object_type << "')";
+    
+    database_->executeAsyncSql(ss.str(), [this, client, object_type] (DatabaseResult* result) {
+        // Vaalidate the input.
+        if (! client || ! result) {
+            return;
+        }
+
+        std::unique_ptr<sql::ResultSet>& result_set = result->getResultSet();
+        
+        if (!result_set->next()) {
+            LOG(WARNING) << "Unable to generate random name for client [" << client->getAccountId() << "]";
+            return;
+        }
+
+        std::string random_name = result_set->getString(1);
+
+        gMessageFactory->StartMessage();
+        gMessageFactory->addUint32(opClientRandomNameResponse);
+        gMessageFactory->addString(object_type);
+        gMessageFactory->addString(std::wstring(random_name.begin(), random_name.end()));
+        gMessageFactory->addString("ui");
+        gMessageFactory->addUint32(0);
+        gMessageFactory->addString("name_approved");
+        Message* newMessage = gMessageFactory->EndMessage();
+
+        client->SendChannelA(newMessage, client->getAccountId(), CR_Client, 4);
+    });
 }
 
 
-//======================================================================================================================
 void CharacterAdminHandler::_processCreateCharacter(Message* message, DispatchClient* client)
 {
     CharacterCreateInfo characterInfo;
@@ -116,102 +150,29 @@ void CharacterAdminHandler::_processCreateCharacter(Message* message, DispatchCl
     // Using a string as a buffer object for the appearance data.  The string class can parse the message format
     _parseAppearanceData(message, &characterInfo);
 
-    BString characterName;
-    characterName.setType(BSTRType_Unicode16);
+    // Get the u16string and convert it to wstring for processing.
+    std::u16string raw_character_name = message->getStringUnicode16();
+    std::wstring tmp(raw_character_name.begin(), raw_character_name.end());
 
-    message->getStringUnicode16(characterName);
+    // A regular expression that searches for a first name and optional sirname.
+    // Only letters, and the ' and - characters are allowed. Only 3 instances
+    // of the ' and - characters may be in the entire name, which must be between
+    // 3 and 16 characters long.
+    const wregex p(L"(?!['-])(?!.*['-].*['-].*['-].*['-])([a-zA-Z][a-z'-]{3,16}?)(?: ([a-zA-Z][a-z'-]{3,16}?))?");
+    wsmatch m;
 
-    uint16* space = reinterpret_cast<uint16*>(wcschr(reinterpret_cast<wchar_t*>(characterName.getRawData()),' '));
-
-    // If there is no last name, there is no space.
-    if (space)
-    {
-        // Get our first name
-        *space = 0;
-        uint16 len = (uint16)wcslen(reinterpret_cast<wchar_t*>(characterName.getRawData()));
-        characterInfo.mFirstName.setType(BSTRType_Unicode16);
-        characterInfo.mFirstName.setLength(len);
-        wcscpy(reinterpret_cast<wchar_t*>(characterInfo.mFirstName.getRawData()), reinterpret_cast<wchar_t*>(characterName.getRawData()));
-
-        // Get our last name
-        *space = ' ';
-        len = (uint16)wcslen(reinterpret_cast<wchar_t*>(space) + 1);
-        characterInfo.mLastName.setType(BSTRType_Unicode16);
-        characterInfo.mLastName.setLength(len);
-        wcscpy(reinterpret_cast<wchar_t*>(characterInfo.mLastName.getRawData()), reinterpret_cast<wchar_t*>(space) + 1);
-    }
-    else
-    {
-        // We only have one name
-        characterInfo.mFirstName = characterName;
-        characterInfo.mLastName.setType(BSTRType_ANSI);
-    }
-
-    // we must have a firstname
-    if(characterInfo.mFirstName.getLength() < 3)
-    {
-        // characterInfo.mFirstName.convert(BSTRType_ANSI);
-        _sendCreateCharacterFailed(1,client);
-        return;
-    }
-    // we dont want large names
-    else if(characterInfo.mFirstName.getLength() > 16)
-    {
-        // characterInfo.mFirstName.convert(BSTRType_ANSI);
-        _sendCreateCharacterFailed(11,client);
+    if (! regex_match(tmp, m, p)) {
+        LOG(WARNING) << "Invalid character name [" << std::string(tmp.begin(), tmp.end()) << "]";
+        _sendCreateCharacterFailed(15, client);
         return;
     }
 
-    // check the name further, allow no numbers,only 3 special signs
-    // other verifications are done via the database
-    uint8 specialCount = 0;
-    BString checkName;
-    bool needsEscape = false;
-    checkName.setType(BSTRType_Unicode16);
+    characterInfo.mFirstName = m[1].str().c_str();
 
-    uint16 len = (uint16)wcslen(reinterpret_cast<wchar_t*>(characterName.getRawData()));
-    characterInfo.mFirstName.setType(BSTRType_Unicode16);
-    characterInfo.mFirstName.setLength(len);
-    wcscpy(reinterpret_cast<wchar_t*>(checkName.getRawData()),reinterpret_cast<wchar_t*>(characterName.getRawData()));
-    checkName.convert(BSTRType_ANSI);
-    int8* check = checkName.getAnsi();
-
-    while(*check)
-    {
-        if(!((*check >= 'A' && *check <= 'Z') || (*check >= 'a' && *check <= 'z')))
-        {
-            if(*check == ' ')
-            {
-                check++;
-                continue;
-            }
-            else if(*check == '\'' || *check == '-')
-            {
-                needsEscape = true;
-
-                if(++specialCount > 2)
-                {
-                    gLogger->log(LogManager::DEBUG,"specialCount > 2 in name");
-                    _sendCreateCharacterFailed(10,client);
-                    return;
-                }
-                else
-                {
-                    check++;
-                    continue;
-                }
-
-            }
-            else
-            {
-                gLogger->log(LogManager::DEBUG,"Invalid chars in name");
-                _sendCreateCharacterFailed(10,client);
-                return;
-            }
-        }
-        check++;
+    if (m[2].matched) {
+        characterInfo.mLastName = m[2].str().c_str();
     }
-
+    
     // Base character model
     message->getStringAnsi(characterInfo.mBaseModel);
     //uint32 crc = characterInfo.mBaseModel.getCrc();
@@ -260,31 +221,22 @@ void CharacterAdminHandler::_processCreateCharacter(Message* message, DispatchCl
     // Convert our name strings to UTF8 so they can be put in the DB.
     characterInfo.mFirstName.convert(BSTRType_ANSI);
     characterInfo.mBiography.convert(BSTRType_ANSI);
-
-    if(needsEscape)
-        characterInfo.mFirstName = strRep(std::string(characterInfo.mFirstName.getAnsi()),"'","''").c_str();
-
-    if(characterInfo.mLastName.getType() != BSTRType_ANSI && characterInfo.mLastName.getLength())
-    {
+    
+    if(characterInfo.mLastName.getType() != BSTRType_ANSI && characterInfo.mLastName.getLength()) {
         characterInfo.mLastName.convert(BSTRType_ANSI);
-
-        if(needsEscape)
-            characterInfo.mLastName = strRep(std::string(characterInfo.mLastName.getAnsi()),"'","''").c_str();
-
+        
         // Build our procedure call
         sprintf(sql, "CALL sp_CharacterCreate(%"PRIu32", 2,'%s','%s', '%s', '%s', %f",
                 client->getAccountId(),
-                characterInfo.mFirstName.getAnsi(),
-                characterInfo.mLastName.getAnsi(),
+                database_->escapeString(characterInfo.mFirstName.getAnsi()).c_str(),
+                database_->escapeString(characterInfo.mLastName.getAnsi()).c_str(),
                 characterInfo.mProfession.getAnsi(),
                 characterInfo.mStartCity.getAnsi(),
                 characterInfo.mScale);
-    }
-    else
-    {
-        sprintf(sql, "CALL sp_CharacterCreate(%"PRIu32", 2, '%s',NULL , '%s', '%s', %f",
+    } else {
+        sprintf(sql, "CALL sp_CharacterCreate(%"PRIu32", 2, '%s', NULL , '%s', '%s', %f",
                 client->getAccountId(),
-                characterInfo.mFirstName.getAnsi(),
+                database_->escapeString(characterInfo.mFirstName.getAnsi()).c_str(),
                 characterInfo.mProfession.getAnsi(),
                 characterInfo.mStartCity.getAnsi(),
                 characterInfo.mScale);
@@ -335,75 +287,29 @@ void CharacterAdminHandler::_processCreateCharacter(Message* message, DispatchCl
     strcat(sql, sql2);
 
     //Logging the character create sql for debugging purposes,beware this contains binary data
-    
-
-    CAAsyncContainer* asyncContainer = new CAAsyncContainer(CAQuery_CreateCharacter,client);
-    mDatabase->ExecuteProcedureAsync(this, asyncContainer, sql);
-}
-
-//======================================================================================================================
-
-void CharacterAdminHandler::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
-{
-    CAAsyncContainer* asyncContainer = reinterpret_cast<CAAsyncContainer*>(ref);
-    switch(asyncContainer->mQueryType)
-    {
-    case CAQuery_CreateCharacter:
-    {
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
-        binding->addField(DFT_uint64,0,8);
-
-        uint64 queryResult;
-        result->GetNextRow(binding,&queryResult);
-
-        if(queryResult >= 0x0000000200000000ULL)
-        {
-            _sendCreateCharacterSuccess(queryResult,asyncContainer->mClient);
-        }
-        else
-        {
-            _sendCreateCharacterFailed(static_cast<uint32>(queryResult),asyncContainer->mClient);
+    database_->executeAsyncProcedure(sql, [this, client] (DatabaseResult* result) {       
+        // Vaalidate the input.
+        if (! client || ! result) {
+            return;
         }
 
-        mDatabase->DestroyDataBinding(binding);
-    }
-    break;
+        std::unique_ptr<sql::ResultSet>& result_set = result->getResultSet();
+        
+        if (!result_set->next()) {
+            LOG(WARNING) << "Unable to generate random name for client [" << client->getAccountId() << "]";
+            return;
+        }
 
-    case CAQuery_RequestName:
-    {
-        Message* newMessage;
+        uint64 query_result = result_set->getUInt64(1);
 
-        BString randomName,ui,state;
-        ui = "ui";
-        state = "name_approved";
-
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
-        binding->addField(DFT_bstring,0,64);
-        result->GetNextRow(binding,&randomName);
-        randomName.convert(BSTRType_Unicode16);
-
-        gMessageFactory->StartMessage();
-        gMessageFactory->addUint32(opClientRandomNameResponse);
-        gMessageFactory->addString(asyncContainer->mObjBaseType);
-        gMessageFactory->addString(randomName);
-        gMessageFactory->addString(ui);
-        gMessageFactory->addUint32(0);
-        gMessageFactory->addString(state);
-        newMessage = gMessageFactory->EndMessage();
-
-        asyncContainer->mClient->SendChannelA(newMessage, asyncContainer->mClient->getAccountId(), CR_Client, 4);
-
-        mDatabase->DestroyDataBinding(binding);
-    }
-    break;
-
-    default:
-        break;
-    }
-    SAFE_DELETE(asyncContainer);
+        if(query_result >= 0x0000000200000000ULL) {
+            _sendCreateCharacterSuccess(query_result, client);
+        } else {
+            _sendCreateCharacterFailed(static_cast<uint32>(query_result), client);
+        }
+    });
 }
 
-//======================================================================================================================
 
 void CharacterAdminHandler::_parseHairData(Message* message, CharacterCreateInfo* info)
 {
@@ -412,7 +318,7 @@ void CharacterAdminHandler::_parseHairData(Message* message, CharacterCreateInfo
 
     // Get the size of the data block
     uint16 dataSize = message->getUint16();
-    gLogger->log(LogManager::DEBUG,"datasize : %u ", dataSize);
+    DLOG(INFO) << "datasize : " << dataSize;
 
     uint8 startindex = 0;
     uint8 endindex = 0;
@@ -426,7 +332,7 @@ void CharacterAdminHandler::_parseHairData(Message* message, CharacterCreateInfo
 
             startindex = message->getUint8();
             endindex = message->getUint8();
-            gLogger->log(LogManager::DEBUG,"StartIndex : %u   : EndIndex %u", startindex, endindex);
+            DLOG(INFO) << "StartIndex : "<< startindex << " : EndIndex " << endindex;
             dataIndex = 2;
         }
 
@@ -460,14 +366,13 @@ void CharacterAdminHandler::_parseHairData(Message* message, CharacterCreateInfo
 
             // Set our attribute value
             info->mHairCustomization[attributeIndex] = ((uint16)valueHighByte << 8) | valueLowByte;
-            gLogger->log(LogManager::DEBUG,"Hair Customization Index : %u   : data %u", attributeIndex,info->mHairCustomization[attributeIndex]);
+            DLOG(INFO) << "Hair Customization Index : " << attributeIndex << "   : data " << info->mHairCustomization[attributeIndex];
         }
 
         /* uint16 end2  = */message->getUint16();
     }
 }
 
-//======================================================================================================================
 
 void CharacterAdminHandler::_parseAppearanceData(Message* message, CharacterCreateInfo* info)
 {
@@ -556,7 +461,6 @@ void CharacterAdminHandler::_parseAppearanceData(Message* message, CharacterCrea
     /* uint16 end  = */message->getUint16();
 }
 
-//======================================================================================================================
 
 void CharacterAdminHandler::_sendCreateCharacterSuccess(uint64 characterId,DispatchClient* client)
 {
@@ -579,7 +483,6 @@ void CharacterAdminHandler::_sendCreateCharacterSuccess(uint64 characterId,Dispa
     client->SendChannelA(newMessage, client->getAccountId(), CR_Client, 2);
 }
 
-//======================================================================================================================
 
 void CharacterAdminHandler::_sendCreateCharacterFailed(uint32 errorCode,DispatchClient* client)
 {
@@ -668,7 +571,7 @@ void CharacterAdminHandler::_sendCreateCharacterFailed(uint32 errorCode,Dispatch
 
     default:
         errorString = "name_declined_internal_error";
-        gLogger->log(LogManager::DEBUG,"CharacterAdminHandler::_sendCreateCharacterFailed Unknown Errorcode in CharacterCreation: %u", errorCode);
+        DLOG(INFO) << "CharacterAdminHandler::_sendCreateCharacterFailed Unknown Errorcode in CharacterCreation: " << errorCode;
         break;
     }
 
@@ -688,6 +591,3 @@ void CharacterAdminHandler::_sendCreateCharacterFailed(uint32 errorCode,Dispatch
 
     client->SendChannelA(newMessage, client->getAccountId(), CR_Client, 3);
 }
-
-//======================================================================================================================
-

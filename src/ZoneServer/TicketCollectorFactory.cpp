@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "TicketCollectorFactory.h"
 #include "ObjectFactoryCallback.h"
 #include "TicketCollector.h"
-#include "Common/LogManager.h"
+
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -102,7 +102,7 @@ void TicketCollectorFactory::handleDatabaseJobComplete(void* ref,DatabaseResult*
 
 void TicketCollectorFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,uint16 subGroup,uint16 subType,DispatchClient* client)
 {
-    mDatabase->ExecuteSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,TCFQuery_MainData,client),"SELECT * FROM ticket_collectors WHERE id = %"PRIu64"",id);
+    mDatabase->executeSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,TCFQuery_MainData,client),"SELECT * FROM ticket_collectors WHERE id = %"PRIu64"",id);
     
 }
 
@@ -110,11 +110,13 @@ void TicketCollectorFactory::requestObject(ObjectFactoryCallback* ofCallback,uin
 
 TicketCollector* TicketCollectorFactory::_createTicketCollector(DatabaseResult* result)
 {
+	if (!result->getRowCount()) {
+		return nullptr;
+	}
+
     TicketCollector*	ticketCollector = new TicketCollector();
 
-    uint64 count = result->getRowCount();
-
-    result->GetNextRow(mTicketCollectorBinding,(void*)ticketCollector);
+    result->getNextRow(mTicketCollectorBinding,(void*)ticketCollector);
 
     ticketCollector->mTypeOptions = 0x108;
     ticketCollector->setLoadState(LoadState_Loaded);
@@ -126,7 +128,7 @@ TicketCollector* TicketCollectorFactory::_createTicketCollector(DatabaseResult* 
 
 void TicketCollectorFactory::_setupDatabindings()
 {
-    mTicketCollectorBinding = mDatabase->CreateDataBinding(13);
+    mTicketCollectorBinding = mDatabase->createDataBinding(13);
     mTicketCollectorBinding->addField(DFT_uint64,offsetof(TicketCollector,mId),8,0);
     mTicketCollectorBinding->addField(DFT_uint64,offsetof(TicketCollector,mParentId),8,1);
     mTicketCollectorBinding->addField(DFT_bstring,offsetof(TicketCollector,mModel),256,2);
@@ -146,7 +148,7 @@ void TicketCollectorFactory::_setupDatabindings()
 
 void TicketCollectorFactory::_destroyDatabindings()
 {
-    mDatabase->DestroyDataBinding(mTicketCollectorBinding);
+    mDatabase->destroyDataBinding(mTicketCollectorBinding);
 }
 
 //=============================================================================

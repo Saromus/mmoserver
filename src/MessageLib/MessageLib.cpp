@@ -27,6 +27,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "MessageLib.h"
 
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "ZoneServer/BuildingObject.h"
 #include "ZoneServer/CellObject.h"
 #include "ZoneServer/CharSheetManager.h"
@@ -35,7 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ZoneServer/CurrentResource.h"
 #include "ZoneServer/Datapad.h"
 #include "ZoneServer/HouseObject.h"
-#include "ZoneServer/InTangibleObject.h"
+#include "ZoneServer/IntangibleObject.h"
 #include "ZoneServer/HarvesterObject.h"
 #include "ZoneServer/FactoryObject.h"
 #include "ZoneServer/FactoryCrate.h"
@@ -55,8 +60,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ZoneServer/WorldConfig.h"
 #include "ZoneServer/WorldManager.h"
 #include "ZoneServer/ZoneOpcodes.h"
-
-#include "Common/LogManager.h"
 
 #include "Common/atMacroString.h"
 #include "NetworkManager/DispatchClient.h"
@@ -125,7 +128,7 @@ bool MessageLib::_checkPlayer(uint64 playerId) const
 
     if(!tested)
     {
-        gLogger->log(LogManager::NOTICE,"Player Id (%I64u) invalid",playerId);
+    	LOG(WARNING) << "Invalid player id [" << playerId << "]";
         return false;
     }
 
@@ -178,7 +181,6 @@ void MessageLib::_sendToInRangeUnreliable(Message* message, Object* const object
     PlayerObjectSet*			inRangePlayers	= object->getKnownPlayers();
     PlayerObjectSet::iterator	playerIt		= inRangePlayers->begin();
 
-    bool failed = false;
     //save us some cycles if traffic is low
 
     if(mMessageFactory->HeapWarningLevel() <= 4)
@@ -197,14 +199,10 @@ void MessageLib::_sendToInRangeUnreliable(Message* message, Object* const object
             {
                 //an invalid player at this point is like armageddon and Ultymas birthday combined at one time
                 assert(false && "Invalid Player in sendtoInrange");
-                failed = true;
             }
 
             ++playerIt;
         }
-
-        if( failed)
-            gLogger->log(LogManager::NOTICE,"MessageLib Heap Protection engaged Heap Warning Level %u Heap size %f",mMessageFactory->HeapWarningLevel(),mMessageFactory->getHeapsize());
     }
     else
     {
@@ -220,10 +218,6 @@ void MessageLib::_sendToInRangeUnreliable(Message* message, Object* const object
                     mMessageFactory->addData(message->getData(),message->getSize());
 
                     ((*playerIt)->getClient())->SendChannelAUnreliable(mMessageFactory->EndMessage(),(*playerIt)->getAccountId(),CR_Client,static_cast<uint8>(priority));
-                }
-                else
-                {
-                    failed = true;
                 }
             }
             ++playerIt;
@@ -386,7 +380,7 @@ void MessageLib::SendSpatialToInRangeUnreliable_(Message* message, Object* const
     // Is this a player object sending the message? If so we need a crc of their name
     // for checking recipient's ignore lists.
     if (object->getType() == ObjType_Player) {
-        if (source_player = dynamic_cast<PlayerObject*>(object)) {
+        if ((source_player = dynamic_cast<PlayerObject*>(object))) {
             // Make sure the player is valid and online.
             if (!_checkPlayer(source_player) || !source_player->isConnected()) {
                 // This is an invalid player, clean up the message and exit.
@@ -507,7 +501,7 @@ bool MessageLib::sendEquippedItems(PlayerObject* srcObject,PlayerObject* targetO
             }
             else
             {
-                gLogger->log(LogManager::DEBUG,"MessageLib send equipped objects: Its not equipped ... %I64u",item->getId());
+                DLOG(INFO) << "MessageLib send equipped objects: Its not equipped ... " << item->getId();
             }
         }
 
@@ -770,7 +764,7 @@ bool MessageLib::sendCreateStaticObject(TangibleObject* tangibleObject,PlayerObj
 {
     if(!_checkPlayer(targetObject) || !tangibleObject)
     {
-        gLogger->log(LogManager::DEBUG,"MessageLib::sendCreateStaticObject No valid player");
+        DLOG(WARNING) << "MessageLib::sendCreateStaticObject No valid player";
         return(false);
     }
 
@@ -790,7 +784,7 @@ bool MessageLib::sendCreateInTangible(IntangibleObject* intangibleObject,uint64 
 {
     if(!_checkPlayer(targetObject) || !intangibleObject)
     {
-        gLogger->log(LogManager::DEBUG,"MessageLib::sendCreateInTangible No valid player");
+        DLOG(WARNING) << "MessageLib::sendCreateInTangible No valid player";
         return(false);
     }
 
@@ -813,7 +807,7 @@ bool MessageLib::sendCreateTangible(TangibleObject* tangibleObject,PlayerObject*
 {
     if(!_checkPlayer(targetObject))
     {
-        gLogger->log(LogManager::DEBUG,"MessageLib::sendCreateTangible No valid player");
+        DLOG(WARNING) << "MessageLib::sendCreateInTangible No valid player";
         return(false);
     }
 
@@ -851,7 +845,7 @@ bool MessageLib::sendCreateTangible(TangibleObject* tangibleObject,PlayerObject*
             else if(parentObject)
             {
                 Item* item = dynamic_cast<Item*>(tangibleObject);
-                sendContainmentMessage(tangibleObject->getId(),parentObject->getId(),4,targetObject);
+                sendContainmentMessage(item->getId(),parentObject->getId(),4,targetObject);
             }
             else
             {
@@ -881,7 +875,7 @@ bool MessageLib::sendCreateTangible(TangibleObject* tangibleObject,PlayerObject*
         TangibleObject* tO = dynamic_cast<TangibleObject*>(gWorldManager->getObjectById((*it)));
         if(!tO)
         {
-            gLogger->log(LogManager::DEBUG,"MessageLib::sendCreateTangible::Unable to find object with ID %PRIu64", (*it));
+            DLOG(INFO) << "MessageLib::sendCreateTangible::Unable to find object with ID " << (*it);
             it++;
             continue;
         }
@@ -930,7 +924,7 @@ bool MessageLib::sendCreateFactoryCrate(FactoryCrate* crate,PlayerObject* target
         TangibleObject* tO = dynamic_cast<TangibleObject*>(gWorldManager->getObjectById((*it)));
         if(!tO)
         {
-            gLogger->log(LogManager::DEBUG,"Unable to find object with ID %PRIu64", (*it));
+            DLOG(INFO) << "Unable to find object with ID " << (*it);
             continue;
         }
 
@@ -1003,7 +997,6 @@ bool MessageLib::sendCreateBuilding(BuildingObject* buildingObject,PlayerObject*
     CellObjectList*				cellList	= buildingObject->getCellList();
     CellObjectList::iterator	cellIt		= cellList->begin();
 
-    uint64 cellCount = cellList->size();
     while(cellIt != cellList->end())
     {
         CellObject* cell = (*cellIt);
@@ -1117,7 +1110,7 @@ bool MessageLib::sendCreateStructure(PlayerStructure* structure,PlayerObject* pl
         return(sendCreateInstallation(structure, player));
     }
 
-    gLogger->log(LogManager::DEBUG,"MessageLib::sendCreateStructure:ID %I64u : couldnt cast structure",structure->getId());
+    DLOG(INFO) << "MessageLib::sendCreateStructure:ID " << structure->getId() << " : couldnt cast structure";
 
     return(false);
 }
@@ -1255,7 +1248,7 @@ bool MessageLib::sendCreateObject(Object* object,PlayerObject* player,bool sendS
 {
     if(!object)
     {
-        gLogger->log(LogManager::DEBUG,"Attempting sendCreateObject on an invalid object instance");
+        DLOG(INFO) << "Attempting sendCreateObject on an invalid object instance";
         return false;
     }
 
@@ -1380,7 +1373,7 @@ bool MessageLib::sendCreateObject(Object* object,PlayerObject* player,bool sendS
     // unknown types
     default:
     {
-        gLogger->log(LogManager::DEBUG,"MessageLib::createObject: Unhandled object type: %i",object->getType());
+        DLOG(INFO) << "MessageLib::createObject: Unhandled object type: " << object->getType();
     }
     break;
     }

@@ -35,7 +35,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "PlayerObject.h"
 #include "UIManager.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 
 //=============================================================================
@@ -79,7 +78,12 @@ void Firework::handleObjectMenuSelect(uint8 messageType,Object* srcObject)
             if(this->getItemType() >= ItemType_Firework_Type_5 || this->getItemType() <= ItemType_Firework_Type_2)
             {
                 //Player must be standing or Kneeling to launch
-                if((playerObject->getPosture()!=CreaturePosture_Upright && playerObject->getPosture()!=CreaturePosture_Crouched) || playerObject->getState() & CreatureState_RidingMount)
+                if(playerObject->states.checkPosture(CreaturePosture_Upright) || playerObject->states.checkPosture(CreaturePosture_Crouched))
+                {
+                    gMessageLib->SendSystemMessage(L"You must be standing or kneeling to start a firework.", playerObject);
+                    return;
+                }
+                else if(playerObject->getParentId())
                 {
                     gMessageLib->SendSystemMessage(L"You must be standing or kneeling to start a firework.", playerObject);
                     return;
@@ -100,7 +104,7 @@ void Firework::handleObjectMenuSelect(uint8 messageType,Object* srcObject)
                     if (charges)
                     {
                         this->setAttribute("charges",boost::lexical_cast<std::string>(charges));
-                        gWorldManager->getDatabase()->ExecuteSqlAsync(0,0,"UPDATE item_attributes SET value='%f' WHERE item_id=%"PRIu64" AND attribute_id=%u",charges,this->getId(), AttrType_Charges);
+                        gWorldManager->getDatabase()->executeSqlAsync(0,0,"UPDATE item_attributes SET value='%f' WHERE item_id=%"PRIu64" AND attribute_id=%u",charges,this->getId(), AttrType_Charges);
                         
                         //now update the uses display
                         gMessageLib->sendUpdateUses(this,playerObject);
@@ -313,70 +317,6 @@ void FireworkShow::handleObjectMenuSelect(uint8 messageType,Object* srcObject)
 
 void FireworkShow::handleUIEvent(uint32 action,int32 element,BString inputStr,UIWindow* window)
 {
-    /*if (action==1)
-    {
-        return;
-    }
-    switch(window->getWindowType())
-    {
-        case SUI_Window_FireworkShow_Add:
-        {
-            if((int)_getInventoryFireworks(window->getOwner())->size() > (int)element && element>=0)
-            {
-
-                Item* item = dynamic_cast<Item*>(_getInventoryFireworks(window->getOwner())->at(element));
-
-                _fireworkShowEvent event;
-                event.delay = 10;
-                event.typeId = item->getItemType();
-                event.itemId = item->getId();
-
-                fireworkShowList.push_back(event);
-
-                //window->getOwner()->getController()->destroyObject(item->getId());
-                gMessageLib->sendDestroyObject(item->getId(),window->getOwner());
-
-                if(item->getParentId() == dynamic_cast<Inventory*>(window->getOwner()->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory))->getId())
-                {
-                    dynamic_cast<Inventory*>(window->getOwner()->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory))->deleteObject(item);
-                }
-
-    /*
-                Item* item = dynamic_cast<Item*>(_getInventoryFireworks(window->getOwner())->at(element));
-                dynamic_cast<Firework*>(item)->setDelay(1000);
-                objList->push_back(item);	*/	/*
-
-}
-}
-break;
-case SUI_Window_FireworkShow_Remove:
-{
-if(fireworkShowList.size() > 0 )	//Do Not erase from an empty list
-{
-gObjectFactory->createIteminInventory(dynamic_cast<Inventory*>(window->getOwner()->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory)),fireworkShowList.at(element).itemId,TanGroup_Item);
-fireworkShowList.erase(fireworkShowList.begin()+element);
-//gObjectFactory->createIteminInventory(dynamic_cast<Inventory*>(window->getOwner()->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory)),fireworkShowList.at(element).itemId,TanGroup_Item);
-}
-
-}
-break;
-
-case SUI_Window_FireworkShow_Modify:
-{
-
-this->fireworkShowListModify=element; //Bit of a filthy hack, but couldn't find an alternative due to ui callback system
-
-gUIManager->createNewTransferBox(this,"handleModifyEventTime","@firework:modify_delay_title"
-,"@firework:modify_delay_prompt", "Available", "Delay"
-,0
-,100
-,window->getOwner());
-
-}
-break;
-default:break;
-}
-*/
 }
 
 void FireworkShow::handleUIEvent(BString strAvailable, BString strDelay, UIWindow* window)
@@ -388,7 +328,6 @@ void FireworkShow::handleUIEvent(BString strAvailable, BString strDelay, UIWindo
     //uint32 delay = atoi(strDelay.getAnsi());
     strDelay.convert(BSTRType_ANSI);
     int32 delay = atoi(strDelay.getAnsi());
-    gLogger->log(LogManager::DEBUG,"strDealay atoi = %i",delay);
     fireworkShowList.at(this->fireworkShowListModify).delay = delay;
 
 }

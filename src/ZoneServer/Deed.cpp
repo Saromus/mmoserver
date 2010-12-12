@@ -82,7 +82,6 @@ void Deed::handleObjectMenuSelect(uint8 messageType,Object* srcObject)
                     ObjectContainer* parentContainer = dynamic_cast<ObjectContainer*>(gWorldManager->getObjectById(this->getParentId()));
                     if(!parentContainer)
                     {
-                        gLogger->log(LogManager::DEBUG,"Deed::handleObjectMenuSelect: couldnt cast deeds parent %I64u !",this->getParentId());
                         return;
                     }
                     parentContainer->removeObject(this);
@@ -189,13 +188,13 @@ void Deed::sendAttributes(PlayerObject* playerObject)
 
     gMessageFactory->addUint32(1 + mAttributeMap.size());
 
-    BString	tmpValueStr = BString(BSTRType_Unicode16,64);
     BString	value;
 
-    tmpValueStr.setLength(swprintf(tmpValueStr.getUnicode16(),50,L"%u/%u",mMaxCondition - mDamage,mMaxCondition));
+	wchar_t temp[64];
+    swprintf(temp,50,L"%u/%u",mMaxCondition - mDamage,mMaxCondition);
 
     gMessageFactory->addString(BString("condition"));
-    gMessageFactory->addString(tmpValueStr);
+    gMessageFactory->addString(temp);
 
     AttributeMap::iterator			mapIt;
     AttributeOrderList::iterator	orderIt = mAttributeOrderList.begin();

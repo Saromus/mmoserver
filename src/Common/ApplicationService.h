@@ -29,11 +29,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define SRC_COMMON_APPLICATION_SERVICE_H_
 
 #include <cstdint>
-#include <memory>
 
 #include "Utils/ActiveObject.h"
-
-#include "Common/declspec.h"
 
 /*! \brief Common is a catch-all library containing primarily base classes and
  * classes used for maintaining application lifetimes.
@@ -64,7 +61,7 @@ public:
  * system which allows it to run independently on it's own thread without contention
  * from locks.
  */
-class COMMON_API BaseApplicationService : public IApplicationService {
+class BaseApplicationService : public IApplicationService {
 public:
     /*! \brief The only available constructor for BaseApplicationService.
      *
@@ -88,7 +85,7 @@ public:
 
 protected:
     EventDispatcher& event_dispatcher_;
-    ::utils::ActiveObject active_;
+    utils::ActiveObject active_;
 
     virtual void onTick() = 0;
 
@@ -98,15 +95,7 @@ private:
     BaseApplicationService(const BaseApplicationService&);
     const BaseApplicationService& operator=(const BaseApplicationService&);
 
-    // Win32 complains about stl during linkage, disable the warning.
-#ifdef _WIN32
-#pragma warning (disable : 4251)
-#endif
-    ::boost::atomic<uint64_t> current_timestamp_;
-    // Re-enable the warning.
-#ifdef _WIN32
-#pragma warning (default : 4251)
-#endif
+    uint64_t current_timestamp_;
 };
 
 } // namespace common

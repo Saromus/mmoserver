@@ -26,6 +26,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "InventoryFactory.h"
+
+#ifdef WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "Inventory.h"
 #include "ObjectFactoryCallback.h"
 #include "TangibleFactory.h"
@@ -33,7 +39,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
-#include "Common/LogManager.h"
 
 #include "Utils/utils.h"
 
@@ -92,7 +97,7 @@ void InventoryFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
         QueryContainerBase* asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(asyncContainer->mOfCallback,IFQuery_ObjectCount,asyncContainer->mClient);
         asContainer->mObject = inventory;
 
-        mDatabase->ExecuteSqlAsync(this,asContainer,"SELECT sf_getInventoryObjectCount(%"PRIu64")",inventory->getId());
+        mDatabase->executeSqlAsync(this,asContainer,"SELECT sf_getInventoryObjectCount(%"PRIu64")",inventory->getId());
         
     }
     break;
@@ -102,10 +107,10 @@ void InventoryFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
         Inventory* inventory = dynamic_cast<Inventory*>(asyncContainer->mObject);
 
         uint32 objectCount;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
 
         binding->addField(DFT_uint32,0,4);
-        result->GetNextRow(binding,&objectCount);
+        result->getNextRow(binding,&objectCount);
 
         inventory->setObjectLoadCounter(objectCount);
 
@@ -121,7 +126,7 @@ void InventoryFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
             //why would we load the lootcontainers and trashpiles for the inventory ???
             //containers are normal items like furniture, lightsabers and stuff
-            mDatabase->ExecuteSqlAsync(this,asContainer,
+            mDatabase->executeSqlAsync(this,asContainer,
                                        "(SELECT \'containers\',containers.id FROM containers INNER JOIN container_types ON (containers.container_type = container_types.id)"
                                        " WHERE (container_types.name NOT LIKE 'unknown') AND (containers.parent_id = %"PRIu64"))"
                                        " UNION (SELECT \'items\',items.id FROM items WHERE (parent_id=%"PRIu64"))"
@@ -135,7 +140,7 @@ void InventoryFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
             asyncContainer->mOfCallback->handleObjectReady(inventory,asyncContainer->mClient);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
@@ -145,7 +150,7 @@ void InventoryFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
         Type1_QueryContainer queryContainer;
 
-        DataBinding*	binding = mDatabase->CreateDataBinding(2);
+        DataBinding*	binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_bstring,offsetof(Type1_QueryContainer,mString),64,0);
         binding->addField(DFT_uint64,offsetof(Type1_QueryContainer,mId),8,1);
 
@@ -158,7 +163,7 @@ void InventoryFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
         for(uint32 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&queryContainer);
+            result->getNextRow(binding,&queryContainer);
 
             if(strcmp(queryContainer.mString.getAnsi(),"containers") == 0)
                 mTangibleFactory->requestObject(this,queryContainer.mId,TanGroup_Container,0,asyncContainer->mClient);
@@ -171,7 +176,7 @@ void InventoryFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
@@ -186,7 +191,7 @@ void InventoryFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
 void InventoryFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,uint16 subGroup,uint16 subType,DispatchClient* client)
 {
-    mDatabase->ExecuteSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,IFQuery_MainInventoryData,client),
+    mDatabase->executeSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,IFQuery_MainInventoryData,client),
                                "SELECT inventories.id,inventories.credits,inventory_types.object_string,inventory_types.name,inventory_types.file,"
                                "inventory_types.slots"
                                " FROM inventories INNER JOIN inventory_types ON (inventories.inventory_type = inventory_types.id)"
@@ -198,12 +203,14 @@ void InventoryFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id
 
 Inventory* InventoryFactory::_createInventory(DatabaseResult* result)
 {
+    if (!result->getRowCount()) {
+    	return nullptr;
+    }
+
     Inventory*	inventory = new Inventory();
 
-    uint64 count = result->getRowCount();
-
     // get our results
-    result->GetNextRow(mInventoryBinding,(void*)inventory);
+    result->getNextRow(mInventoryBinding,(void*)inventory);
     inventory->setParentId(inventory->mId - 1);
 
     inventory->setCapacity(inventory->mMaxSlots);
@@ -217,7 +224,7 @@ Inventory* InventoryFactory::_createInventory(DatabaseResult* result)
 void InventoryFactory::_setupDatabindings()
 {
     // inventory binding
-    mInventoryBinding = mDatabase->CreateDataBinding(6);
+    mInventoryBinding = mDatabase->createDataBinding(6);
     mInventoryBinding->addField(DFT_uint64,offsetof(Inventory,mId),8,0);
     mInventoryBinding->addField(DFT_int32,offsetof(Inventory,mCredits),4,1);
     mInventoryBinding->addField(DFT_bstring,offsetof(Inventory,mModel),256,2);
@@ -230,7 +237,7 @@ void InventoryFactory::_setupDatabindings()
 
 void InventoryFactory::_destroyDatabindings()
 {
-    mDatabase->DestroyDataBinding(mInventoryBinding);
+    mDatabase->destroyDataBinding(mInventoryBinding);
 }
 
 //=============================================================================
@@ -242,11 +249,12 @@ void InventoryFactory::handleObjectReady(Object* object,DispatchClient* client)
 
     InLoadingContainer* ilc	= _getObject(object->getParentId());
 
-    if (! ilc) {//Crashbug fix
-        gLogger->log(LogManager::WARNING,"InventoryFactory::handleObjectReady could not locate ILC for objectId:%I64u",object->getId());
+
+    if (! ilc) {
+    	LOG(WARNING) << "Could not locate InLoadingContainer for object with id [" << object->getId() << "]";
+        assert(ilc && "InventoryFactory::handleObjectReady unable to find InLoadingContainer");//moved below the return
         return;
     }
-    assert(ilc && "InventoryFactory::handleObjectReady unable to find InLoadingContainer");//moved below the return
 
     Inventory*			inventory	= dynamic_cast<Inventory*>(ilc->mObject);
 
@@ -257,12 +265,10 @@ void InventoryFactory::handleObjectReady(Object* object,DispatchClient* client)
 
     if(inventory->getObjectLoadCounter() == (inventory->getObjects())->size())
     {
-        gLogger->log(LogManager::DEBUG,"InventoryFactory: remove inventory %I64u from loadmap",inventory->getId());
-
         inventory->setLoadState(LoadState_Loaded);
 
         if(!(_removeFromObjectLoadMap(inventory->getId())))
-            gLogger->log(LogManager::DEBUG,"InventoryFactory: Failed removing object from loadmap");
+        	LOG(INFO) << "Failed removing object from loadmap";
 
         ilc->mOfCallback->handleObjectReady(inventory,ilc->mClient);
 

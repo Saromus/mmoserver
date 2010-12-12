@@ -26,6 +26,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "TradeManager.h"
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "Bank.h"
 #include "CharacterBuilderTerminal.h"
 #include "Datapad.h"
@@ -39,7 +45,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "WorldManager.h"
 #include "ZoneOpcodes.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/Transaction.h"
@@ -58,10 +63,9 @@ TradeManager*		TradeManager::mSingleton  = NULL;
 //======================================================================================================================
 
 TradeManager::TradeManager(Database* database, MessageDispatch* dispatch)
-{   mDatabase = database;
-    mMessageDispatch = dispatch;
-    TradeManagerAsyncContainer* asyncContainer;
-
+: mDatabase(database)
+, mMessageDispatch(dispatch)
+{
     mMessageDispatch->RegisterMessageCallback(opCreateAuctionMessage,std::bind(&TradeManager::_processHandleAuctionCreateMessage, this, std::placeholders::_1, std::placeholders::_2));
     mMessageDispatch->RegisterMessageCallback(opCreateImmediateAuctionMessage,std::bind(&TradeManager::_processHandleImmediateAuctionCreateMessage, this, std::placeholders::_1, std::placeholders::_2));
     mMessageDispatch->RegisterMessageCallback(opProcessSendCreateItem,std::bind(&TradeManager::_processCreateItemMessage, this, std::placeholders::_1, std::placeholders::_2));
@@ -83,16 +87,15 @@ TradeManager::TradeManager(Database* database, MessageDispatch* dispatch)
     mZoneId = gWorldManager->getZoneId();
 
     // load our bazaar terminals
-    asyncContainer = new TradeManagerAsyncContainer(TRMQuery_LoadBazaar, 0);
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,"SELECT * FROM commerce_bazaar");
+    TradeManagerAsyncContainer* load_bazaar_container = new TradeManagerAsyncContainer(TRMQuery_LoadBazaar, 0);
+    mDatabase->executeSqlAsync(this, load_bazaar_container, "SELECT * FROM commerce_bazaar");
    
     //AuctionHandler = new AuctionClass;
 
 
-    //load the itemtable for the character builder terminal
-    asyncContainer = new TradeManagerAsyncContainer(TRMQuery_ItemTableFrogQuery, 0);
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,"SELECT * FROM frog_items fi INNER JOIN item_families i_f on fi.family = i_f.id");
-   
+    //load the item table for the character builder terminal
+    TradeManagerAsyncContainer* frog_query_container = new TradeManagerAsyncContainer(TRMQuery_ItemTableFrogQuery, 0);
+    mDatabase->executeSqlAsync(this, frog_query_container, "SELECT * FROM frog_items fi INNER JOIN item_families i_f on fi.family = i_f.id");
 }
 
 
@@ -153,20 +156,20 @@ void TradeManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     case TRMQuery_MoneyTransaction:
     {
         uint32 error;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
-        result->GetNextRow(binding,&error);
+        result->getNextRow(binding,&error);
 
 
         if((!asynContainer->player1)||(!asynContainer->player2))
         {
-            gLogger->log(LogManager::DEBUG,"TradeManager TRMQuery_MoneyTransaction : one of the tradepartners doesnt exist");
+            DLOG(INFO) << "TradeManager TRMQuery_MoneyTransaction : one of the tradepartners doesnt exist";
             error = 1;
         }
 
         if (error )
         {
-            gLogger->log(LogManager::DEBUG,"TradeManager Trade transaction failed");
+            DLOG(INFO) << "TradeManager Trade transaction failed";
             // oh woe we need to rollback :(
             // (ie do nothing)
             //oh and send an error to the client!
@@ -201,9 +204,9 @@ void TradeManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     case TRMQuery_BazaarMoneyTransaction:
     {
         uint32 error;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
-        result->GetNextRow(binding,&error);
+        result->getNextRow(binding,&error);
         if (error == 0)
         {
             // no errors : lets move the money
@@ -290,14 +293,13 @@ void TradeManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         //takes the bazaar fees
 
         uint32 error;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
-        result->GetNextRow(binding,&error);
+        result->getNextRow(binding,&error);
         uint64 itemId = asynContainer->tangible->getId();
 
         if (error)
         {
-            gLogger->log(LogManager::DEBUG,"TradeManager TRMQuery_CreateAuctionTransaction: transaction failed");
             gMessageLib->sendCreateAuctionItemResponseMessage(asynContainer->player1,itemId,2);
             return;
         }
@@ -337,7 +339,7 @@ void TradeManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
     case TRMQuery_ItemTableFrogQuery:
     {
 
-        DataBinding* binding = mDatabase->CreateDataBinding(6);
+        DataBinding* binding = mDatabase->createDataBinding(6);
         binding->addField(DFT_uint64,offsetof(ItemFrogItemClass,id),8,0);
         binding->addField(DFT_uint32,offsetof(ItemFrogItemClass,type),4,1);
         binding->addField(DFT_uint32,offsetof(ItemFrogItemClass,family),4,2);
@@ -351,7 +353,7 @@ void TradeManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         for(uint64 i=0; i <count; i++)
         {
             ItemFrogItemClass*	item = new(ItemFrogItemClass);
-            result->GetNextRow(binding,item);
+            result->getNextRow(binding,item);
 
             ItemFrogTypeClass* type = mItemFrogClass.LookUpFamily(item->family);
             if(!type)
@@ -364,8 +366,7 @@ void TradeManager::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
             type->InsertItem(item);
 
         }
-        if(result->getRowCount())
-            gLogger->log(LogManager::NOTICE,"Loaded frog items.");
+    	LOG_IF(INFO, count) << "Loaded " << count << " frog items";
 
     }
     break;
@@ -443,8 +444,8 @@ void TradeManager::_processFindFriendCreateWaypointMessage(Message* message,Disp
     {
         //update instead of deleting and re-creating...
 
-        gMessageLib->sendUpdateWaypoint(wp, ObjectUpdateAdd, playerObject);
         datapad->updateWaypoint(wp->getId(), playerFriendName.getAnsi(), position, static_cast<uint16>(planet), playerObject->getId(), WAYPOINT_ACTIVE);
+        gMessageLib->sendUpdateWaypoint(wp,ObjectUpdateChange,playerObject);
     }
     else
     {
@@ -575,7 +576,7 @@ void TradeManager::_HandleAuctionCreateMessage(Message* message,DispatchClient* 
     TradeManagerAsyncContainer* asyncContainer;
 
     PlayerObject*	playerObject	= gWorldManager->getPlayerByAccId(client->getAccountId());
-    Inventory*		inventory		= dynamic_cast<Inventory*>(playerObject->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
+    //Inventory*		inventory		= dynamic_cast<Inventory*>(playerObject->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
 
     //the items description we provide
     BString			Description;
@@ -594,7 +595,6 @@ void TradeManager::_HandleAuctionCreateMessage(Message* message,DispatchClient* 
     if(!(playerObject && playerObject->isConnected()))
     {
         //some error
-        gLogger->log(LogManager::DEBUG,"TradeManager::_processHandleAuctionCreateMessage No player!!!");
         gMessageLib->sendCreateAuctionItemResponseMessage(playerObject,ItemID,1);
         return;
     }
@@ -606,7 +606,7 @@ void TradeManager::_HandleAuctionCreateMessage(Message* message,DispatchClient* 
         Description.setLength(1024);
 
     int8 theDescription[1028];
-    mDatabase->Escape_String(theDescription,Description.getAnsi(),Description.getLength());
+    mDatabase->escapeString(theDescription,Description.getAnsi(),Description.getLength());
 
 
     TangibleObject*		requestedObject		= dynamic_cast<TangibleObject*>(gWorldManager->getObjectById(ItemID));
@@ -626,8 +626,6 @@ void TradeManager::_HandleAuctionCreateMessage(Message* message,DispatchClient* 
     if(!requestedObject)
     {
         //cave we might sell datapad schematics, too
-        gLogger->log(LogManager::DEBUG,"TradeManager::_processHandleCreateAuction could not find object");
-
         return;
     }
 
@@ -656,7 +654,7 @@ void TradeManager::_HandleAuctionCreateMessage(Message* message,DispatchClient* 
     }
 
     int8 theName[128];
-    mDatabase->Escape_String(theName,name.getAnsi(),name.getLength());
+    mDatabase->escapeString(theName,name.getAnsi(),name.getLength());
 
     itemType	= requestedObject->getTangibleGroup();
     tang		= requestedObject->getBazaarTang();
@@ -738,7 +736,7 @@ void TradeManager::_HandleAuctionCreateMessage(Message* message,DispatchClient* 
 
     int8 sql[200];
     sprintf(sql,"Select * FROM commerce_auction WHERE owner_id = '%"PRIu64"'", playerObject->getId());
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+    mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
 
 }
@@ -760,7 +758,6 @@ void TradeManager::_processAbortTradeMessage(Message* message,DispatchClient* cl
 
             playerObject->getTrade()->cancelTradeSession();
 
-            gLogger->log(LogManager::DEBUG,"TradeManager Canceled Trade");
         }
     }
 }
@@ -815,7 +812,7 @@ void TradeManager::_processTradeCompleteMessage(Message* message,DispatchClient*
         }
         else
         {
-            gLogger->log(LogManager::DEBUG,"TradeManager Trade finished without Accept !!!!!");
+            DLOG(INFO) << "TradeManager Trade finished without Accept !!!!!";
         }
     }
 }
@@ -860,15 +857,15 @@ void TradeManager::TradeTransaction(DispatchClient* client,PlayerObject* player1
         player1->getTrade()->cancelTradeSession();
         player2->getTrade()->cancelTradeSession();
 
-        gLogger->log(LogManager::DEBUG,"TradeManager Trade likely to have been tampered with");
+        DLOG(INFO) << "TradeManager Trade likely to have been tampered with";
 
         if (!player1->testCash(asyncContainer->amount1) )
         {
-            gLogger->log(LogManager::DEBUG,"Player : %s, id %"PRIu64" wanted to trade %u credits but had only %u left",player1->getFirstName().getAnsi(),player1->getId(),asyncContainer->amount1,dynamic_cast<Inventory*>(player1->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory))->getCredits());
+			DLOG(INFO) <<"Player : "<<player1->getFirstName().getAnsi()<< "id "<<player1->getId()<< "wanted to trade "<<asyncContainer->amount1<<" credits but had only " << dynamic_cast<Inventory*>(player1->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory))->getCredits();
         }
         if (!player2->testCash(asyncContainer->amount2) )
         {
-            gLogger->log(LogManager::DEBUG,"Player : %s, id %"PRIu64" wanted to trade %u credits but had only %u left",player2->getFirstName().getAnsi(),player2->getId(),asyncContainer->amount2,dynamic_cast<Inventory*>(player2->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory))->getCredits());
+            DLOG(INFO) <<"Player : "<<player2->getFirstName().getAnsi()<< "id "<<player2->getId()<< "wanted to trade "<<asyncContainer->amount2<<" credits but had only " << dynamic_cast<Inventory*>(player2->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory))->getCredits();
         }
     }
 }
@@ -985,17 +982,15 @@ void TradeManager::_processAddItemMessage(Message* message,DispatchClient* clien
     PlayerObject*	playerObject	= gWorldManager->getPlayerByAccId(client->getAccountId());
     PlayerObject* tradePartner = (PlayerObject*) gWorldManager->getObjectById(playerObject->getTradePartner());
 
-    Inventory*		inventory		= dynamic_cast<Inventory*>(playerObject->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
+    //Inventory*		inventory		= dynamic_cast<Inventory*>(playerObject->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
 
     if(!(playerObject && playerObject->isConnected()))
     {
-        gLogger->log(LogManager::DEBUG,"TradeManager::_processAddItemMessage:: No player");
         return;
     }
 
     if (!playerObject->getTradeStatus())
     {
-        gLogger->log(LogManager::DEBUG,"TradeManager::_processAddItemMessage:: Not trading");
         return;
     }
 
@@ -1004,7 +999,6 @@ void TradeManager::_processAddItemMessage(Message* message,DispatchClient* clien
 
     if (!addedItem)
     {
-        gLogger->log(LogManager::DEBUG,"TradeManager::_processAddItemMessage:: No (tangible) Item");
         return;
     }
 

@@ -28,30 +28,30 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef ANH_ZONESERVER_OBJECT_H
 #define ANH_ZONESERVER_OBJECT_H
 
-#include "ObjectController.h"
-#include "RadialMenu.h"
-#include "UICallback.h"
-#include "Object_Enums.h"
-#include "Common/LogManager.h" // @todo: this needs to go.	  where does it need to go ?
-#include "Utils/EventHandler.h"
-#include "Utils/typedefs.h"
+#include <vector>
+#include <map>
+#include <memory>
+#include <set>
+#include <list>
 
 #include <boost/lexical_cast.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-#include <vector>
-#include <map>
-#include <set>
-#include <list>
+#include "Utils/EventHandler.h"
+#include "Utils/typedefs.h"
 
-#if defined(__GNUC__)
-// GCC implements tr1 in the <tr1/*> headers. This does not conform to the TR1
-// spec, which requires the header without the tr1/ prefix.
-#include <tr1/memory>
-#else
-#include <memory>
+// Fix for issues with glog redefining this constant
+#ifdef ERROR
+#undef ERROR
 #endif
+
+#include <glog/logging.h>
+
+#include "ObjectController.h"
+#include "RadialMenu.h"
+#include "UICallback.h"
+#include "Object_Enums.h"
 
 //=============================================================================
 
@@ -60,7 +60,7 @@ class PlayerObject;
 class CreatureObject;
 
 typedef std::map<uint32,std::string>	AttributeMap;
-typedef std::tr1::shared_ptr<RadialMenu>	RadialMenuPtr;
+typedef std::shared_ptr<RadialMenu>	RadialMenuPtr;
 // typedef std::vector<uint64>				ObjectIDList;
 typedef std::list<uint64>				ObjectIDList;
 typedef std::set<Object*>				ObjectSet;
@@ -75,7 +75,7 @@ typedef std::list<uint32>				AttributeOrderList;
  - Base class for all gameobjects
  */
 
-class Object : public UICallback, public Anh_Utils::EventHandler
+class Object : public UICallback, public Anh_Utils::EventHandler, public std::enable_shared_from_this<Object>
 {
     friend class PlayerObjectFactory;
     friend class InventoryFactory;
@@ -113,7 +113,7 @@ public:
     //just sets a new ParentID and sends Containment to TargetObject
     virtual void				setParentIdIncDB(uint64 parentId) {
         mParentId = parentId;
-        gLogger->log(LogManager::NOTICE, "Object no table specified setting ID: %I64u", this->getId());
+        DLOG(INFO) << "Object no table specified setting ID: " <<  this->getId();
     }
 
 
@@ -401,11 +401,11 @@ T	Object::getAttribute(BString key) const
         }
         catch(boost::bad_lexical_cast &)
         {
-            gLogger->log(LogManager::INFORMATION, "Object::getAttribute: cast failed (%s)", key.getAnsi());
+            DLOG(INFO) << "Object::getAttribute: cast failed " << key.getAnsi();
         }
     }
     else
-        gLogger->log(LogManager::INFORMATION, "Object::getAttribute: could not find %s", key.getAnsi());
+        DLOG(INFO) << "Object::getAttribute: could not find " << key.getAnsi();
 
     return(T());
 }
@@ -447,11 +447,11 @@ T	Object::getAttribute(uint32 keyCrc) const
         }
         catch(boost::bad_lexical_cast &)
         {
-            gLogger->log(LogManager::DEBUG,"Object::getAttribute: cast failed (%s)",keyCrc);
+            DLOG(INFO) << "Object::getAttribute: cast failed " << keyCrc;
         }
     }
     else
-        gLogger->log(LogManager::DEBUG,"Object::getAttribute: could not find %s",keyCrc);
+        DLOG(INFO) << "Object::getAttribute: could not find " << keyCrc;
 
     return(T());
 }
@@ -472,11 +472,11 @@ T	Object::getInternalAttribute(BString key)
         }
         catch(boost::bad_lexical_cast &)
         {
-            gLogger->log(LogManager::DEBUG,"Object::getInternalAttribute: cast failed (%s)",key.getAnsi());
+            DLOG(INFO) << "Object::getInternalAttribute: cast failed " << key.getAnsi();
         }
     }
     else
-        gLogger->log(LogManager::DEBUG,"Object::getInternalAttribute: could not find %s",key.getAnsi());
+        DLOG(INFO) << "Object::getInternalAttribute: could not find " << key.getAnsi();
 
     return(T());
 }

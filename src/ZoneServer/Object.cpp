@@ -39,7 +39,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //=============================================================================
 
 Object::Object()
-    : mModel("")
+    : mMovementMessageToggle(true)
+	, mModel("")
     , mLoadState(LoadState_Loading)
     , mId(0)
     , mParentId(0)
@@ -48,7 +49,6 @@ Object::Object()
     , mSubZoneId(0)
     , mTypeOptions(0)
     , mDataTransformCounter(0)
-    , mMovementMessageToggle(true)
 {
     mDirection = glm::quat();
     mPosition  = glm::vec3();
@@ -59,7 +59,8 @@ Object::Object()
 //=============================================================================
 
 Object::Object(uint64 id,uint64 parentId,BString model,ObjectType type)
-    : mModel(model)
+    : mMovementMessageToggle(true)
+    , mModel(model)
     , mLoadState(LoadState_Loading)
     , mType(type)
     , mId(id)
@@ -69,7 +70,6 @@ Object::Object(uint64 id,uint64 parentId,BString model,ObjectType type)
     , mSubZoneId(0)
     , mTypeOptions(0)
     , mDataTransformCounter(0)
-    , mMovementMessageToggle(true)
 {
     mObjectController.setObject(this);
 
@@ -378,7 +378,7 @@ void Object::setAttribute(BString key,std::string value)
 
     if(it == mAttributeMap.end())
     {
-        gLogger->log(LogManager::DEBUG,"Object::setAttribute: could not find %s",key.getAnsi());
+        DLOG(INFO) << "Object::setAttribute: could not find " << key.getAnsi();
         return;
     }
 
@@ -399,7 +399,7 @@ void Object::setAttributeIncDB(BString key,std::string value)
 
     if(it == mAttributeMap.end())
     {
-        gLogger->log(LogManager::DEBUG,"Object::setAttribute: could not find %s",key.getAnsi());
+        DLOG(INFO) << "Object::setAttribute: could not find " << key.getAnsi();
         return;
     }
 
@@ -408,7 +408,7 @@ void Object::setAttributeIncDB(BString key,std::string value)
     uint32 attributeID = gWorldManager->getAttributeId(key.getCrc());
     if(!attributeID)
     {
-        gLogger->log(LogManager::DEBUG,"Object::addAttribute DB: no such attribute in the attribute table :%s",key.getAnsi());
+        DLOG(INFO) << "Object::addAttribute DB: no such attribute in the attribute table :" << key.getAnsi();
         return;
     }
 
@@ -417,12 +417,12 @@ void Object::setAttributeIncDB(BString key,std::string value)
     sprintf(sql,"UPDATE item_attributes SET value='");
 
     sqlPointer = sql + strlen(sql);
-    sqlPointer += gWorldManager->getDatabase()->Escape_String(sqlPointer,value.c_str(),value.length());
-    sprintf(restStr,"'WHERE item_id=%I64u AND attribute_id=%u",this->getId(),attributeID);
+    sqlPointer += gWorldManager->getDatabase()->escapeString(sqlPointer,value.c_str(),value.length());
+    sprintf(restStr,"'WHERE item_id=%"PRIu64" AND attribute_id=%u",this->getId(),attributeID);
     strcat(sql,restStr);
 
     //sprintf(sql,"UPDATE item_attributes SET value='%s' WHERE item_id=%"PRIu64" AND attribute_id=%u",value,this->getId(),attributeID);
-    gWorldManager->getDatabase()->ExecuteSqlAsync(0,0,sql);
+    gWorldManager->getDatabase()->executeSqlAsync(0,0,sql);
 
 }
 
@@ -453,7 +453,7 @@ void Object::addAttributeIncDB(BString key,std::string value)
     uint32 attributeID = gWorldManager->getAttributeId(key.getCrc());
     if(!attributeID)
     {
-        gLogger->log(LogManager::DEBUG,"Object::addAttribute DB: no such attribute in the attribute table :%s",key.getAnsi());
+        DLOG(INFO) << "Object::addAttribute DB: no such attribute in the attribute table : " << key.getAnsi();
         return;
     }
     int8 sql[512],*sqlPointer,restStr[128];
@@ -461,11 +461,11 @@ void Object::addAttributeIncDB(BString key,std::string value)
     sprintf(sql,"INSERT INTO item_attributes VALUES(%"PRIu64",%u,'",this->getId(),attributeID);
 
     sqlPointer = sql + strlen(sql);
-    sqlPointer += gWorldManager->getDatabase()->Escape_String(sqlPointer,value.c_str(),value.length());
+    sqlPointer += gWorldManager->getDatabase()->escapeString(sqlPointer,value.c_str(),value.length());
     sprintf(restStr,"',%u,0)",static_cast<uint32>(this->getAttributeMap()->size()));
     strcat(sql,restStr);
 
-    gWorldManager->getDatabase()->ExecuteSqlAsync(0,0,sql);
+    gWorldManager->getDatabase()->executeSqlAsync(0,0,sql);
 
     //sprintf(sql,"INSERT INTO item_attributes VALUES(%"PRIu64",%u,%s,%u,0)",this->getId(),attributeID,value,mAttributeOrderList.size());
 }
@@ -489,7 +489,7 @@ void Object::removeAttribute(BString key)
     if(it != mAttributeMap.end())
         mAttributeMap.erase(it);
     else
-        gLogger->log(LogManager::DEBUG,"Object::removeAttribute: could not find %s",key.getAnsi());
+        DLOG(INFO) << "Object::removeAttribute: could not find " << key.getAnsi();
 }
 
 //=========================================================================
@@ -508,7 +508,7 @@ void Object::setInternalAttributeIncDB(BString key,std::string value)
 
     if(it == mInternalAttributeMap.end())
     {
-        gLogger->log(LogManager::DEBUG,"Object::setAttribute: could not find %s",key.getAnsi());
+        DLOG(INFO) << "Object::setAttribute: could not find " << key.getAnsi();
         return;
     }
 
@@ -517,7 +517,7 @@ void Object::setInternalAttributeIncDB(BString key,std::string value)
     uint32 attributeID = gWorldManager->getAttributeId(key.getCrc());
     if(!attributeID)
     {
-        gLogger->log(LogManager::DEBUG,"Object::addAttribute DB: no such attribute in the attribute table :%s",key.getAnsi());
+        DLOG(INFO) << "Object::addAttribute DB: no such attribute in the attribute table :" << key.getAnsi();
         return;
     }
 
@@ -526,12 +526,12 @@ void Object::setInternalAttributeIncDB(BString key,std::string value)
     sprintf(sql,"UPDATE item_attributes SET value='");
 
     sqlPointer = sql + strlen(sql);
-    sqlPointer += gWorldManager->getDatabase()->Escape_String(sqlPointer,value.c_str(),value.length());
-    sprintf(restStr,"'WHERE item_id=%I64u AND attribute_id=%u",this->getId(),attributeID);
+    sqlPointer += gWorldManager->getDatabase()->escapeString(sqlPointer,value.c_str(),value.length());
+    sprintf(restStr,"'WHERE item_id=%"PRIu64" AND attribute_id=%u",this->getId(),attributeID);
     strcat(sql,restStr);
 
     //sprintf(sql,"UPDATE item_attributes SET value='%s' WHERE item_id=%"PRIu64" AND attribute_id=%u",value,this->getId(),attributeID);
-    gWorldManager->getDatabase()->ExecuteSqlAsync(0,0,sql);
+    gWorldManager->getDatabase()->executeSqlAsync(0,0,sql);
   
 }
 
@@ -541,7 +541,7 @@ void	Object::setInternalAttribute(BString key,std::string value)
 
     if(it == mInternalAttributeMap.end())
     {
-        gLogger->log(LogManager::DEBUG,"Object::setInternalAttribute: could not find %s",key.getAnsi());
+        DLOG(INFO) << "Object::setInternalAttribute: could not find " << key.getAnsi();
         return;
     }
 
@@ -564,7 +564,7 @@ void Object::addInternalAttributeIncDB(BString key,std::string value)
     uint32 attributeID = gWorldManager->getAttributeId(key.getCrc());
     if(!attributeID)
     {
-        gLogger->log(LogManager::DEBUG,"Object::addAttribute DB: no such attribute in the attribute table :%s",key.getAnsi());
+        DLOG(INFO) << "Object::addAttribute DB: no such attribute in the attribute table : " << key.getAnsi();
         return;
     }
     int8 sql[512],*sqlPointer,restStr[128];
@@ -572,11 +572,11 @@ void Object::addInternalAttributeIncDB(BString key,std::string value)
     sprintf(sql,"INSERT INTO item_attributes VALUES(%"PRIu64",%u,'", this->getId(), attributeID);
 
     sqlPointer = sql + strlen(sql);
-    sqlPointer += gWorldManager->getDatabase()->Escape_String(sqlPointer, value.c_str(), value.length());
+    sqlPointer += gWorldManager->getDatabase()->escapeString(sqlPointer, value.c_str(), value.length());
     sprintf(restStr,"',%u,0)",static_cast<uint32>(this->mInternalAttributeMap.size()));
     strcat(sql,restStr);
 
-    gWorldManager->getDatabase()->ExecuteSqlAsync(0, 0, sql);
+    gWorldManager->getDatabase()->executeSqlAsync(0, 0, sql);
 
     //sprintf(sql,"INSERT INTO item_attributes VALUES(%"PRIu64",%u,%s,%u,0)",this->getId(),attributeID,value,mAttributeOrderList.size());
 }
@@ -608,7 +608,7 @@ void Object::removeInternalAttribute(BString key)
     if(it != mInternalAttributeMap.end())
         mInternalAttributeMap.erase(it);
     else
-        gLogger->log(LogManager::DEBUG,"Object::removeInternalAttribute: could not find %s",key.getAnsi());
+        DLOG(INFO) << "Object::removeInternalAttribute: could not find " << key.getAnsi();
 }
 
 
@@ -640,7 +640,7 @@ void Object::addKnownObject(Object* object)
     }
     if(checkKnownObjects(object))
     {
-        gLogger->log(LogManager::DEBUG,"Object::addKnownObject %I64u couldnt be added to %I64u - already in it", object->getId(), this->getId());
+		DLOG(INFO) << "Object::addKnownObject " << object->getId() << " couldnt be added to " <<this->getId()<< " - already in it";
         return;
     }
 

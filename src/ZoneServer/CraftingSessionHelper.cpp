@@ -68,9 +68,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 bool CraftingSession::AdjustComponentStack(Item* item, uint32 uses)
 {
-    gLogger->log(LogManager::DEBUG,"CraftingSession::AdjustComponentStack");
-    bool deleteStack = false;
-
     //is this a stack ???
     if(item->hasAttribute("stacksize"))
     {
@@ -78,9 +75,8 @@ bool CraftingSession::AdjustComponentStack(Item* item, uint32 uses)
 
         uint32 stackSize;
         stackSize = item->getAttribute<uint32>("stacksize");
-        gLogger->log(LogManager::DEBUG,"CraftingSession::AdjustComponentStack stacksize : %u",stackSize);
-
-        if(stackSize > uses)
+        
+		if(stackSize > uses)
         {
             //just adjust the stacks size
             item->setAttributeIncDB("stacksize",boost::lexical_cast<std::string>(stackSize-uses));
@@ -95,7 +91,6 @@ bool CraftingSession::AdjustComponentStack(Item* item, uint32 uses)
         {
             //just adjust the stacks size
             item->setAttributeIncDB("stacksize",boost::lexical_cast<std::string>(stackSize-uses));
-            deleteStack = true;
         }
 
     }
@@ -103,16 +98,13 @@ bool CraftingSession::AdjustComponentStack(Item* item, uint32 uses)
         //no stack, just a singular item
         if(uses == 1)
         {
-            gLogger->log(LogManager::DEBUG,"CraftingSession::AdjustComponentStack no stacksize attribute set stack to 1");
-            deleteStack = true;
+            DLOG(INFO) << "CraftingSession::AdjustComponentStack no stacksize attribute set stack to 1";
         }
         else
         {
-            gLogger->log(LogManager::DEBUG,"CraftingSession::AdjustComponentStack no stacksize attribute return false");
+            DLOG(INFO) << "CraftingSession::AdjustComponentStack no stacksize attribute return false";
             return false;
         }
-
-
 
     return true;
 
@@ -126,16 +118,12 @@ bool CraftingSession::AdjustComponentStack(Item* item, uint32 uses)
 
 uint32 CraftingSession::AdjustFactoryCrate(FactoryCrate* crate, uint32 uses)
 {
-
-    bool deleteCrate = false;
-
     uint32 crateSize = 1;
     uint32 stackSize = 1;
 
 
     if(!crate->hasAttribute("factory_count"))
     {
-        gLogger->log(LogManager::DEBUG,"CraftingSession::prepareComponentoffer crate without factory_count attribute");
         return 0;
     }
 
@@ -164,7 +152,7 @@ uint32 CraftingSession::AdjustFactoryCrate(FactoryCrate* crate, uint32 uses)
 
     if(takeOut>crateSize)
     {
-        gLogger->log(LogManager::DEBUG,"CraftingSession::AdjustFactoryCrate :: Crate does not have enough content");
+        DLOG(INFO) << "CraftingSession::AdjustFactoryCrate :: Crate does not have enough content";
         return 0;
     }
 
@@ -225,7 +213,7 @@ uint32 CraftingSession::getComponentOffer(Item* component, uint32 needed)
     {
         if(!fC->hasAttribute("factory_count"))
         {
-            gLogger->log(LogManager::DEBUG,"CraftingSession::prepareComponent crate without factory_count attribute");
+            DLOG(INFO) << "CraftingSession::prepareComponent crate without factory_count attribute";
             return 0;
         }
 
@@ -278,7 +266,7 @@ bool CraftingSession::prepareComponent(Item* component, uint32 needed, Manufactu
     {
 
         uint32 amount = AdjustFactoryCrate(fC, needed);
-        gLogger->log(LogManager::DEBUG,"CraftingSession::prepareComponent FactoryCrate take %u stacks",amount);
+        DLOG(INFO) << "CraftingSession::prepareComponent FactoryCrate take " << amount;
 
         //TODO - added stacks shouldnt have more items than maximally possible - needed is the amount needed for the slot
         // that might be bigger than the max stack size
@@ -320,8 +308,6 @@ bool CraftingSession::prepareComponent(Item* component, uint32 needed, Manufactu
     //no stacksize or crate - do not bother with temporaries
     if(!component->hasAttribute("stacksize"))
     {
-        gLogger->log(LogManager::DEBUG,"CraftingSession::prepareComponent no stacksize attribute : %I64u",component->getId());
-
         // remove it out of the inventory so we cant use it several times
         TangibleObject* tO = dynamic_cast<TangibleObject*>(gWorldManager->getObjectById(component->getParentId()));
 
@@ -336,7 +322,6 @@ bool CraftingSession::prepareComponent(Item* component, uint32 needed, Manufactu
         return true;
 
     }
-    gLogger->log(LogManager::DEBUG,"CraftingSession::prepareComponent stack  ");
 
     //only pure stacks remain
     AdjustComponentStack(component, needed);
@@ -351,7 +336,6 @@ bool CraftingSession::prepareComponent(Item* component, uint32 needed, Manufactu
 
     if(!stackSize)
     {
-        gLogger->log(LogManager::DEBUG,"CraftingSession::AdjustComponentStack delete stack");
         //remove the item out of its container
         TangibleObject* tO = dynamic_cast<TangibleObject*>(gWorldManager->getObjectById(component->getParentId()));
 
@@ -384,15 +368,11 @@ void CraftingSession::handleFillSlotComponent(uint64 componentId,uint32 slotId,u
 
     ManufactureSlot*	manSlot			= mManufacturingSchematic->getManufactureSlots()->at(slotId);
 
-    uint64 crateID = 0;
-
     Item*		component	= dynamic_cast<Item*>(gWorldManager->getObjectById(componentId));
 
     //remove the component out of its container and attach it to the man schematic
     //alternatively remove the amount necessary from a stack / crate
 
-
-    uint32				availableAmount		= 0;
     uint32				existingAmount		= 0;
     uint32				totalNeededAmount	= manSlot->mDraftSlot->getNecessaryAmount();
 
@@ -463,8 +443,6 @@ void CraftingSession::handleFillSlotComponent(uint64 componentId,uint32 slotId,u
     component->setParentId(mManufacturingSchematic->getId());
 
     //it wasnt a crate / stack - process right here
-
-    gLogger->log(LogManager::DEBUG,"CraftingSession::handleFillSlotComponent no callback %I64u mAsyncComponentAmount : %u",component->getId(), mAsyncComponentAmount);
 
     //add the necessary information to the slot
     manSlot->mUsedComponentStacks.push_back(std::make_pair(component,mAsyncComponentAmount));
@@ -616,7 +594,7 @@ void CraftingSession::handleFillSlotResource(uint64 resContainerId,uint32 slotId
         {
             resContainer->setAmount(newContainerAmount);
             gMessageLib->sendResourceContainerUpdateAmount(resContainer,mOwner);
-            mDatabase->ExecuteSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",newContainerAmount,resContainer->getId());
+            mDatabase->executeSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",newContainerAmount,resContainer->getId());
             
         }
 
@@ -709,8 +687,6 @@ void CraftingSession::handleFillSlotResourceRewrite(uint64 resContainerId,uint32
     // update resource container
     ResourceContainer*			resContainer	= dynamic_cast<ResourceContainer*>(gWorldManager->getObjectById(resContainerId));
     ManufactureSlot*			manSlot			= mManufacturingSchematic->getManufactureSlots()->at(slotId);
-
-    FilledResources::iterator	filledResIt		= manSlot->mFilledResources.begin();
 
     //bool resourceBool = false;
     bool smallupdate = false;
@@ -825,13 +801,9 @@ void CraftingSession::bagComponents(ManufactureSlot* manSlot,uint64 containerId)
     while(compIt != manSlot->mUsedComponentStacks.end())
     {
         Item*	filledComponent	= dynamic_cast<Item*>((*compIt).first);
-        gLogger->log(LogManager::DEBUG,"CraftingSession::bagComponent %I64u",filledComponent->getId());
-
-        uint32 amount = (*compIt).second;
 
         if(!filledComponent)
         {
-            gLogger->log(LogManager::DEBUG,"CraftingSession::bagComponents filledComponent not found");
             return;
         }
 
@@ -866,12 +838,8 @@ void CraftingSession::destroyComponents()
 
             if(!filledComponent)
             {
-                gLogger->log(LogManager::DEBUG,"CraftingSession::destroyComponents filledComponent not found");
                 return;
             }
-
-
-            gLogger->log(LogManager::DEBUG,"CraftingSession::destroyComponents remove stack %I64u",filledComponent->getId());
 
             gObjectFactory->deleteObjectFromDB(filledComponent);
             gMessageLib->sendDestroyObject(filledComponent->getId(),mOwner);
@@ -937,7 +905,7 @@ void CraftingSession::bagResource(ManufactureSlot* manSlot,uint64 containerId)
 
                         gMessageLib->sendResourceContainerUpdateAmount(resCont,mOwner);
 
-                        gWorldManager->getDatabase()->ExecuteSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%I64u",newAmount,resCont->getId());
+                        gWorldManager->getDatabase()->executeSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",newAmount,resCont->getId());
                         
                     }
                     // target container full, put in what fits, create a new one
@@ -948,7 +916,7 @@ void CraftingSession::bagResource(ManufactureSlot* manSlot,uint64 containerId)
                         resCont->setAmount(maxAmount);
 
                         gMessageLib->sendResourceContainerUpdateAmount(resCont,mOwner);
-                        gWorldManager->getDatabase()->ExecuteSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%I64u",maxAmount,resCont->getId());
+                        gWorldManager->getDatabase()->executeSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",maxAmount,resCont->getId());
                         
 
                         gObjectFactory->requestNewResourceContainer(dynamic_cast<Inventory*>(mOwner->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory)),(*resIt).first,mOwner->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory)->getId(),99,selectedNewAmount);
@@ -1092,14 +1060,11 @@ uint8 CraftingSession::_experimentRoll(uint32 expPoints)
     //ok we have some sort of success
     assRoll = (int32) floor( (double)gRandom->getRand() / (RAND_MAX  + 1.0f) * (100.0f - 1.0f) + 1.0f) ;
 
-    gLogger->log(LogManager::DEBUG,"CraftingSession:: assembly Roll preMod %u",assRoll);
-
     int32 modRoll = static_cast<int32>(((assRoll - (rating * 0.4f)) / 15.0f) - (mToolEffectivity / 50.0f));
 
     ++modRoll;
 
     //int32 modRoll = (gRandom->getRand() - (rating*0.2))/15;
-    gLogger->log(LogManager::DEBUG,"CraftingSession:: assembly Roll postMod %i",modRoll);
 
     //0 is amazing success
     //1 is great success
@@ -1311,11 +1276,11 @@ void CraftingSession::collectResources()
         //update db
         //enter it slotdependent as we dont want to clot our attributes table with resources
         //173  is cat_manf_schem_resource
-        mDatabase->ExecuteSqlAsync(0,0,"INSERT INTO item_attributes VALUES (%"PRIu64",173,'%s',1,0)",mManufacturingSchematic->getId(),str);
+        mDatabase->executeSqlAsync(0,0,"INSERT INTO item_attributes VALUES (%"PRIu64",173,'%s',1,0)",mManufacturingSchematic->getId(),str);
         
 
         //now enter it in the relevant manschem table so we can use it in factories
-        mDatabase->ExecuteSqlAsync(0,0,"INSERT INTO manschemresources VALUES (NULL,%"PRIu64",%"PRIu64",%u)",mManufacturingSchematic->getId(),(*checkResIt).first,(*checkResIt).second);
+        mDatabase->executeSqlAsync(0,0,"INSERT INTO manschemresources VALUES (NULL,%"PRIu64",%"PRIu64",%u)",mManufacturingSchematic->getId(),(*checkResIt).first,(*checkResIt).second);
         
 
         checkResIt  ++;
@@ -1364,8 +1329,6 @@ void CraftingSession::collectComponents()
             if(tO->hasAttribute("serial"))
                 componentSerial = tO->getAttribute<std::string>("serial").c_str();
 
-            uint32 serialCRC = componentSerial.getCrc();
-
             checkResIt = mCheckRes.find(componentID);
             if(checkResIt == mCheckRes.end())
             {
@@ -1393,7 +1356,6 @@ void CraftingSession::collectComponents()
         Item* tO = dynamic_cast<Item*>(gWorldManager->getObjectById((*checkResIt).first));
         if(!tO)
         {
-            gLogger->log(LogManager::DEBUG,"CraftingSession::collectComponents() no component");
             continue;
         }
         BString componentSerial = "";
@@ -1415,11 +1377,11 @@ void CraftingSession::collectComponents()
         //update db
         //enter it slotdependent as we dont want to clot our attributes table with resources
         //173  is cat_manf_schem_resource
-        mDatabase->ExecuteSqlAsync(0,0,"INSERT INTO item_attributes VALUES (%"PRIu64",173,'%s',1,0)",mManufacturingSchematic->getId(),str);
+        mDatabase->executeSqlAsync(0,0,"INSERT INTO item_attributes VALUES (%"PRIu64",173,'%s',1,0)",mManufacturingSchematic->getId(),str);
         
 
         //now enter it in the relevant manschem table so we can use it in factories
-        mDatabase->ExecuteSqlAsync(0,0,"INSERT INTO manschemcomponents VALUES (NULL,%"PRIu64",%u,%s,%u)",mManufacturingSchematic->getId(),tO->getItemType(),componentSerial,(*checkResIt).second);
+        mDatabase->executeSqlAsync(0,0,"INSERT INTO manschemcomponents VALUES (NULL,%"PRIu64",%u,%s,%u)",mManufacturingSchematic->getId(),tO->getItemType(),componentSerial.getAnsi(),(*checkResIt).second);
         
 
         checkResIt  ++;
@@ -1455,7 +1417,7 @@ void CraftingSession::updateResourceContainer(uint64 containerID, uint32 newAmou
 
         resContainer->setAmount(newAmount);
         gMessageLib->sendResourceContainerUpdateAmount(resContainer,mOwner);
-        mDatabase->ExecuteSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",newAmount,resContainer->getId());
+        mDatabase->executeSqlAsync(NULL,NULL,"UPDATE resource_containers SET amount=%u WHERE id=%"PRIu64"",newAmount,resContainer->getId());
        
     }
 
@@ -1570,7 +1532,7 @@ uint8 CraftingSession::getExperimentationRoll(ExperimentationProperty* expProper
 
     if(expProperty->mRoll == -1)
     {
-        gLogger->log(LogManager::DEBUG,"CraftingSession:: expProperty is a Virgin!");
+        DLOG(INFO) << "CraftingSession:: expProperty is a Virgin!";
 
         // get our Roll and take into account the relevant modifiers
         roll			= _experimentRoll(expPoints);
@@ -1582,10 +1544,8 @@ uint8 CraftingSession::getExperimentationRoll(ExperimentationProperty* expProper
         {
             ExperimentationProperty* tempProperty = (*itAll);
 
-            gLogger->log(LogManager::DEBUG,"CraftingSession:: now testing expProperty : %s",tempProperty->mExpAttributeName.getAnsi());
             if(expProperty->mExpAttributeName.getCrc() == tempProperty->mExpAttributeName.getCrc())
             {
-                gLogger->log(LogManager::DEBUG,"CraftingSession:: assign it our roll : %u",roll);
                 tempProperty->mRoll = roll;
             }
 
@@ -1596,7 +1556,7 @@ uint8 CraftingSession::getExperimentationRoll(ExperimentationProperty* expProper
     else
     {
         roll = static_cast<uint8>(expProperty->mRoll);
-        gLogger->log(LogManager::DEBUG,"CraftingSession:: experiment expProperty isnt a virgin anymore ...(roll:%u)",roll);
+        DLOG(INFO) << "CraftingSession:: experiment expProperty isnt a virgin anymore ...(roll:" << roll;
     }
 
     return roll;

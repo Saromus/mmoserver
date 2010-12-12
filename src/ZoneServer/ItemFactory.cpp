@@ -27,7 +27,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "ItemFactory.h"
 
-#include "Holocron.h"
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "CraftingTool.h"
 #include "CraftingStation.h"
 #include "Deed.h"
@@ -35,6 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Food.h"
 #include "Furniture.h"
 #include "FactoryCrate.h"
+#include "Holocron.h"
 #include "Instrument.h"
 #include "Item.h"
 #include "ManufacturingSchematic.h"
@@ -49,7 +54,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Wearable.h"
 #include "ChanceCube.h"
 #include "WorldManager.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -117,7 +121,7 @@ void ItemFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
             asContainer->mObject = item;
             asContainer->mDepth = asyncContainer->mDepth;
 
-            mDatabase->ExecuteSqlAsync(this,asContainer,"SELECT attributes.name,item_attributes.value,attributes.internal"
+            mDatabase->executeSqlAsync(this,asContainer,"SELECT attributes.name,item_attributes.value,attributes.internal"
                                        " FROM item_attributes"
                                        " INNER JOIN attributes ON (item_attributes.attribute_id = attributes.id)"
                                        " WHERE item_attributes.item_id = %"PRIu64" ORDER BY item_attributes.order",item->getId());
@@ -145,7 +149,7 @@ void ItemFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
             asContainer->mDepth = asyncContainer->mDepth;
 
             //containers are normal items like furniture, lightsabers and stuff
-            mDatabase->ExecuteSqlAsync(this,asContainer,
+            mDatabase->executeSqlAsync(this,asContainer,
                                        "(SELECT \'items\',items.id FROM items WHERE (parent_id=%"PRIu64"))"
                                        " UNION (SELECT \'resource_containers\',resource_containers.id FROM resource_containers WHERE (parent_id=%"PRIu64"))",
                                        item->getId(),item->getId());
@@ -172,7 +176,7 @@ void ItemFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         Type1_QueryContainer queryContainer;
 
-        DataBinding*	binding = mDatabase->CreateDataBinding(2);
+        DataBinding*	binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_bstring,offsetof(Type1_QueryContainer,mString),64,0);
         binding->addField(DFT_uint64,offsetof(Type1_QueryContainer,mId),8,1);
 
@@ -191,7 +195,7 @@ void ItemFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         // request all children
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&queryContainer);
+            result->getNextRow(binding,&queryContainer);
 
             if(strcmp(queryContainer.mString.getAnsi(),"items") == 0)
             {
@@ -220,7 +224,7 @@ void ItemFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,uint
     QueryContainerBase* asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,ItemFactoryQuery_MainData,client,id);
     asContainer->mDepth = 0;
 
-    mDatabase->ExecuteSqlAsync(this,asContainer,
+    mDatabase->executeSqlAsync(this,asContainer,
                                "SELECT items.id,items.parent_id,items.item_family,items.item_type,items.privateowner_id,items.oX,items.oY,"
                                "items.oZ,items.oW,items.x,items.y,items.z,items.planet_id,items.customName,"
                                "item_types.object_string,item_types.stf_name,item_types.stf_file,item_types.stf_detail_name,"
@@ -240,7 +244,7 @@ void ItemFactory::requestContainerContent(ObjectFactoryCallback* ofCallback,uint
     QueryContainerBase* asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,ItemFactoryQuery_MainData,client,id);
     asContainer->mDepth = depth;
 
-    mDatabase->ExecuteSqlAsync(this,asContainer,
+    mDatabase->executeSqlAsync(this,asContainer,
                                "SELECT items.id,items.parent_id,items.item_family,items.item_type,items.privateowner_id,items.oX,items.oY,"
                                "items.oZ,items.oW,items.x,items.y,items.z,items.planet_id,items.customName,"
                                "item_types.object_string,item_types.stf_name,item_types.stf_file,item_types.stf_detail_name,"
@@ -260,10 +264,8 @@ Item* ItemFactory::_createItem(DatabaseResult* result)
     Item*			item;
     ItemIdentifier	itemIdentifier;
 
-    uint64 count = result->getRowCount();
-
-    result->GetNextRow(mItemIdentifierBinding,(void*)&itemIdentifier);
-    result->ResetRowIndex();
+    result->getNextRow(mItemIdentifierBinding,(void*)&itemIdentifier);
+    result->resetRowIndex();
 
     switch(itemIdentifier.mFamilyId)
     {
@@ -367,12 +369,12 @@ Item* ItemFactory::_createItem(DatabaseResult* result)
     default:
     {
         item = new Item();
-        gLogger->log(LogManager::NOTICE,"ItemFactory::createItem (itemType: %u) with unknown Family %u",itemIdentifier.mTypeId, itemIdentifier.mFamilyId);
+        LOG(INFO) << "ItemFactory::createItem (itemType:"<< itemIdentifier.mTypeId << ") with unknown Family " << itemIdentifier.mFamilyId;
     }
     break;
     }
 
-    result->GetNextRow(mItemBinding,item);
+    result->getNextRow(mItemBinding,item);
 
     item->setItemFamily(itemIdentifier.mFamilyId);
     item->setItemType(itemIdentifier.mTypeId);
@@ -386,7 +388,7 @@ Item* ItemFactory::_createItem(DatabaseResult* result)
 
 void ItemFactory::_setupDatabindings()
 {
-    mItemBinding = mDatabase->CreateDataBinding(23);
+    mItemBinding = mDatabase->createDataBinding(23);
     mItemBinding->addField(DFT_uint64,offsetof(Item,mId),8,0);
     mItemBinding->addField(DFT_uint64,offsetof(Item,mParentId),8,1);
     mItemBinding->addField(DFT_uint64,offsetof(Item,mPrivateOwner),8,4);
@@ -413,7 +415,7 @@ void ItemFactory::_setupDatabindings()
 
 
 
-    mItemIdentifierBinding = mDatabase->CreateDataBinding(2);
+    mItemIdentifierBinding = mDatabase->createDataBinding(2);
     mItemIdentifierBinding->addField(DFT_uint32,offsetof(ItemIdentifier,mFamilyId),4,2);
     mItemIdentifierBinding->addField(DFT_uint32,offsetof(ItemIdentifier,mTypeId),4,3);
 }
@@ -422,8 +424,8 @@ void ItemFactory::_setupDatabindings()
 
 void ItemFactory::_destroyDatabindings()
 {
-    mDatabase->DestroyDataBinding(mItemBinding);
-    mDatabase->DestroyDataBinding(mItemIdentifierBinding);
+    mDatabase->destroyDataBinding(mItemBinding);
+    mDatabase->destroyDataBinding(mItemIdentifierBinding);
 }
 
 //=============================================================================
@@ -469,12 +471,12 @@ void ItemFactory::_postProcessAttributes(Object* object)
             else
             {
                 item->setAttribute("craft_tool_status","@crafting:tool_status_ready");
-                mDatabase->ExecuteSqlAsync(0,0,"UPDATE item_attributes SET value='@crafting:tool_status_ready' WHERE item_id=%"PRIu64" AND attribute_id=%u",item->getId(),AttrType_CraftToolStatus);
+                mDatabase->executeSqlAsync(0,0,"UPDATE item_attributes SET value='@crafting:tool_status_ready' WHERE item_id=%"PRIu64" AND attribute_id=%u",item->getId(),AttrType_CraftToolStatus);
 
                 int8 sql[250];
                 item->addAttribute("craft_tool_time","0");
                 sprintf(sql,"INSERT INTO item_attributes VALUES(%"PRIu64",%u,'0',0,0)",item->getId(),AttrType_CraftToolTime);
-                mDatabase->ExecuteSqlAsync(0,0,sql);
+                mDatabase->executeAsyncSql(sql);
                
             }
         }
@@ -504,7 +506,8 @@ void ItemFactory::handleObjectReady(Object* object,DispatchClient* client)
     InLoadingContainer* ilc	= _getObject(object->getParentId());
 
     if (! ilc) {
-        gLogger->log(LogManager::WARNING,"ItemFactory::handleObjectReady could not locate ILC for objectParentId:%I64u",object->getParentId());
+        LOG(WARNING) << "Failed to locate InLoadingContainer for parent id [" << object->getParentId() << "]";
+        LOG(WARNING) << "ItemFactory::handleObjectReady could not locate ILC for objectParentId: " << object->getParentId();
         return;
     }
     assert(ilc && "ItemFactory::handleObjectReady unable to find InLoadingContainer");
@@ -524,7 +527,7 @@ void ItemFactory::handleObjectReady(Object* object,DispatchClient* client)
         ilc->mOfCallback->handleObjectReady(item,ilc->mClient);
 
         if(!(_removeFromObjectLoadMap(item->getId())))
-            gLogger->log(LogManager::DEBUG,"ItemFactory: Failed removing object from loadmap");
+            LOG(WARNING) << "Failed removing object from loadmap";
 
         mILCPool.free(ilc);
         return;

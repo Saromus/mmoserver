@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "PlayerObject.h"
 #include "ResourceContainer.h"
 #include "ResourceManager.h"
+#include "StateManager.h"
 #include "SchematicManager.h"
 #include "WorldManager.h"
 
@@ -73,34 +74,33 @@ CraftingSession::CraftingSession(Anh_Utils::Clock* clock,Database* database,Play
     , mCriticalCount(0)
     , mExpFlag(expFlag)
     , mStage(1)
+	, mFirstFill(false)
     , mCounter(2)
-    , mFirstFill(false)
     , mItemLoaded(false)
 {
+	// update player variables
+	mOwner->setCraftingStage(mStage);
+	mOwner->setExperimentationFlag(mExpFlag);
+	mOwner->setExperimentationPoints(0);
 
-    // update player variables
-    mOwner->setCraftingStage(mStage);
-    mOwner->setExperimentationFlag(mExpFlag);
-    mOwner->setExperimentationPoints(0);
 
+	// the station given is the crafting station compatible with our tool in a set radius
+	//
+	if(station)
+		mOwner->setNearestCraftingStation(station->getId());
+	else
+		mOwner->setNearestCraftingStation(0);
 
-    // the station given is the crafting station compatible with our tool in a set radius
-    //
-    if(station)
-        mOwner->setNearestCraftingStation(station->getId());
-    else
-        mOwner->setNearestCraftingStation(0);
+	gStateManager.setCurrentActionState(mOwner,CreatureState_Crafting);
 
-    mOwner->toggleStateOn(CreatureState_Crafting);
-
-    // send the updates
-    gMessageLib->sendStateUpdate(mOwner);
-    gMessageLib->sendUpdateCraftingStage(mOwner);
-    gMessageLib->sendUpdateExperimentationFlag(mOwner);
-    gMessageLib->sendUpdateNearestCraftingStation(mOwner);
-    gMessageLib->sendUpdateExperimentationPoints(mOwner);
-    gMessageLib->sendDraftSchematicsList(mTool,mOwner);
-    mToolEffectivity = mTool->getAttribute<float>("craft_tool_effectiveness");
+	// send the updates
+	gMessageLib->sendStateUpdate(mOwner);
+	gMessageLib->sendUpdateCraftingStage(mOwner);
+	gMessageLib->sendUpdateExperimentationFlag(mOwner);
+	gMessageLib->sendUpdateNearestCraftingStation(mOwner);
+	gMessageLib->sendUpdateExperimentationPoints(mOwner);
+	gMessageLib->sendDraftSchematicsList(mTool,mOwner);
+	mToolEffectivity = mTool->getAttribute<float>("craft_tool_effectiveness");
 }
 
 //=============================================================================
@@ -109,18 +109,18 @@ CraftingSession::CraftingSession(Anh_Utils::Clock* clock,Database* database,Play
 //
 CraftingSession::~CraftingSession()
 {
-    _cleanUp();
+	_cleanUp();
 
-    // reset player variables
-    mOwner->setCraftingSession(NULL);
-    mOwner->toggleStateOff(CreatureState_Crafting);
-    mOwner->setCraftingStage(0);
-    mOwner->setExperimentationFlag(1);
-    mOwner->setExperimentationPoints(10);
-    mOwner->setNearestCraftingStation(0);
+	// reset player variables
+	mOwner->setCraftingSession(NULL);
+    gStateManager.removeActionState(mOwner, CreatureState_Crafting);
+	mOwner->setCraftingStage(0);
+	mOwner->setExperimentationFlag(1);
+	mOwner->setExperimentationPoints(10);
+	mOwner->setNearestCraftingStation(0);
 
-    // send cancel session
-    gMessageLib->sendSharedNetworkMessage(mOwner,0,1);
+	// send cancel session
+	gMessageLib->sendSharedNetworkMessage(mOwner,0,1);
     gMessageLib->SendSystemMessage(::common::OutOfBand("ui_craft", "session_ended"), mOwner);
 
     // send player updates
@@ -143,7 +143,7 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
     case CraftSessionQuery_SkillmodExp:
     {
         uint32			modId;
-        DataBinding*	binding = mDatabase->CreateDataBinding(1);
+        DataBinding*	binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
 
         uint32 count = static_cast<uint32>(result->getRowCount());
@@ -157,7 +157,7 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
             // alternatively a separate db entry needs to be made
             for(uint32 i = 0; i<count; i++)
             {
-                result->GetNextRow(binding,&modId);
+                result->getNextRow(binding,&modId);
                 mExpSkillModId = modId;
                 int32 resultInt = mOwner->getSkillModValue(mExpSkillModId);
                 if ((resultInt > 0)&& (resultInt > (int32) mOwnerExpSkillMod))
@@ -171,14 +171,14 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
         }
 
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
         CraftSessionQueryContainer* container = new CraftSessionQueryContainer(CraftSessionQuery_SkillmodAss,0);
         uint32 groupId = mDraftSchematic->getWeightsBatchId();
 
         int8 sql[550];
         sprintf(sql,"SELECT DISTINCT skills_skillmods.skillmod_id FROM draft_schematics INNER JOIN skills_schematicsgranted ON draft_schematics.group_id = skills_schematicsgranted.schem_group_id INNER JOIN skills_skillmods ON skills_schematicsgranted.skill_id = skills_skillmods.skill_id INNER JOIN skillmods ON skills_skillmods.skillmod_id = skillmods.skillmod_id WHERE draft_schematics.weightsbatch_id = %u AND skillmods.skillmod_name LIKE %s",groupId,"'%%asse%%'");
-        mDatabase->ExecuteSqlAsyncNoArguments(this,container,sql);
+        mDatabase->executeSqlAsyncNoArguments(this,container,sql);
         
         //mDatabase->ExecuteSqlAsync(this,container,sql);
 
@@ -189,7 +189,7 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
     case CraftSessionQuery_SkillmodAss:
     {
         uint32			resultId;
-        DataBinding*	binding = mDatabase->CreateDataBinding(1);
+        DataBinding*	binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
 
         uint32 count = static_cast<uint32>(result->getRowCount());
@@ -204,7 +204,7 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
             // alternatively a separate db entry needs to be made
             for(uint32 i = 0; i<count; i++)
             {
-                result->GetNextRow(binding,&resultId);
+                result->getNextRow(binding,&resultId);
                 mAssSkillModId = resultId;
                 int32 resultInt = mOwner->getSkillModValue(mAssSkillModId);
                 if ((resultInt > 0)&& (resultInt > (int32) mOwnerAssSkillMod))
@@ -216,7 +216,7 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
         }
 
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
         //lets get the customization data from db
         CraftSessionQueryContainer* container = new CraftSessionQueryContainer(CraftSessionQuery_CustomizationData,0);
@@ -224,7 +224,7 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
 
         int8 sql[550];
         sprintf(sql,"SELECT dsc.attribute, dsc.cust_attribute, dsc.palette_size, dsc.default_value FROM draft_schematic_customization dsc WHERE dsc.batchId = %u",groupId);
-        mDatabase->ExecuteSqlAsync(this,container,sql);
+        mDatabase->executeSqlAsync(this,container,sql);
 
 
     }
@@ -232,7 +232,7 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
 
     case CraftSessionQuery_CustomizationData:
     {
-        DataBinding*	binding = mDatabase->CreateDataBinding(4);
+        DataBinding*	binding = mDatabase->createDataBinding(4);
         binding->addField(DFT_bstring,offsetof(CustomizationOption,attribute),32,0);
         binding->addField(DFT_uint16,offsetof(CustomizationOption,cutomizationIndex),2,1);
         binding->addField(DFT_uint32,offsetof(CustomizationOption,paletteSize),4,2);
@@ -243,13 +243,13 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
         for(uint32 i = 0; i<count; i++)
         {
             CustomizationOption* cO = new(CustomizationOption);
-            result->GetNextRow(binding,cO);
+            result->getNextRow(binding,cO);
 
             cO->paletteSize =  (uint32)(cO->paletteSize /200)* getCustomization();
 
             mManufacturingSchematic->mCustomizationList.push_back(cO);
         }
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
         // lets move on to stage 2, send the updates
 
@@ -268,10 +268,10 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
     case CraftSessionQuery_Prototype:
     {
         uint32			resultId;
-        DataBinding*	binding = mDatabase->CreateDataBinding(1);
+        DataBinding*	binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
 
-        result->GetNextRow(binding,&resultId);
+        result->getNextRow(binding,&resultId);
 
         // all went well
         if(!resultId)
@@ -313,7 +313,7 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
             gMessageLib->sendCraftAcknowledge(opCreatePrototypeResponse,CraftCreate_Failure,qContainer->mCounter,mOwner);
 
             // end the session
-            mDatabase->DestroyDataBinding(binding);
+            mDatabase->destroyDataBinding(binding);
             delete(qContainer);
 
             gCraftingSessionFactory->destroySession(this);
@@ -321,13 +321,13 @@ void CraftingSession::handleDatabaseJobComplete(void* ref,DatabaseResult* result
             return;
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
     default:
     {
-        gLogger->log(LogManager::WARNING,"CraftSession: unhandled DatabaseQuery");
+        
     }
     break;
     }
@@ -343,7 +343,7 @@ void CraftingSession::handleObjectReady(Object* object,DispatchClient* client)
     Item* item = dynamic_cast<Item*>(object);
     if(!item)
     {   //Manufacturingschematic couldnt be created!!! Crashbug patch for: http://paste.swganh.org/viewp.php?id=20100627064849-3d026388be3dc63f7d9706f737e6d510
-        gLogger->log(LogManager::CRITICAL,"CraftingSession::handleObjectReady: Couldnt Cast item.");
+        LOG(WARNING) << "CraftingSession::handleObjectReady: Couldnt Cast item.";
         mManufacturingSchematic = NULL;
 
         gMessageLib->sendCraftAcknowledge(opCreatePrototypeResponse,CraftCreate_Failure,this->getCounter(),mOwner);
@@ -357,16 +357,14 @@ void CraftingSession::handleObjectReady(Object* object,DispatchClient* client)
         //reset - we just started from scratch
         mItemLoaded = false;
 
-        gLogger->log(LogManager::DEBUG,"CraftingSession::handleObjectReady: loaded schematic.");
         mManufacturingSchematic = dynamic_cast<ManufacturingSchematic*>(item);
         if(!mManufacturingSchematic)
         {
-            gLogger->log(LogManager::CRITICAL,"CraftingSession::handleObjectReady: Couldnt Cast ManufacturingSchematic.");
+            LOG(WARNING) << "CraftingSession::handleObjectReady: Couldnt Cast ManufacturingSchematic.";
 
             if(mDraftSchematic)
             {
-                gLogger->log(LogManager::CRITICAL,"CraftingSession::handleObjectReady: DraftSchematic : %s / Object : %I64u",mDraftSchematic->getModel(),object->getId());
-                gLogger->log(LogManager::CRITICAL,"CraftingSession::handleObjectReady: DraftSchematic batch: %4u",mDraftSchematic->getWeightsBatchId());
+                LOG(WARNING) << "CraftingSession::handleObjectReady: DraftSchematic : " << mDraftSchematic->getModel().getAnsi() << " Object " << object->getId();
             }
             mManufacturingSchematic = NULL;
             gMessageLib->sendCraftAcknowledge(opCreatePrototypeResponse,CraftCreate_Failure,this->getCounter(),mOwner);
@@ -383,7 +381,6 @@ void CraftingSession::handleObjectReady(Object* object,DispatchClient* client)
     // its the item we load
     else if(!mItemLoaded)
     {
-        gLogger->log(LogManager::DEBUG,"CraftingSession::handleObjectReady: loaded item.");
         //mark it as loaded the next item we might receive will be a component
         mItemLoaded = true;
         mItem = item;
@@ -407,7 +404,7 @@ void CraftingSession::handleObjectReady(Object* object,DispatchClient* client)
         sprintf(sql,"SELECT DISTINCT skills_skillmods.skillmod_id FROM draft_schematics INNER JOIN skills_schematicsgranted ON draft_schematics.group_id = skills_schematicsgranted.schem_group_id INNER JOIN skills_skillmods ON skills_schematicsgranted.skill_id = skills_skillmods.skill_id INNER JOIN skillmods ON skills_skillmods.skillmod_id = skillmods.skillmod_id WHERE draft_schematics.weightsbatch_id = %u AND skillmods.skillmod_name LIKE %s",groupId,"'%%exper%%'");
 
         //% just upsets the standard query
-        mDatabase->ExecuteSqlAsyncNoArguments(this,container,sql);
+        mDatabase->executeSqlAsyncNoArguments(this,container,sql);
         
         
         return;
@@ -415,7 +412,6 @@ void CraftingSession::handleObjectReady(Object* object,DispatchClient* client)
     //as the main item has been loaded we can now only receive components when we fill slots with stack-/crate- content
     else if(mItemLoaded)
     {
-        gLogger->log(LogManager::DEBUG,"CraftingSession::handleObjectReady: loaded component.");
         uint32 maxsize = mAsyncStackSize;
 
         //make sure we have the proper stacksizes
@@ -440,11 +436,9 @@ void CraftingSession::handleObjectReady(Object* object,DispatchClient* client)
             mAsyncComponentAmount--;
         }
 
-        gLogger->log(LogManager::DEBUG,"CraftingSession::handleObjectReady: stacksize : %u",mAsyncComponentAmount);
-
         if(!mAsyncManSlot)
         {
-            gLogger->log(LogManager::CRITICAL,"CraftingSession::handleObjectReady: Couldnt find Slot!!!.");
+            LOG(WARNING) << "CraftingSession::handleObjectReady: Couldnt find Slot!!!.";
 
             mManufacturingSchematic = NULL;
             gMessageLib->sendCraftAcknowledge(opCreatePrototypeResponse,CraftCreate_Failure,this->getCounter(),mOwner);
@@ -514,7 +508,6 @@ bool CraftingSession::selectDraftSchematic(uint32 schematicIndex)
     // invalid index
     if(filteredPlayerSchematics->empty() || filteredPlayerSchematics->size() < schematicIndex)
     {
-        gLogger->log(LogManager::DEBUG,"CraftingSession::selectDraftSchematic: Invalid Index : %u",schematicIndex);
         return(false);
     }
 
@@ -527,14 +520,14 @@ bool CraftingSession::selectDraftSchematic(uint32 schematicIndex)
 
     if(!mDraftSchematic)
     {
-        gLogger->log(LogManager::NOTICE,"CraftingSession::selectDraftSchematic: not found crc:%u",schemCrc);
+        LOG(INFO) << "CraftingSession::selectDraftSchematic: not found crc:" << schemCrc;
         return(false);
     }
 
     // temporary check until all items are craftable
     if(!mDraftSchematic->isCraftEnabled())
     {
-        gLogger->log(LogManager::NOTICE,"CraftingSession::selectDraftSchematic: schematic not craftable crc:%u",schemCrc);
+        LOG(INFO) << "CraftingSession::selectDraftSchematic: schematic not craftable crc:" <<schemCrc;
         gMessageLib->SendSystemMessage(L"This item is currently not craftable.", mOwner);
         return(true);
     }
@@ -684,8 +677,6 @@ void CraftingSession::addComponentAttribute()
 
             if(!filledComponent)
             {
-                // uh  oh what did I just say ???
-                gLogger->log(LogManager::NOTICE,"CraftingSession::addComponentAttribute component not found");
                 continue;
             }
 
@@ -696,28 +687,20 @@ void CraftingSession::addComponentAttribute()
             while(cAPPiT != cAPP->end())
             {
                 // see whether our filled component has the relevant attribute
-                gLogger->log(LogManager::DEBUG,"CraftingSession::addComponentAttribute checking component for attribute %s ",(*cAPPiT)->getAttributeKey().getAnsi() );
                 if(!filledComponent->hasAttribute( (*cAPPiT)->getAttributeKey().getAnsi() ))
                 {
-                    gLogger->log(LogManager::NOTICE,"CraftingSession::addComponentAttribute : attribute %s not found",(*cAPPiT)->getAttributeKey().getAnsi() );
-                    cAPPiT++;
+					cAPPiT++;
                     continue;
                 }
-                gLogger->log(LogManager::DEBUG,"CraftingSession::addComponentAttribute : attribute %s has been found",(*cAPPiT)->getAttributeKey().getAnsi() );
-
                 // now that we have the attribute lets check how we want to manipulate what attribute of our final item
                 // here we are during the items assembly so we want to initialize value additions or add new attributes to the final item
 
                 if((*cAPPiT)->getManipulation() == AttributePPME_AddValue)
                 {
-                    gLogger->log(LogManager::DEBUG,"CraftingSession::addComponentAttribute : Manipulation : AttributePPME_AddValue");
                     // just add our value to the items attribute in case the attribute on the item exists
                     // do NOT add the attribute in case it wont exist
-                    gLogger->log(LogManager::DEBUG,"addComponentAttribute checking item for attribute %s",(*cAPPiT)->getAffectedAttributeKey().getAnsi());
                     if(mItem->hasAttribute( (*cAPPiT)->getAffectedAttributeKey().getAnsi() ))
                     {
-                        gLogger->log(LogManager::DEBUG,"CraftingSession::addComponentAttribute %s will affect %s",(*cAPPiT)->getAttributeKey().getAnsi() ,(*cAPPiT)->getAffectedAttributeKey().getAnsi() );
-
                         // add the attribute (to the schematic) if it doesnt exist already to the relevant list for storage
                         // on sending the msco deltas respective producing the final items the values will be added to the attributes
                         if(mManufacturingSchematic->hasPPAttribute((*cAPPiT)->getAffectedAttributeKey()))
@@ -737,7 +720,7 @@ void CraftingSession::addComponentAttribute()
                     }
                     else
                     {
-                        gLogger->log(LogManager::DEBUG,"CraftingSession::addComponentAttribute  : Attribute %s is not part of the item",(*cAPPiT)->getAffectedAttributeKey().getAnsi() );
+                        DLOG(INFO) << "CraftingSession::addComponentAttribute  : Attribute " << (*cAPPiT)->getAffectedAttributeKey().getAnsi()  << " is not part of the item";
                     }
 
                 }
@@ -951,7 +934,7 @@ void CraftingSession::createPrototype(uint32 noPractice,uint32 counter)
         // update the custom name and parent
         sprintf(sql,"UPDATE items SET parent_id=%"PRIu64", customName='",mOwner->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory)->getId());
         sqlPointer = sql + strlen(sql);
-        sqlPointer += mDatabase->Escape_String(sqlPointer,mItem->getCustomName().getAnsi(),mItem->getCustomName().getLength());
+        sqlPointer += mDatabase->escapeString(sqlPointer,mItem->getCustomName().getAnsi(),mItem->getCustomName().getLength());
         sprintf(restStr,"' WHERE id=%"PRIu64" ",mItem->getId());
         strcat(sql,restStr);
 
@@ -1060,8 +1043,6 @@ void CraftingSession::experiment(uint8 counter,std::vector<std::pair<uint32,uint
     {
         expPoints = (*it).first;
         ExperimentationProperty* expProperty = expPropList->at((*it).second).second;
-
-        gLogger->log(LogManager::DEBUG,"CraftingSession:: experiment expProperty : %s",expProperty->mExpAttributeName.getAnsi());
 
         // make sure that we only experiment once for exp properties that might be entered twice in our list !!!!
         roll = getExperimentationRoll(expProperty,expPoints);
@@ -1172,11 +1153,11 @@ float CraftingSession::_calcWeightedResourceValue(CraftWeights* weights)
         if(manSlot->mFilledResources.size() == 0)
         {
             //PANICK - theres no resource filled !!!!!!!!!!!!!!!!!!!!!!!!!!
-            gLogger->log(LogManager::DEBUG,"CraftingSession::_calcWeightedResourceValue: NO REOURCE IN RESOURCE SLOT :");
+            DLOG(INFO) << "CraftingSession::_calcWeightedResourceValue: NO REOURCE IN RESOURCE SLOT :";
 
             if(manSlot->mDraftSlot->getOptional())
             {
-                gLogger->log(LogManager::DEBUG,"CraftingSession::_calcWeightedResourceValue: SLOT WAS OPTIONAL:");
+                DLOG(INFO) << "CraftingSession::_calcWeightedResourceValue: SLOT WAS OPTIONAL:";
             }
             assert(false&&"CraftingSession::_calcWeightedResourceValue: NO RESSOURCE IN RESOURCE SLOT ");
             ++manIt;
@@ -1239,7 +1220,6 @@ void CraftingSession::createManufactureSchematic(uint32 counter)
 
     if(!datapad->addManufacturingSchematic(mManufacturingSchematic))
     {
-        gLogger->log(LogManager::DEBUG,"CraftingSession:: createManufactureSchematic : datapad full");
         //TODO
         //delete the man schem from the objectlist and the db
         gObjectFactory->deleteObjectFromDB(mItem);
@@ -1272,7 +1252,7 @@ void CraftingSession::createManufactureSchematic(uint32 counter)
     AttributeOrderList*	list = 	mManufacturingSchematic->getAttributeOrder();
     list->clear();
 
-    mDatabase->ExecuteSqlAsync(0,0,"DELETE FROM item_attributes WHERE item_id=%"PRIu64"",mManufacturingSchematic->getId());
+    mDatabase->executeSqlAsync(0,0,"DELETE FROM item_attributes WHERE item_id=%"PRIu64"",mManufacturingSchematic->getId());
 
 
     //save the datapad as the Owner Id in the db
@@ -1289,7 +1269,7 @@ void CraftingSession::createManufactureSchematic(uint32 counter)
     //Now enter the relevant information into the Manufactureschematic table
     std::string serial = mItem->getAttribute<std::string>("serial_number");
 
-    mDatabase->ExecuteSqlAsync(0, 0, "INSERT INTO manufactureschematic VALUES (%"PRIu64",%u,%u,%"PRIu64",'%s',%f)",mManufacturingSchematic->getId(),this->getProductionAmount(),this->mSchematicCRC,mItem->getId(),serial.c_str(),mManufacturingSchematic->getComplexity());
+    mDatabase->executeSqlAsync(0, 0, "INSERT INTO manufactureschematic VALUES (%"PRIu64",%u,%u,%"PRIu64",'%s',%f)",mManufacturingSchematic->getId(),this->getProductionAmount(),this->mSchematicCRC,mItem->getId(),serial.c_str(),mManufacturingSchematic->getComplexity());
 
 
     //save the customization - thats part of the item!!!!

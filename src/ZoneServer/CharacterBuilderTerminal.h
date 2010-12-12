@@ -150,7 +150,7 @@ private:
     BStringVector			mItemMenu;
     BStringVector			mResourceMenu;
     BStringVector			mWoundMenu;
-    BStringVector			mStateMenu;
+    BStringVector			mStatesMenu;
 
     //2nd level menus
     BStringVector			mStructureMenu;
@@ -227,7 +227,6 @@ private:
 class ItemFrogItemClass
 {
 public:
-
     ItemFrogItemClass () {};
     ~ItemFrogItemClass () {};
 
@@ -322,7 +321,6 @@ public:
 
     //uint32			GetCount(){return(CommoditiesTypeCount);}
     //uint32			CommoditiesTypeCount;
-
 };
 
 //=============================================================================

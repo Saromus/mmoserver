@@ -45,9 +45,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ZoneServer/WorldManager.h"
 #include "ZoneServer/ZoneOpcodes.h"
 
-#include "Common/LogManager.h"
 
-#include "Common/ByteBuffer.h"
+
+#include "Common/byte_buffer.h"
 #include "Common/atMacroString.h"
 #include "NetworkManager/DispatchClient.h"
 #include "NetworkManager/Message.h"
@@ -584,17 +584,16 @@ bool MessageLib::sendEnterTicketPurchaseModeMessage(TravelTerminal* terminal,Pla
 //
 
 bool MessageLib::SendSystemMessage(const std::wstring& custom_message, const PlayerObject* const player, bool chatbox_only, bool send_to_inrange) {
+
     // Use regex to check if the chat string matches the stf string format.
     static const regex pattern("@([a-zA-Z0-9/_]+):([a-zA-Z0-9_]+)");
     smatch result;
 
     std::string stf_string(custom_message.begin(), custom_message.end());
 
-    regex_search(stf_string, result, pattern);
-
     // If it's an exact match (2 sub-patterns + the full string = 3 elements) it's an stf string.
     // Reroute the call to the appropriate overload.
-    if (result.size() == 3)
+    if (regex_search(stf_string, result, pattern))
     {
         std::string file(result[1].str());
         std::string string(result[2].str());
@@ -638,7 +637,7 @@ bool MessageLib::SendSystemMessage_(const std::wstring& custom_message, const Ou
         mMessageFactory->addUint32(0);
 
         const ByteBuffer* attachment = prose.Pack();
-        mMessageFactory->addData(attachment->Data(), attachment->Size());
+        mMessageFactory->addData(attachment->data(), attachment->size());
     }
 
     // If a player was passed in then only send out the message to the appropriate parties.
@@ -730,7 +729,7 @@ bool MessageLib::sendUpdateCellPermissionMessage(CellObject* cellObject,uint8 pe
 //
 // play a clienteffect, if a player is given it will be sent to him only, otherwise to everyone in range of the effectObject
 //
-bool MessageLib::sendPlayClientEffectObjectMessage(BString effect,BString location,Object* effectObject,PlayerObject* playerObject)
+bool MessageLib::sendPlayClientEffectObjectMessage(std::string effect, BString location,Object* effectObject,PlayerObject* playerObject)
 {
     if((playerObject && !playerObject->isConnected()) || !effectObject)
     {
@@ -752,7 +751,7 @@ bool MessageLib::sendPlayClientEffectObjectMessage(BString effect,BString locati
     {
         if(PlayerObject* playerTargetObject = dynamic_cast<PlayerObject*>(effectObject))
         {
-            _sendToInRange(mMessageFactory->EndMessage(),effectObject,5);
+            _sendToInRange(mMessageFactory->EndMessage(),playerTargetObject,5);
         }
         else
         {
@@ -767,14 +766,14 @@ bool MessageLib::sendPlayClientEffectObjectMessage(BString effect,BString locati
 //
 // play a clienteffect at location
 //
-bool MessageLib::sendPlayClientEffectLocMessage(BString effect, const glm::vec3& pos, PlayerObject* targetObject)
+bool MessageLib::sendPlayClientEffectLocMessage(std::string effect, const glm::vec3& pos, PlayerObject* targetObject)
 {
     if(!targetObject || !targetObject->isConnected())
     {
         return(false);
     }
 
-    BString		planet = gWorldManager->getPlanetNameThis();
+    std::string		planet = gWorldManager->getPlanetNameThis();
 
     mMessageFactory->StartMessage();
     mMessageFactory->addUint32(opPlayClientEffectLocMessage);

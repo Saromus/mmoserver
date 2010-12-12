@@ -26,6 +26,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "CharSheetManager.h"
 
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "Badge.h"
 #include "Bank.h"
 #include "PlayerObject.h"
@@ -33,7 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Inventory.h"
 #include "ZoneOpcodes.h"
 
-#include "Common/LogManager.h"
+
 
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
@@ -60,7 +65,7 @@ CharSheetManager::CharSheetManager(Database* database,MessageDispatch* dispatch)
     _registerCallbacks();
 
     //gLogger->log(LogManager::DEBUG,"Started Loading Factions.");
-    mDatabase->ExecuteSqlAsync(this, new(mDBAsyncPool.malloc()) CSAsyncContainer(CharSheetQuery_Factions), "SELECT * FROM faction ORDER BY id;");
+    mDatabase->executeSqlAsync(this, new(mDBAsyncPool.malloc()) CSAsyncContainer(CharSheetQuery_Factions), "SELECT * FROM faction ORDER BY id;");
     
 }
 
@@ -120,26 +125,23 @@ void CharSheetManager::handleDatabaseJobComplete(void* ref, DatabaseResult* resu
     {
 
         BString name;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_bstring,0,255,1);
 
         uint64 count = result->getRowCount();
         mvFactions.reserve((uint32)count);
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&name);
+            result->getNextRow(binding,&name);
             mvFactions.push_back(BString(name.getAnsi()));
         }
 
-        if(result->getRowCount())
-            gLogger->log(LogManager::NOTICE,"Loaded factions.");
+        LOG_IF(INFO, count) << "Loaded " << count << " factions";
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
-        gLogger->log(LogManager::DEBUG,"Finished Loading Factions.");
         // load badge categories
-        gLogger->log(LogManager::NOTICE,"Loading Badge Categories.");
-        mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.malloc()) CSAsyncContainer(CharSheetQuery_BadgeCategories),"SELECT * FROM badge_categories ORDER BY id");
+        mDatabase->executeSqlAsync(this,new(mDBAsyncPool.malloc()) CSAsyncContainer(CharSheetQuery_BadgeCategories),"SELECT * FROM badge_categories ORDER BY id");
         
     }
     break;
@@ -147,22 +149,24 @@ void CharSheetManager::handleDatabaseJobComplete(void* ref, DatabaseResult* resu
     case CharSheetQuery_BadgeCategories:
     {
         BString name;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_bstring,0,255,1);
 
         uint64 count = result->getRowCount();
         mvBadgeCategories.reserve((uint32)count);
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&name);
+            result->getNextRow(binding,&name);
             mvBadgeCategories.push_back(BString(name.getAnsi()));
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        LOG_IF(INFO, count) << "Loaded " << count << " badge categories";
+
+        mDatabase->destroyDataBinding(binding);
 
         //gLogger->log(LogManager::DEBUG,"Finished Loading Badge Categories.");
         //gLogger->log(LogManager::NOTICE,"Loading Badges.");
-        mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.malloc()) CSAsyncContainer(CharSheetQuery_Badges),"SELECT * FROM badges ORDER BY id");
+        mDatabase->executeSqlAsync(this,new(mDBAsyncPool.malloc()) CSAsyncContainer(CharSheetQuery_Badges),"SELECT * FROM badges ORDER BY id");
         
     }
     break;
@@ -171,7 +175,7 @@ void CharSheetManager::handleDatabaseJobComplete(void* ref, DatabaseResult* resu
     {
         Badge* badge;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(4);
+        DataBinding* binding = mDatabase->createDataBinding(4);
         binding->addField(DFT_uint32,offsetof(Badge,mId),4,0);
         binding->addField(DFT_bstring,offsetof(Badge,mName),255,1);
         binding->addField(DFT_uint32,offsetof(Badge,mSoundId),4,2);
@@ -182,11 +186,13 @@ void CharSheetManager::handleDatabaseJobComplete(void* ref, DatabaseResult* resu
         for(uint64 i = 0; i < count; i++)
         {
             badge = new Badge();
-            result->GetNextRow(binding,badge);
+            result->getNextRow(binding,badge);
             mvBadges.push_back(badge);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        LOG_IF(INFO, count) << "Loaded " << count << " badges";
+
+        mDatabase->destroyDataBinding(binding);
         //gLogger->log(LogManager::DEBUG,"Finished Loading Badges.");
     }
     break;
@@ -206,7 +212,7 @@ void CharSheetManager::_processFactionRequest(Message* message,DispatchClient* c
 
     if(player == NULL)
     {
-        gLogger->log(LogManager::DEBUG,"CharSheetManager::_processFactionRequest: could not find player %u",client->getAccountId());
+        DLOG(INFO) << "CharSheetManager::_processFactionRequest: could not find player " << client->getAccountId();
         return;
     }
 
@@ -252,7 +258,7 @@ void CharSheetManager::_processPlayerMoneyRequest(Message* message,DispatchClien
 
     if(player == NULL)
     {
-        gLogger->log(LogManager::DEBUG,"CharSheetManager::_processPlayerMoneyRequest: could not find player %u",client->getAccountId());
+        DLOG(INFO) << "CharSheetManager::_processPlayerMoneyRequest: could not find player " << client->getAccountId();
         return;
     }
 

@@ -68,171 +68,82 @@ public:
     // inherited from moving object
     virtual void		updateMovementProperties();
 
-    Ham*				getHam() {
-        return &mHam;
-    }
+    Ham*				getHam(){ return &mHam; }
 
-    BString				getFirstName() const {
-        return mFirstName;
-    }
-    void				setFirstName(BString name) {
-        mFirstName = name;
-    }
-    BString				getLastName() const {
-        return mLastName;
-    }
-    void				setLastName(BString name) {
-        mLastName = name;
-    }
+    BString				getFirstName() const { return mFirstName; }
+    void				setFirstName(BString name){ mFirstName = name; }
+    BString				getLastName() const { return mLastName; }
+    void				setLastName(BString name){ mLastName = name; }
 
-    uint32				getPosture() const {
-        return mPosture;
-    }
+    //uint32				getPosture() const { return mPosture; }
     // calls setLocomotion as well
-    void				setPosture(uint32 posture) {
-        setLocomotionByPosture(posture);
-        mPosture = posture;
-    }
+    //void				setPosture(uint32 posture){ setLocomotionByPosture(posture); mPosture = posture; }
 
-    uint64				getLocomotion() const {
-        return mLocomotion;
-    }
-    void				setLocomotion(uint32 loco) {
-        mLocomotion = loco ;
-    }
-protected:
+    //uint64				getLocomotion() const { return mLocomotion; }
+    //void				setLocomotion(uint32 loco){ mLocomotion = loco ;}
     // Locomotion set only through setPosture
-    void				setLocomotionByPosture(uint32 posture);
+    //void				setLocomotionByPosture(uint32 posture);
     // Postures are NOT bitwise constants.
     // Can NOT use bitwise operation on non bitwise constants.
     // bool				checkPostures(uint8 postures) const { return((mPosture & postures) == postures); }
-public:
-    bool				checkPosture(uint32 postures) const {
-        return (mPosture == postures);
-    }
+    //bool				checkPosture(uint32 postures) const { return (mPosture == postures); }
 
     // Can NOT use bitwise operation on non bitwise constants.
     // bool				checkPosturesEither(uint8 postures){ return((mPosture & postures) != 0); }
 
-    float				getScale() {
-        return mScale;
-    }
-    void				setScale(float scale) {
-        mScale = scale;
-    }
-    uint16				getCL() {
-        return mCL;
-    }
-    void				setCL(uint16 cl) {
-        mCL = cl;
-    }
-    uint8				getRaceId() const {
-        return mRaceId;
-    }
-    void				setRaced(uint8 id) {
-        mRaceId = id;
-    }
-    BString				getSpeciesString() {
-        return mSpecies;
-    }
-    void				setSpeciesString(const int8* species) {
-        mSpecies = species;
-    }
-    BString				getSpeciesGroup() {
-        return mSpeciesGroup;
-    }
-    void				setSpeciesGroup(const int8* speciesGroup) {
-        mSpeciesGroup = speciesGroup;
-    }
+    float				getScale(){ return mScale; }
+    void				setScale(float scale){ mScale = scale; }
+    uint16				getCL(){ return mCL; }
+    void				setCL(uint16 cl){ mCL = cl; }
+    uint8				getRaceId() const { return mRaceId; }
+    void				setRaced(uint8 id){ mRaceId = id; }
+    BString				getSpeciesString(){ return mSpecies; }
+    void				setSpeciesString(const int8* species){ mSpecies = species; }
+    BString				getSpeciesGroup(){ return mSpeciesGroup; }
+    void				setSpeciesGroup(const int8* speciesGroup){ mSpeciesGroup = speciesGroup; }
     //Object*			getTarget() const { return mTargetObject; }
     Object*				getTarget() const;
     // void				setTarget(Object* object){ mTargetObject = object; }
-    void				setTarget(uint64 targetId) {
-        mTargetId = targetId;
-    }
+    void				setTarget(uint64 targetId){ mTargetId = targetId; }
     // uint64			getTargetId() const { return(mTargetObject != NULL) ? mTargetObject->getId():0; }
-    uint64				getTargetId() const {
-        return mTargetId;
-    }
-    uint64				getGroupId() const {
-        return mGroupId;
-    }
-    void				setGroupId(uint64 groupId) {
-        mGroupId = groupId;
-    }
+    uint64				getTargetId() const { return mTargetId; }
+    uint64				getGroupId() const { return mGroupId; }
+    void				setGroupId(uint64 groupId) { mGroupId = groupId; }
 
-    uint16*				getCustomization() {
-        return &mCustomization[0];
-    }
-    void				setCustomization(uint8 index, uint16 val) {
-        mCustomization[index] = val;
-    }
-    BString				getCustomizationStr() {
-        return mCustomizationStr;
-    }
-    void				setCustomizationStr(const int8* customization) {
-        mCustomizationStr = customization;
-    }
+    uint16*				getCustomization(){ return &mCustomization[0]; }
+    void				setCustomization(uint8 index, uint16 val){ mCustomization[index] = val; }
+    BString				getCustomizationStr(){ return mCustomizationStr; }
+    void				setCustomizationStr(const int8* customization){ mCustomizationStr = customization; }
 
     //we need to reference hair outside of the equipmanager as the hairslot can be occupied by helmets
-    Object*				getHair() {
-        return mHair;
-    }
-    void				setHair(Object* hair) {
-        mHair = hair;
-    }
+    Object*				getHair(){ return mHair; }
+    void				setHair(Object* hair){ mHair = hair; }
 
-    CreatureGroup		getCreoGroup() {
-        return mCreoGroup;
-    }
-    void				setCreoGroup(CreatureGroup group) {
-        mCreoGroup = group;
-    }
+    CreatureGroup		getCreoGroup(){ return mCreoGroup; }
+    void				setCreoGroup(CreatureGroup group){ mCreoGroup = group; }
 
-    uint8				getMoodId() const {
-        return mMoodId;
-    }
-    void				setMoodId(uint8 id) {
-        mMoodId = id;
-    }
+    uint8				getMoodId() const { return mMoodId; }
+    void				setMoodId(uint8 id){ mMoodId = id; }
 
     // skills
-    void				addSkill(Skill* skill) {
-        mSkills.push_back(skill);
-    }
+    void				addSkill(Skill* skill){ mSkills.push_back(skill); }
     bool				removeSkill(Skill* skill);
 
     //whether we have a certain skill as found in skillenums.h SMSkillType or the skills table
     bool				checkSkill(uint32 skillId);
     uint32				getSkillPointsLeft();
-    SkillList*			getSkills() {
-        return &mSkills;
-    }
-    SkillModsList*		getSkillMods() {
-        return &mSkillMods;
-    }
-    SkillCommandList*	getSkillCommands() {
-        return &mSkillCommands;
-    }
+    SkillList*			getSkills(){ return &mSkills; }
+    SkillModsList*		getSkillMods(){ return &mSkillMods; }
+    SkillCommandList*	getSkillCommands(){ return &mSkillCommands; }
 
     //the values of a skillmod with the skillmod as in skillenums.h SMSkillMod
     int32				getSkillModValue(uint32 modId);
     bool				setSkillModValue(uint32 modId,int32 value);
     bool				modifySkillModValue(uint32 modId,int32 modifier);
-    uint32				getSkillUpdateCounter() {
-        return mSkillUpdateCounter;
-    }
-    void				setSkillUpdateCounter(uint32 count) {
-        mSkillUpdateCounter = count;
-    }
-    uint32				getAndIncrementSkillUpdateCounter() {
-        mSkillUpdateCounter++;
-        return mSkillUpdateCounter;
-    }
-    uint32				getAndIncrementSkillModUpdateCounter(uint32 amount) {
-        mSkillModUpdateCounter+=amount;
-        return mSkillModUpdateCounter;
-    }
+    uint32				getSkillUpdateCounter(){ return mSkillUpdateCounter; }
+    void				setSkillUpdateCounter(uint32 count){ mSkillUpdateCounter = count; }
+    uint32				getAndIncrementSkillUpdateCounter(){ mSkillUpdateCounter++; return mSkillUpdateCounter; }
+    uint32				getAndIncrementSkillModUpdateCounter(uint32 amount){ mSkillModUpdateCounter+=amount; return mSkillModUpdateCounter; }
     void				prepareSkillMods();
     void				prepareSkillCommands();
     bool				verifyAbility(uint32 abilityCRC);
@@ -240,149 +151,100 @@ public:
     SkillModsList::iterator	findSkillMod(uint32 modId);
 
     // equipped objects
-    EquipManager*		getEquipManager() {
-        return &mEquipManager;
-    }
+    EquipManager*		getEquipManager(){ return &mEquipManager; }
 
     // pvp status
+    CreaturePvPStatus	getPvPStatus(){ return mPvPStatus; }
+    void				setPvPStatus(CreaturePvPStatus status){ mPvPStatus = status; }
+    void				togglePvPStateOn(CreaturePvPStatus state){ mPvPStatus = (CreaturePvPStatus)(mPvPStatus | state); }
+    void				togglePvPStateOff(CreaturePvPStatus state){ mPvPStatus = (CreaturePvPStatus)(mPvPStatus & ~state); }
+    void				togglePvPState(CreaturePvPStatus state){ mPvPStatus = (CreaturePvPStatus)(mPvPStatus ^ state); }
+    bool				checkPvPState(CreaturePvPStatus state){ return((CreaturePvPStatus)(mPvPStatus & state) == state); }
+        
+    // ONLY SWITCH STATES THROUGH THE STATE MANAGER!
+    struct STATES
+    {
+        uint32_t        posture;
+        uint32_t        locomotion;
+        uint64_t        action;
+        bool            blockPosture;
+        bool            blockAction;
+        bool            blockLocomotion;
 
-    CreaturePvPStatus	getPvPStatus() {
-        return mPvPStatus;
-    }
-    void				setPvPStatus(CreaturePvPStatus status) {
-        mPvPStatus = status;
-    }
-    void				togglePvPStateOn(CreaturePvPStatus state) {
-        mPvPStatus = (CreaturePvPStatus)(mPvPStatus | state);
-    }
-    void				togglePvPStateOff(CreaturePvPStatus state) {
-        mPvPStatus = (CreaturePvPStatus)(mPvPStatus & ~state);
-    }
-    void				togglePvPState(CreaturePvPStatus state) {
-        mPvPStatus = (CreaturePvPStatus)(mPvPStatus ^ state);
-    }
-    bool				checkPvPState(CreaturePvPStatus state) {
-        return((CreaturePvPStatus)(mPvPStatus & state) == state);
-    }
-
-    // states
-    uint64				getState() {
-        return mState;
-    }
-    //void				setState(uint64 state){ mState = state; }
-    void				toggleStateOn(CreatureState state) {
-        mState = mState | state;
-    }
-    void				toggleStateOff(CreatureState state) {
-        mState = mState & ~state;
-    }
-    //void				toggleState(CreatureState state){ mState = mState ^ state; }
-    bool				checkState(CreatureState state) {
-        return((mState & state) == state);
-    }
-    bool				checkStates(uint64 states) {
-        return((mState & states) == states);
-    }
-    bool				checkStatesEither(uint64 states) {
-        return((mState & states) != 0);
-    }
+        void            blockLayers() { blockPosture = true; blockAction = true; blockLocomotion = true; }
+        // posture states
+        uint32_t        getPosture() { return posture; } 
+        void            setPosture(uint32_t pos) { posture = pos; }
+        bool			checkPosture(uint32_t pos) const { return (posture == pos); }
+        // locomotion states
+        uint32_t        getLocomotion() { return locomotion; }
+        void            setLocomotion(uint32_t loco) { locomotion = loco; }
+        bool			checkLocomotion(uint32_t loco) const { return (locomotion == loco); }
+        // action states
+        uint64_t        getAction(){return action;}
+        void            toggleActionOn(CreatureState state){ action = action | state; }
+        void            toggleActionOff(CreatureState state){ action = action & ~ state; }
+        bool            checkState(CreatureState state){ return ((action & state) == state); }
+        bool            checkStates(uint64_t states){ return ((action & states) == states); }
+        bool            checkStatesEither(uint64_t states){ return ((action & states) != 0); }
+        // clear states, do not call directly
+        void            clearAllStates() { action = CreatureState_ClearState;}
+    } states;
+    //// OLD WAY OF DOING STATES
+    //// states
+    //uint64				getState(){ return mState; }
+    //// do not call these manually use the StateManager directly.
+    //void				toggleStateOn(CreatureState state){ mState = mState | state; }
+    //void				states.toggleActionOff(CreatureState state){ mState = mState & ~state; }
+    ////void			toggleState(CreatureState state){ mState = mState ^ state; }
+    //bool				checkState(CreatureState state){ return((mState & state) == state); }
+    //bool				checkStates(uint64 states){ return((mState & states) == states); }
+    //bool				->states.checkStatesEither(uint64 states){ return((mState & states) != 0); }
 
     // factions
-    BString				getFaction() {
-        return mFaction;
-    }
-    void				setFaction(const int8* faction) {
-        mFaction = faction;
-    }
-    uint8				getFactionRank() {
-        return mFactionRank;
-    }
-    void				setFactionRank(uint8 rank) {
-        mFactionRank = rank;
-    }
-    FactionList*		getFactionList() {
-        return &mFactionList;
-    }
+    BString				getFaction(){ return mFaction; }
+    void				setFaction(const int8* faction){ mFaction = faction; }
+    uint8				getFactionRank(){ return mFactionRank; }
+    void				setFactionRank(uint8 rank){ mFactionRank = rank; }
+    FactionList*		getFactionList(){ return &mFactionList; }
     int32				getFactionPointsByFactionId(uint32 id);
     bool				updateFactionPoints(uint32 factionId,int32 value);
 
     // language
-    uint32				getLanguage() const {
-        return mLanguage;
-    }
-    void				setLanguage(uint32 language) {
-        mLanguage = language;
-    }
+    uint32				getLanguage() const { return mLanguage; }
+    void				setLanguage(uint32 language){ mLanguage = language; }
 
     //entertaining
-    void*				getPerformance() {
-        return mPerformance;
-    }
-    void				setPerformance(void* performance) {
-        mPerformance = performance;
-    }
-    uint64				getEntertainerListenToId() {
-        return mEntertainerListenToId;
-    }
-    void				setEntertainerListenToId(uint64 listenToId) {
-        mEntertainerListenToId= listenToId;
-    }
+    void*				getPerformance(){return mPerformance;}
+    void				setPerformance(void* performance){mPerformance = performance;}
+    uint64				getEntertainerListenToId(){return mEntertainerListenToId;}
+    void				setEntertainerListenToId(uint64 listenToId){mEntertainerListenToId= listenToId;}
 
-    PerformingPause		getPerformancePaused() {
-        return mPerformancePaused;
-    }
-    void				setPerformancePaused(PerformingPause paused) {
-        mPerformancePaused = paused;
-    }
+    PerformingPause		getPerformancePaused(){return mPerformancePaused;}
+    void				setPerformancePaused(PerformingPause paused){mPerformancePaused = paused;}
 
-    float				getLastEntertainerXP() {
-        mLastEntertainerXP --;
-        if (mLastEntertainerXP <= 0) {
-            mLastEntertainerXP = 0;
-        }
-        return mLastEntertainerXP;
-    }
-    void				setLastEntertainerXP(float lastEntertainerXP) {
-        mLastEntertainerXP = lastEntertainerXP;
-    }
+    float				getLastEntertainerXP(){mLastEntertainerXP --; if (mLastEntertainerXP <= 0){mLastEntertainerXP = 0;} return mLastEntertainerXP;}
+    void				setLastEntertainerXP(float lastEntertainerXP){mLastEntertainerXP = lastEntertainerXP;}
 
     bool				handlePerformanceTick(uint64 time,void* ref);
     bool				handleImagedesignerTimeOut(uint64 time,void* ref);
 
-    PerformingState		getPerformingState() const {
-        return mPendingPerform;
-    }
-    void				setPerformingState(PerformingState state) {
-        mPendingPerform = state;
-    }
+    PerformingState		getPerformingState() const { return mPendingPerform; }
+    void				setPerformingState(PerformingState state){ mPendingPerform = state; }
 
-    uint32				getPerformanceId() {
-        return mPerformanceId;
-    }
-    void				setPerformanceId(uint32 Id) {
-        mPerformanceId = Id;
-    }
+    uint32				getPerformanceId(){ return mPerformanceId; }
+    void				setPerformanceId(uint32 Id){ mPerformanceId = Id; }
 
-    BString				getCurrentAnimation() {
-        return mCurrentAnimation;
-    }
-    void				setCurrentAnimation(BString state) {
-        mCurrentAnimation = state;
-    }
+    BString				getCurrentAnimation(){ return mCurrentAnimation; }
+    void				setCurrentAnimation(BString state){ mCurrentAnimation = state; }
 
-    bool				isStationary() {
-        return mStationary;
-    }
-    void				setStationary(bool val) {
-        mStationary = val;
-    }
+    bool				isStationary(){ return mStationary; }
+    void				setStationary(bool val){ mStationary = val; }
 
     uint32				UpdatePerformanceCounter();
 
 
-    ObjectIDList*		getDefenders() {
-        return &mDefenders;
-    }
+    ObjectIDList*		getDefenders(){ return &mDefenders; }
     void				addDefender(uint64 defenderId);
     void				removeAllDefender(void);
 
@@ -392,26 +254,14 @@ public:
     void				clearDefenders();
     bool				checkDefenderList(uint64 defenderId);
 
-    uint32				getLastMoveTick() {
-        return mLastMoveTick;
-    }
-    void				setLastMoveTick(uint32 tick) {
-        mLastMoveTick = tick;
-    }
+    uint32				getLastMoveTick(){ return mLastMoveTick; }
+    void				setLastMoveTick(uint32 tick){ mLastMoveTick = tick; }
 
-    bool				getReady() {
-        return mReady;
-    }
-    void				setReady(bool b) {
-        mReady = b;
-    }
+    bool				getReady(){ return mReady; }
+    void				setReady(bool b){ mReady = b; }
 
-    uint32				getRaceGenderMask() {
-        return mRaceGenderMask;
-    }
-    void				setRaceGenderMask(uint32 mask) {
-        mRaceGenderMask = mask;
-    }
+    uint32				getRaceGenderMask(){ return mRaceGenderMask; }
+    void				setRaceGenderMask(uint32 mask){ mRaceGenderMask = mask; }
 
     void				buildCustomization(uint16 customization[]);
 
@@ -421,48 +271,29 @@ public:
     // incapacitation
     void				incap();
     void				die();
-    bool				isIncapacitated() {
-        return(mPosture == CreaturePosture_Incapacitated);
-    }
-    bool				isDead() {
-        return(mPosture == CreaturePosture_Dead);
-    }
+    bool				isIncapacitated(){ return(states.posture == CreaturePosture_Incapacitated); }
+    bool				isDead(){ return(states.posture == CreaturePosture_Dead); }
 
     // nr of current incaps until death, base values are retrieved through world config
-    uint8				getIncapCount() {
-        return mIncapCount;
-    }
-    void				setIncapCount(uint8 count) {
-        mIncapCount = count;
-    }
-    void				resetIncapCount() {
-        mIncapCount = 0;
-    }
+    uint8				getIncapCount(){ return mIncapCount; }
+    void				setIncapCount(uint8 count){ mIncapCount = count; }
+    void				resetIncapCount(){ mIncapCount = 0; }
 
     // current incap time
-    uint64				getCurrentIncapTime() {
-        return mCurrentIncapTime;
-    }
-    void				setCurrentIncapTime(uint64 incapTime) {
-        mCurrentIncapTime = incapTime;
-    }
-    uint64				getFirstIncapTime() {
-        return mFirstIncapTime;
-    }
-    void				setFirstIncapTime(uint64 incapTime) {
-        mFirstIncapTime = incapTime;
-    }
+    uint64				getCurrentIncapTime(){ return mCurrentIncapTime; }
+    void				setCurrentIncapTime(uint64 incapTime){ mCurrentIncapTime = incapTime; }
+    uint64				getFirstIncapTime(){ return mFirstIncapTime; }
+    void				setFirstIncapTime(uint64 incapTime){ mFirstIncapTime = incapTime; }
 
+    // new event helper functions
+    void                creaturePostureUpdate();
+    void                creatureLocomotionUpdate();
+    void                creatureActionStateUpdate();
     // event functions
     void				onIncapRecovery(const IncapRecoveryEvent* event);
 
     virtual void		prepareCustomRadialMenu(CreatureObject* creatureObject, uint8 itemCount);
-    virtual void		ResetRadialMenu() {
-        mRadialMenu.reset();
-        RadialMenu* radial	= NULL;
-        RadialMenuPtr radialPtr(radial);
-        mRadialMenu = radialPtr;
-    }
+    virtual void		ResetRadialMenu(){mRadialMenu.reset();RadialMenu* radial	= NULL;RadialMenuPtr radialPtr(radial);	mRadialMenu = radialPtr;}
 
     void				makePeaceWithDefender(uint64 targetId);
     uint64				getNearestDefender(void);
@@ -472,7 +303,7 @@ public:
     virtual void		killEvent(void) { }
     virtual void		respawn(void) { }
 
-
+        
     // flow control vars
     uint64				mTargetId;
     uint32				mDefenderUpdateCounter;
@@ -481,10 +312,8 @@ public:
 
     // meditation
     void				setMeditateState();
-    bool 				isMeditating() {
-        return mMeditating;
-    }
-
+    bool				isForceMeditating() { return mForceMeditating; }
+    bool				isMeditating() { return mMeditating; } // Used for Teras Kasi Meditation.
 
 protected:
 
@@ -519,7 +348,7 @@ protected:
     uint64				mEntertainerListenToId;
     uint64				mFirstIncapTime;
     uint64				mGroupId;
-
+    
     uint64				mState; //char states like peace, combat etc
     float				mLastEntertainerXP;
     float				mScale;
@@ -540,6 +369,7 @@ protected:
     uint8				mRaceId;
     bool				mReady;
     bool				mStationary;			 //sets the stationary flag in the tano3 so better move it there
+    bool				mForceMeditating;
     bool				mMeditating;
     // entertaining
 
@@ -554,23 +384,14 @@ public:
     Buff*				GetBuff(uint32 BuffIcon);
     bool				GetBuffExists(uint32 BuffIcon);
     int					GetNoOfBuffs();
-    BuffList*			GetBuffList() {
-        return(&mBuffList);
-    }
+    BuffList*			GetBuffList(){return(&mBuffList);}
 
     //asynccount is our asyncquery counter when we store buffs async
-    uint32				GetBuffAsyncCount() {
-        return(mBuffAsyncCount);
-    }
-    void				SetBuffAsyncCount(uint32 count) {
-        mBuffAsyncCount = count;
-    }
-    void				IncBuffAsyncCount() {
-        mBuffAsyncCount++;
-    }
-    void				DecBuffAsyncCount() {
-        mBuffAsyncCount--;
-    }
+    uint32				GetBuffAsyncCount(){return(mBuffAsyncCount);}
+    void				SetBuffAsyncCount(uint32 count){mBuffAsyncCount = count; }
+    void				IncBuffAsyncCount(){mBuffAsyncCount++; }
+    void				DecBuffAsyncCount(){mBuffAsyncCount--; }
+    //CreatureObject::STATES  states;
 };
 
 //=============================================================================

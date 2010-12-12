@@ -26,6 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "EntertainerManager.h"
+
+#include <glog/logging.h>
+
 #include "GroupManager.h"
 #include "GroupManagerCallbackContainer.h"
 
@@ -36,6 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "nonPersistantObjectFactory.h"
 #include "PlayerObject.h"
 #include "PlayerEnums.h"
+#include "StateManager.h"
 #include "UIManager.h"
 #include "WorldManager.h"
 #include "Weapon.h"
@@ -48,6 +52,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Common/atMacroString.h"
 #include "Utils/utils.h"
 
+#ifdef WIN32
+#undef ERROR
+#endif
 
 bool EntertainerManager::mInsFlag = false;
 EntertainerManager*	EntertainerManager::mSingleton = NULL;
@@ -75,17 +82,17 @@ EntertainerManager::EntertainerManager(Database* database,MessageDispatch* dispa
 
     // load our performance Data
     asyncContainer = new EntertainerManagerAsyncContainer(EMQuery_LoadPerformances, 0);
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,"SELECT performanceName,	instrumentAudioId, InstrumenType ,danceVisualId,	actionPointPerLoop,	loopDuration,	florushXpMod,	healMindWound,	healShockWound,	MusicVisualId FROM swganh.entertainer_performances");
+    mDatabase->executeSqlAsync(this,asyncContainer,"SELECT performanceName,	instrumentAudioId, InstrumenType ,danceVisualId,	actionPointPerLoop,	loopDuration,	florushXpMod,	healMindWound,	healShockWound,	MusicVisualId FROM swganh.entertainer_performances");
   
 
     // load our attribute data for ID
     asyncContainer = new EntertainerManagerAsyncContainer(EMQuery_LoadIDAttributes, 0);
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,"SELECT CustomizationCRC, SpeciesCRC, Atr1ID, Atr1Name, Atr2ID, Atr2Name, XP, Hair, divider FROM swganh.id_attributes");
+    mDatabase->executeSqlAsync(this,asyncContainer,"SELECT CustomizationCRC, SpeciesCRC, Atr1ID, Atr1Name, Atr2ID, Atr2Name, XP, Hair, divider FROM swganh.id_attributes");
   
 
     // load our holoemote Data
     asyncContainer = new EntertainerManagerAsyncContainer(EMQuery_LoadHoloEmotes, 0);
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,"SELECT crc, effect_id, name FROM swganh.holoemote");
+    mDatabase->executeSqlAsync(this,asyncContainer,"SELECT crc, effect_id, name FROM swganh.holoemote");
   
 }
 
@@ -234,7 +241,7 @@ void EntertainerManager::showOutcastList(PlayerObject* entertainer)
     {
         EntertainerManagerAsyncContainer* asyncContainer = new EntertainerManagerAsyncContainer(EMQuery_DenyServiceListNames,0);
         asyncContainer->performer = entertainer;
-        mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+        mDatabase->executeSqlAsync(this,asyncContainer,sql);
         
 
         //gUIManager->createNewOutcastSelectBox(entertainer,"handleselectoutcast","select whom to delete from your deny service list","",availableOutCasts,entertainer,SUI_LB_OK);
@@ -288,7 +295,7 @@ void EntertainerManager::toggleOutcastId(PlayerObject* entertainer,uint64 outCas
         
 
         EntertainerManagerAsyncContainer* asyncContainer = new EntertainerManagerAsyncContainer(EMQuery_NULL,0);
-        mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+        mDatabase->executeSqlAsync(this,asyncContainer,sql);
 
         return;
     }
@@ -310,7 +317,7 @@ void EntertainerManager::toggleOutcastId(PlayerObject* entertainer,uint64 outCas
     sprintf(sql,"INSERT INTO entertainer_deny_service VALUES(%"PRIu64",%"PRIu64")",entertainer->getId(),outCastId);
 
     EntertainerManagerAsyncContainer* asyncContainer = new EntertainerManagerAsyncContainer(EMQuery_NULL,0);
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+    mDatabase->executeSqlAsync(this,asyncContainer,sql);
     
 
 }
@@ -341,7 +348,7 @@ bool	EntertainerManager::checkDenyServiceList(PlayerObject* audience, PlayerObje
 void EntertainerManager::verifyOutcastName(PlayerObject* entertainer,BString outCastName)
 {
     int8 sql[256], name[50];
-    mDatabase->Escape_String(name,outCastName.getAnsi(),outCastName.getLength());
+    mDatabase->escapeString(name,outCastName.getAnsi(),outCastName.getLength());
 
     //we'll need the id only
     sprintf(sql,"SELECT id FROM swganh.characters c WHERE c.firstname = '%s'",name);
@@ -351,7 +358,7 @@ void EntertainerManager::verifyOutcastName(PlayerObject* entertainer,BString out
     asyncContainer->performer = entertainer;
     asyncContainer->outCastName = outCastName;
 
-    mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+    mDatabase->executeSqlAsync(this,asyncContainer,sql);
     
 
 }
@@ -471,9 +478,9 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
     case EMQuery_IDFinances:
     {
         uint32 error;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
-        result->GetNextRow(binding,&error);
+        result->getNextRow(binding,&error);
         if (error == 0)
         {
             //proceed as normal our transaction has been a success
@@ -485,7 +492,7 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
         }
         else
         {
-            gLogger->log(LogManager::DEBUG,"Image Designer : transaction failed");
+        	LOG(ERROR) << "Image design transaction failed";
             // oh woe we need to rollback :(
             // (ie do nothing)
 
@@ -497,7 +504,7 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
     {
         HoloStruct* holo;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(3);
+        DataBinding* binding = mDatabase->createDataBinding(3);
         binding->addField(DFT_uint32,offsetof(HoloStruct,pCRC),4,0);
         binding->addField(DFT_uint32,offsetof(HoloStruct,pId),4,1);
         binding->addField(DFT_string,offsetof(HoloStruct,pEmoteName),32,2);
@@ -508,7 +515,7 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
         for(uint64 i = 0; i < count; i++)
         {
             holo = new(HoloStruct);
-            result->GetNextRow(binding,holo);
+            result->getNextRow(binding,holo);
             mHoloList.push_back(holo);
             BString emote("holoemote_");
             emote << holo->pEmoteName;
@@ -518,8 +525,7 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
             holo->pCRC = emote.getCrc();
         }
 
-        if(result->getRowCount())
-            gLogger->log(LogManager::NOTICE,"Loading holo emotes.");
+    	LOG_IF(INFO, count) << "Loaded " << count << " holo emotes";
 
     }
     break;
@@ -529,7 +535,7 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
         int8 sql[1024];
         StatTargets theTargets;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(9);
+        DataBinding* binding = mDatabase->createDataBinding(9);
         binding->addField(DFT_uint32,offsetof(StatTargets,TargetHealth),4,0);
         binding->addField(DFT_uint32,offsetof(StatTargets,TargetStrength),4,1);
         binding->addField(DFT_uint32,offsetof(StatTargets,TargetConstitution),4,2);
@@ -550,7 +556,7 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
         {
 
             //stats set update ham plus check
-            result->GetNextRow(binding,&theTargets);
+            result->getNextRow(binding,&theTargets);
             Ham* pHam = asynContainer->customer->getHam();
             uint32 currentAmount = pHam->getTotalHamCount();
 
@@ -604,25 +610,24 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
 
                 asyncContainer = new EntertainerManagerAsyncContainer(EMQuery_NULL,0);
                 sprintf(sql,"UPDATE swganh.character_attributes SET health_max = %i, strength_max = %i, constitution_max = %i, action_max = %i, quickness_max = %i, stamina_max = %i, mind_max = %i, focus_max = %i, willpower_max = %i where character_id = %"PRIu64"",theTargets.TargetHealth,theTargets.TargetStrength,theTargets.TargetConstitution, theTargets.TargetAction,theTargets.TargetQuickness,theTargets.TargetStamina,theTargets.TargetMind ,theTargets.TargetFocus ,theTargets.TargetWillpower ,asynContainer->customer->getId());
-                mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+                mDatabase->executeSqlAsync(this,asyncContainer,sql);
                
                 asyncContainer = new EntertainerManagerAsyncContainer(EMQuery_NULL,0);
                 sprintf(sql,"UPDATE swganh.character_attributes SET health_current = %i, strength_current = %i, constitution_current = %i, action_current = %i, quickness_current = %i, stamina_current = %i, mind_current = %i, focus_current = %i, willpower_current = %i where character_id = %"PRIu64"",theTargets.TargetHealth,theTargets.TargetStrength,theTargets.TargetConstitution, theTargets.TargetAction,theTargets.TargetQuickness,theTargets.TargetStamina,theTargets.TargetMind ,theTargets.TargetFocus ,theTargets.TargetWillpower ,asynContainer->customer->getId());
-                mDatabase->ExecuteSqlAsync(this,asyncContainer,sql);
+                mDatabase->executeSqlAsync(this,asyncContainer,sql);
                
                 gSkillManager->addExperience(XpType_imagedesigner,2000,asynContainer->performer);
             }
             else
             {
                 //somebodies trying to cheat here
-                gLogger->log(LogManager::WARNING,"EntertainerManager: CHEATER : newHamCount != oldHamCount : %"PRIu64"",asynContainer->customer->getId());
-
+            	LOG(ERROR) << "newHamCount != oldHamCount ";
             }
 
 
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
 
     }
@@ -631,9 +636,9 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
     case EMQuery_IDMoneyTransaction:
     {
         uint32 error;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint32,0,4);
-        result->GetNextRow(binding,&error);
+        result->getNextRow(binding,&error);
         if (error == 0)
         {
             if(asynContainer->customer != NULL && asynContainer->customer->getConnectionState() == PlayerConnState_Connected)
@@ -656,7 +661,7 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
         BStringVector availableOutCasts;
 
         DataBinding* binding;
-        binding = mDatabase->CreateDataBinding(1);
+        binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_bstring,0,36);
         uint64 count;
         count = result->getRowCount();
@@ -664,7 +669,7 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
         {
             for(uint64 i = 0; i < count; i++)
             {
-                result->GetNextRow(binding,&outCast);
+                result->getNextRow(binding,&outCast);
                 availableOutCasts.push_back(outCast);
             }
 
@@ -678,16 +683,16 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
         outCastId = 0;
 
         DataBinding* binding;
-        binding = mDatabase->CreateDataBinding(1);
+        binding = mDatabase->createDataBinding(1);
         binding->addField(DFT_uint64,0,8);
         uint64 count;
         count = result->getRowCount();
         if (count == 1)
         {
-            result->GetNextRow(binding,&outCastId);
+            result->getNextRow(binding,&outCastId);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
 
         PlayerObject* entertainer = asynContainer->performer;
         //is it valid?
@@ -713,7 +718,7 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
     {
 
         DataBinding* binding;
-        binding = mDatabase->CreateDataBinding(9);
+        binding = mDatabase->createDataBinding(9);
         binding->addField(DFT_uint32,offsetof(IDStruct,CustomizationCRC),4,0);
         binding->addField(DFT_uint32,offsetof(IDStruct,SpeciesCRC),4,1);
         binding->addField(DFT_uint32,offsetof(IDStruct,Atr1ID),4,2);
@@ -729,12 +734,11 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
         for(uint64 i = 0; i < count; i++)
         {
             IDStruct* idData = new(IDStruct);
-            result->GetNextRow(binding,idData);
+            result->getNextRow(binding,idData);
             mIDList.push_back(idData);
         }
 
-        if(result->getRowCount())
-            gLogger->log(LogManager::NOTICE,"Loaded image designer attributes.");
+    	LOG_IF(INFO, count) << "Loaded " << count << " image designer attributes";
     }
     break;
 
@@ -742,7 +746,7 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
     case EMQuery_LoadPerformances:
     {
         DataBinding* binding;
-        binding = mDatabase->CreateDataBinding(10);
+        binding = mDatabase->createDataBinding(10);
         binding->addField(DFT_string,offsetof(PerformanceStruct,performanceName),32,0);
         binding->addField(DFT_uint32,offsetof(PerformanceStruct,instrumentAudioId),4,1);
         binding->addField(DFT_uint32,offsetof(PerformanceStruct,requiredInstrument),4,2);
@@ -760,13 +764,12 @@ void EntertainerManager::handleDatabaseJobComplete(void* ref,DatabaseResult* res
         for(uint64 i = 0; i < count; i++)
         {
             PerformanceStruct* mPerformanceData = new(PerformanceStruct);
-            result->GetNextRow(binding,mPerformanceData);
+            result->getNextRow(binding,mPerformanceData);
             mPerformanceList.push_back(mPerformanceData);
 
         }
 
-        if(result->getRowCount())
-            gLogger->log(LogManager::NOTICE,"Loaded performances.");
+    	LOG_IF(INFO, count) << "Loaded " << count << " performances";
     }
     break;
 
@@ -904,13 +907,10 @@ void	EntertainerManager::startMusicPerformance(PlayerObject* entertainer,BString
         gMessageLib->UpdateEntertainerPerfomanceCounter(entertainer);
         //gMessageLib->sendEntertainerCreo6PartB(this);
 
-        //posture
-        entertainer->setPosture(CreaturePosture_SkillAnimating);
-        gMessageLib->sendPostureUpdate(entertainer);
-        gMessageLib->sendSelfPostureUpdate(entertainer);
-
-        entertainer->setEntertainerListenToId(entertainer->getId());
-        gMessageLib->sendListenToId(entertainer);
+		//posture
+		entertainer->states.setPosture(CreaturePosture_SkillAnimating);
+		gMessageLib->sendPostureUpdate(entertainer);
+		gMessageLib->sendSelfPostureUpdate(entertainer);
 
         gMessageLib->SendSystemMessage(::common::OutOfBand("performance", "music_start_self"), entertainer);
 
@@ -928,38 +928,38 @@ void	EntertainerManager::startMusicPerformance(PlayerObject* entertainer,BString
 //=======================================================================================================================
 void	EntertainerManager::startDancePerformance(PlayerObject* entertainer,BString performance)
 {
-    entertainer->setFlourishCount(0);
-    PerformanceStruct* performanceStruct;
+	entertainer->setFlourishCount(0);
+	PerformanceStruct* performanceStruct;
 
-    performanceStruct = getPerformance(performance);
-    if(performanceStruct != NULL)
-    {
-        entertainer->setPerformance(performanceStruct);
-        //dance
-        int8 text[32];
-        sprintf(text,"dance_%u",performanceStruct->danceVisualId);
-        entertainer->setCurrentAnimation(BString(text));
+	performanceStruct = getPerformance(performance);
+	if(performanceStruct != NULL)
+	{
+		entertainer->setPerformance(performanceStruct);
+		//dance
+		int8 text[32];
+		sprintf(text,"dance_%u",performanceStruct->danceVisualId);
+		entertainer->setCurrentAnimation(BString(text));
 
-        //performancecounter
-        gMessageLib->UpdateEntertainerPerfomanceCounter(entertainer);
-        //gMessageLib->sendEntertainerCreo6PartB(this);
+		//performancecounter
+		gMessageLib->UpdateEntertainerPerfomanceCounter(entertainer);
+		//gMessageLib->sendEntertainerCreo6PartB(this);
 
-        //performance id
-        //probably only set with Music!!
-        entertainer->setPerformanceId(0);
-        gMessageLib->sendPerformanceId(entertainer);
+		//performance id
+		//probably only set with Music!!
+		entertainer->setPerformanceId(0);
+		gMessageLib->sendPerformanceId(entertainer);
 
-        //posture
-        entertainer->setPosture(CreaturePosture_SkillAnimating);
-        gMessageLib->sendPostureUpdate(entertainer);
-        gMessageLib->sendSelfPostureUpdate(entertainer);
+		//posture
+		entertainer->states.setPosture(CreaturePosture_SkillAnimating);
+		gMessageLib->sendPostureUpdate(entertainer);
+		gMessageLib->sendSelfPostureUpdate(entertainer);
 
-        gMessageLib->sendAnimationString(entertainer);
+		gMessageLib->sendAnimationString(entertainer);
 
-        entertainer->setEntertainerWatchToId(entertainer->getId());
-        entertainer->setEntertainerListenToId(entertainer->getId());
-        gMessageLib->sendListenToId(entertainer);
-
+		entertainer->setEntertainerWatchToId(entertainer->getId());
+		entertainer->setEntertainerListenToId(entertainer->getId());
+		gMessageLib->sendListenToId(entertainer);
+        
         gMessageLib->SendSystemMessage(::common::OutOfBand("performance", "dance_start_self"), entertainer);
 
         //now add our scheduler
@@ -996,42 +996,40 @@ void EntertainerManager::stopEntertaining(PlayerObject* entertainer)
     else
     {
         gMessageLib->SendSystemMessage(::common::OutOfBand("performance", "dance_stop_self"), entertainer);
-    }
+	}
 
-    entertainer->setPerformance(NULL);
-    entertainer->setCurrentAnimation("");
-    entertainer->setPerformancePaused(Pause_None);
+	entertainer->setPerformance(NULL);
+	entertainer->setCurrentAnimation("");
+	entertainer->setPerformancePaused(Pause_None);
 
-    //posture
-    if(entertainer->getPosture() == CreaturePosture_SkillAnimating)
-    {
-        entertainer->setPosture(CreaturePosture_Upright);
-        gMessageLib->sendPostureUpdate(entertainer);
-        gMessageLib->sendSelfPostureUpdate(entertainer);
-    }
+	//posture
+	if(entertainer->states.getPosture() == CreaturePosture_SkillAnimating)
+	{
+		gStateManager.setCurrentPostureState(entertainer, CreaturePosture_Upright);
+	}
 
-    //gMessageLib->sendAnimationString(entertainer);
+	//gMessageLib->sendAnimationString(entertainer);
 
-    //performance id
-    entertainer->setPerformanceId(0);
-    gMessageLib->sendPerformanceId(entertainer);
+	//performance id
+	entertainer->setPerformanceId(0);
+	gMessageLib->sendPerformanceId(entertainer);
 
-    //stops music to be heard
-    entertainer->setEntertainerListenToId(0);
-    entertainer->setEntertainerWatchToId(0);
-    gMessageLib->sendListenToId(entertainer);
+	//stops music to be heard
+	entertainer->setEntertainerListenToId(0);
+	entertainer->setEntertainerWatchToId(0);
+	gMessageLib->sendListenToId(entertainer);
 
-    //iterate through the audience
-    AudienceList* mAudienceList = entertainer->getAudienceList();
-    AudienceList::iterator it = mAudienceList->begin();
+	//iterate through the audience
+	AudienceList* mAudienceList = entertainer->getAudienceList();
+	AudienceList::iterator it = mAudienceList->begin();
 
-    while (it != mAudienceList->end())
-    {
-        PlayerObject* audience = dynamic_cast<PlayerObject*> (*it);
-        if(audience && audience->isConnected())
-        {
-            if(entertainer->getPerformingState() == PlayerPerformance_Dance)
-            {
+	while (it != mAudienceList->end())
+	{
+		PlayerObject* audience = dynamic_cast<PlayerObject*> (*it);
+		if(audience && audience->isConnected())
+		{
+			if(entertainer->getPerformingState() == PlayerPerformance_Dance)
+			{
                 gMessageLib->SendSystemMessage(::common::OutOfBand("performance", "dance_stop_other", entertainer->getId(), 0, 0, 0, 0.0f), audience);
                 audience->setEntertainerWatchToId(0);
             }
@@ -1468,7 +1466,7 @@ void EntertainerManager::CheckDistances(PlayerObject* entertainer)
 
     if(!entertainer->getAudienceList())
     {
-        gLogger->log(LogManager::DEBUG,"CheckDistances(PlayerObject* entertainer) getAudienceList does not exist !!!!!");
+        DLOG(INFO) << "CheckDistances(PlayerObject* entertainer) getAudienceList does not exist !!!!!";
         return;
     }
 
@@ -1525,7 +1523,7 @@ void EntertainerManager::stopWatching(PlayerObject* audience, bool ooRange)
     }
     if(entertainer->getPerformingState() == PlayerPerformance_Dance)//who is dancing
     {
-        audience->setTarget(NULL);
+        audience->setTarget(0);
         gMessageLib->sendTargetUpdateDeltasCreo6(audience);
 
         // the caller is now removed from the audienceList
@@ -1635,7 +1633,7 @@ void EntertainerManager::stopListening(PlayerObject* audience,bool ooRange)
         else
             gMessageLib->SendSystemMessage(::common::OutOfBand("performance", "music_listen_stop_self"), audience);
 
-        audience->setTarget(NULL);
+        audience->setTarget(0);
         gMessageLib->sendTargetUpdateDeltasCreo6(audience);
 
         if (audience->getEntertainerWatchToId()== 0 )
@@ -1913,42 +1911,41 @@ void EntertainerManager::startWatching(PlayerObject* audience, PlayerObject* ent
 //=======================================================================================================================
 void EntertainerManager::handlePerformancePause(CreatureObject* mObject)
 {
-    PlayerObject*	entertainer	= dynamic_cast<PlayerObject*>(mObject);
-    int8 text[32];
-    if(entertainer->getPerformance() == NULL) {
-        return;
-    }
+	PlayerObject*	entertainer	= dynamic_cast<PlayerObject*>(mObject);
+	int8 text[32];
+	if(entertainer->getPerformance() == NULL){
+		return;
+	}
 
-    //see if we have to start a Pause
-    if(entertainer->getPerformancePaused() == Pause_Start)
-    {
-        int8  animation[32];
-        sprintf(animation,"skill_action_0");
+	//see if we have to start a Pause
+	if(entertainer->getPerformancePaused() == Pause_Start)
+	{
+		int8  animation[32];
+		sprintf(animation,"skill_action_0");
 
-        gMessageLib->sendCreatureAnimation(entertainer, BString(animation));
-        gMessageLib->sendperformFlourish(entertainer, 0);
+		gMessageLib->sendCreatureAnimation(entertainer, BString(animation));
+		gMessageLib->sendperformFlourish(entertainer, 0);
 
-        entertainer->setPosture(CreaturePosture_Upright);
-        gMessageLib->sendPostureUpdate(entertainer);
-        gMessageLib->sendSelfPostureUpdate(entertainer);
+		gStateManager.setCurrentPostureState(entertainer, CreaturePosture_Upright);
+		gMessageLib->sendPostureUpdate(entertainer);
+		gMessageLib->sendSelfPostureUpdate(entertainer);
 
-        entertainer->setCurrentAnimation("");
-        gMessageLib->sendAnimationString(entertainer);
+		entertainer->setCurrentAnimation("");
+		gMessageLib->sendAnimationString(entertainer);
 
-        //entertainer->setEntertainerPauseId(gWorldManager->addEntertainerPause(entertainer,((PerformanceStruct*)entertainer->getPerformance())->loopDuration*1000));
-        entertainer->setPerformancePaused(Pause_Paused);
-    }
-    else if(entertainer->getPerformancePaused() == Pause_Paused)
-    {
-        entertainer->setPerformancePaused(Pause_None);
-        sprintf(text,"dance_%u",((PerformanceStruct*)entertainer->getPerformance())->danceVisualId);
-        entertainer->setCurrentAnimation(BString(text));
-        gMessageLib->sendAnimationString(entertainer);
+		//entertainer->setEntertainerPauseId(gWorldManager->addEntertainerPause(entertainer,((PerformanceStruct*)entertainer->getPerformance())->loopDuration*1000));
+		entertainer->setPerformancePaused(Pause_Paused);
+	}
+	else
+	if(entertainer->getPerformancePaused() == Pause_Paused)
+	{
+		entertainer->setPerformancePaused(Pause_None);
+		sprintf(text,"dance_%u",((PerformanceStruct*)entertainer->getPerformance())->danceVisualId);
+		entertainer->setCurrentAnimation(BString(text));
+		gMessageLib->sendAnimationString(entertainer);
 
-        entertainer->setPosture(CreaturePosture_SkillAnimating);
-        gMessageLib->sendPostureUpdate(entertainer);
-        gMessageLib->sendSelfPostureUpdate(entertainer);
-    }
+        gStateManager.setCurrentPostureState(entertainer,CreaturePosture_SkillAnimating);
+	}
 }
 
 //=======================================================================================================================
@@ -1958,24 +1955,23 @@ void EntertainerManager::handlePerformancePause(CreatureObject* mObject)
 //=======================================================================================================================
 bool EntertainerManager::handlePerformanceTick(CreatureObject* mObject)
 {
-    //check if we are still performing otherwise delete the tick and
-    //stop performing if our state != 9 (dancing)
-    PlayerObject*	entertainer	= dynamic_cast<PlayerObject*>(mObject);
-    if(!entertainer)
-        return false;
+	//check if we are still performing otherwise delete the tick and
+	//stop performing if our state != 9 (dancing)
+	PlayerObject*	entertainer	= dynamic_cast<PlayerObject*>(mObject);
+	if(!entertainer)
+		return false;
 
-    //check if we need to stop the performance or if it already has been stopped
-    //Mind the pausing dancer though
-    handlePerformancePause(entertainer);
-    if((entertainer->getPosture() != CreaturePosture_SkillAnimating)&&(entertainer->getPerformancePaused() == Pause_None))
-    {
-        //stop our performance for ourselves and all watchers
-        stopEntertaining(entertainer);
-        return (false);
-    }
+	//check if we need to stop the performance or if it already has been stopped
+	//Mind the pausing dancer though
+	handlePerformancePause(entertainer);
+	if((entertainer->states.getPosture() != CreaturePosture_SkillAnimating)&&(entertainer->getPerformancePaused() == Pause_None))
+	{
+		//stop our performance for ourselves and all watchers
+		stopEntertaining(entertainer);
+		return (false);
+	}
 
     //check distance and remove offending audience
-    gLogger->log(LogManager::DEBUG,"check the audience distances %"PRIu64"",entertainer->getId());
     CheckDistances(entertainer);
 
     //heal BF and Mindwounds
@@ -2018,11 +2014,9 @@ bool EntertainerManager::handlePerformanceTick(CreatureObject* mObject)
 
         gMessageLib->SendSystemMessage(::common::OutOfBand(prose), entertainer);
 
-        gLogger->log(LogManager::DEBUG,"end tick %"PRIu64"",entertainer->getId());
         return (false);
 
     }
-    gLogger->log(LogManager::DEBUG,"end tick %"PRIu64"",entertainer->getId());
     return (true);
 }
 
@@ -2178,7 +2172,6 @@ void EntertainerManager::handleObjectReady(Object* object,DispatchClient* client
 
             if(!permanentinstrument)
             {
-                gLogger->log(LogManager::DEBUG,"EntertainerManager::handleObjectReady: no permanent instrument");
                 return;
             }
 

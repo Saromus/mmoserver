@@ -26,6 +26,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "RegionFactory.h"
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "BadgeRegionFactory.h"
 #include "CityFactory.h"
 #include "ObjectFactoryCallback.h"
@@ -33,47 +39,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "RegionObject.h"
 #include "SpawnRegionFactory.h"
 
-#include "Common/LogManager.h"
 #include "Utils/utils.h"
 
 #include <assert.h>
 
-//=============================================================================
-
-bool				RegionFactory::mInsFlag    = false;
-RegionFactory*		RegionFactory::mSingleton  = NULL;
-
-//======================================================================================================================
-
-RegionFactory*	RegionFactory::Init(Database* database)
-{
-    if(!mInsFlag)
-    {
-        mSingleton = new RegionFactory(database);
-        mInsFlag = true;
-        return mSingleton;
-    }
-    else
-        return mSingleton;
-}
-
-//=============================================================================
+using namespace std;
 
 RegionFactory::RegionFactory(Database* database) : FactoryBase(database)
 {
-    mCityFactory			= CityFactory::Init(mDatabase);
-    mBadgeRegionFactory		= BadgeRegionFactory::Init(mDatabase);
-    mSpawnRegionFactory		= SpawnRegionFactory::Init(mDatabase);
-    mQTRegionFactory		= QTRegionFactory::Init(mDatabase);
+    mCityFactory = make_shared<CityFactory>(mDatabase);
+    mBadgeRegionFactory = make_shared<BadgeRegionFactory>(mDatabase);
+    mSpawnRegionFactory = make_shared<SpawnRegionFactory>(mDatabase);
+    mQTRegionFactory = make_shared<QTRegionFactory>(mDatabase);
 }
 
 //=============================================================================
 
 RegionFactory::~RegionFactory()
-{
-    mInsFlag = false;
-    delete(mSingleton);
-}
+{}
 
 //=============================================================================
 
@@ -95,20 +78,7 @@ void RegionFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,ui
         break;
 
     default:
-        gLogger->log(LogManager::DEBUG,"RegionFactory::requestObject Unknown Group\n");
+        LOG(ERROR) << "Unknown group [" << subGroup << "]";
         break;
     }
 }
-
-//=============================================================================
-
-void RegionFactory::releaseAllPoolsMemory()
-{
-    mCityFactory->releaseQueryContainerPoolMemory();
-    mBadgeRegionFactory->releaseQueryContainerPoolMemory();
-    mSpawnRegionFactory->releaseQueryContainerPoolMemory();
-    mQTRegionFactory->releaseQueryContainerPoolMemory();
-}
-
-//=============================================================================
-

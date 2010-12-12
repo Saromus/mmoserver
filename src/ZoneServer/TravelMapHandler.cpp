@@ -26,6 +26,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "TravelMapHandler.h"
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "Inventory.h"
 #include "ObjectFactory.h"
 #include "PlayerObject.h"
@@ -39,7 +45,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ZoneOpcodes.h"
 
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
+
 
 #include "NetworkManager/DispatchClient.h"
 #include "NetworkManager/Message.h"
@@ -75,7 +81,7 @@ TravelMapHandler::TravelMapHandler(Database* database, MessageDispatch* dispatch
     mMessageDispatch->RegisterMessageCallback(opTutorialServerStatusReply, std::bind(&TravelMapHandler::_processTutorialTravelList, this, std::placeholders::_1, std::placeholders::_2));
 
     // load our points in world
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.malloc()) TravelMapAsyncContainer(TMQuery_PointsInWorld),
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.malloc()) TravelMapAsyncContainer(TMQuery_PointsInWorld),
                                "SELECT DISTINCT(terminals.dataStr),terminals.x,terminals.y,terminals.z,terminals.dataInt1,"
                                "terminals.dataInt2,terminals.planet_id,"
                                "spawn_shuttle.X,spawn_shuttle.Y,spawn_shuttle.Z"
@@ -87,7 +93,7 @@ TravelMapHandler::TravelMapHandler(Database* database, MessageDispatch* dispatch
    
 
     // load travel points in cells
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.malloc()) TravelMapAsyncContainer(TMQuery_PointsInCells),
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.malloc()) TravelMapAsyncContainer(TMQuery_PointsInCells),
                                "SELECT DISTINCT(terminals.dataStr),terminals.planet_id,terminals.dataInt1,terminals.dataInt2,"
                                "buildings.x,buildings.y,buildings.z,spawn_shuttle.X,spawn_shuttle.Y,spawn_shuttle.Z"
                                " FROM terminals"
@@ -100,7 +106,7 @@ TravelMapHandler::TravelMapHandler(Database* database, MessageDispatch* dispatch
                                " GROUP BY terminals.dataStr");
    
     // load planet routes and base prices
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.malloc()) TravelMapAsyncContainer(TMQuery_PlanetRoutes),"SELECT * FROM travel_planet_routes");
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.malloc()) TravelMapAsyncContainer(TMQuery_PlanetRoutes),"SELECT * FROM travel_planet_routes");
    
 }
 
@@ -152,7 +158,7 @@ void TravelMapHandler::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
     {
     case TMQuery_PointsInWorld:
     {
-        DataBinding* binding = mDatabase->CreateDataBinding(10);
+        DataBinding* binding = mDatabase->createDataBinding(10);
         binding->addField(DFT_string,offsetof(TravelPoint,descriptor),64,0);
         binding->addField(DFT_float,offsetof(TravelPoint,x),4,1);
         binding->addField(DFT_float,offsetof(TravelPoint,y),4,2);
@@ -169,21 +175,23 @@ void TravelMapHandler::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
         for(uint64 i = 0; i < count; i++)
         {
             TravelPoint* travelPoint = new TravelPoint();
-            result->GetNextRow(binding,travelPoint);
+            result->getNextRow(binding,travelPoint);
 
             mTravelPoints[travelPoint->planetId].push_back(travelPoint);
         }
 
+        LOG_IF(INFO, count) << "Loaded " << count << " outdoor travel points";
+
         mPointCount += static_cast<uint32>(count);
         mWorldPointsLoaded = true;
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
     case TMQuery_PointsInCells:
     {
-        DataBinding* binding = mDatabase->CreateDataBinding(10);
+        DataBinding* binding = mDatabase->createDataBinding(10);
         binding->addField(DFT_string,offsetof(TravelPoint,descriptor),64,0);
         binding->addField(DFT_uint16,offsetof(TravelPoint,planetId),2,1);
         binding->addField(DFT_uint8,offsetof(TravelPoint,portType),1,2);
@@ -200,15 +208,17 @@ void TravelMapHandler::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
         for(uint64 i = 0; i < count; i++)
         {
             TravelPoint* travelPoint = new TravelPoint();
-            result->GetNextRow(binding,travelPoint);
+            result->getNextRow(binding,travelPoint);
 
             mTravelPoints[travelPoint->planetId].push_back(travelPoint);
         }
 
+        LOG_IF(INFO, count) << "Loaded " << count << " in-cell travel points";
+
         mPointCount += static_cast<uint32>(count);
         mCellPointsLoaded = true;
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
@@ -217,7 +227,7 @@ void TravelMapHandler::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
         TravelRoute route;
 
-        DataBinding* binding = mDatabase->CreateDataBinding(3);
+        DataBinding* binding = mDatabase->createDataBinding(3);
         binding->addField(DFT_uint16,offsetof(TravelRoute,srcId),2,0);
         binding->addField(DFT_uint16,offsetof(TravelRoute,destId),2,1);
         binding->addField(DFT_int32,offsetof(TravelRoute,price),4,2);
@@ -226,14 +236,16 @@ void TravelMapHandler::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
 
         for(uint64 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&route);
+            result->getNextRow(binding,&route);
             mTravelRoutes[route.srcId].push_back(std::make_pair(route.destId,route.price));
         }
+
+        LOG_IF(INFO, count) << "Loaded " << count << " routes";
 
         mRouteCount = static_cast<uint32>(count);
         mRoutesLoaded = true;
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
@@ -248,9 +260,6 @@ void TravelMapHandler::handleDatabaseJobComplete(void* ref,DatabaseResult* resul
         mWorldPointsLoaded = false;
         mCellPointsLoaded = false;
         mRoutesLoaded = false;
-
-        if(result->getRowCount())
-            gLogger->log(LogManager::NOTICE,"Loaded travel routes and travel points.");
     }
 }
 
@@ -287,14 +296,12 @@ void TravelMapHandler::_processTravelPointListRequest(Message* message,DispatchC
 
     if(playerObject != NULL && playerObject->isConnected())
     {
-        bool excludeQueryPosition = false;
-
         // we need to know where we query from
         TravelTerminal* terminal = playerObject->getTravelPoint();
 
         if(terminal == NULL)
         {
-            gLogger->log(LogManager::DEBUG,"TravelMapHandler::_processTravelListRequest: No TravelPosition set, player %"PRIu64"",playerObject->getId());
+            DLOG(INFO) << "TravelMapHandler::_processTravelListRequest: No TravelPosition set, player "<<playerObject->getId();
             return;
         }
 
@@ -304,7 +311,6 @@ void TravelMapHandler::_processTravelPointListRequest(Message* message,DispatchC
         // find our planetId
         uint8 planetId = gWorldManager->getPlanetIdByName(requestedPlanet);
 
-        uint32 pointCount = 0;
         char	queryPoint[64];
         TravelPoint* qP = NULL;
 
@@ -381,7 +387,7 @@ void TravelMapHandler::_processTravelPointListRequest(Message* message,DispatchC
         playerObject->getClient()->SendChannelA(gMessageFactory->EndMessage(), playerObject->getAccountId(), CR_Client, 5);
     }
     else
-        gLogger->log(LogManager::DEBUG,"TravelMapHandler::_processTravelListRequest: Couldnt find player for %u",client->getAccountId());
+        DLOG(INFO) << "TravelMapHandler::_processTravelListRequest: Couldnt find player for " << client->getAccountId();
 }
 
 //=======================================================================================================================
@@ -596,7 +602,6 @@ void TravelMapHandler::handleUIEvent(uint32 action,int32 element,BString inputSt
                     }
                     else
                     {
-                        gLogger->log(LogManager::DEBUG,"TicketCollector: Error getting TravelPoint");
                     }
                     break;
                 }
@@ -674,7 +679,6 @@ void TravelMapHandler::useTicket(PlayerObject* playerObject, TravelTicket* ticke
     }
     else
     {
-        gLogger->log(LogManager::DEBUG,"TicketCollector: Error getting TravelPoint");
     }
 }
 

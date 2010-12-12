@@ -42,7 +42,7 @@ class CraftAttributeWeight;
 
 struct CustomizationOption
 {
-    BString		attribute;
+    BString	attribute;
     uint16		cutomizationIndex;
     uint32		paletteSize;
     uint32		defaultValue;
@@ -182,7 +182,7 @@ public:
 
 private:
 
-    BString						mItemModel;
+    BString					mItemModel;
     uint8						mSlotsFilled;
     ManufactureSlots			mManufactureSlots;
     ExperimentationProperties	mExperimentationProperties;
@@ -190,7 +190,7 @@ private:
     uint8						mCounter;
     float						mExpFailureChance;
     Item*						mItem;
-    BString						mSerial;
+    BString     				mSerial;
 
     AttributeMap				mPPAttributeMap;
 };
@@ -202,14 +202,14 @@ class ManufactureSlot
 public:
 
     ManufactureSlot(DraftSlot* draftSlot)
-        :	mDraftSlot(draftSlot)
+        : mDraftSlot(draftSlot)
+        , mResourceId(0)
         , mFilled(0)
         , mFilledType(DST_Empty)
         , mUnknown1(0)
         , mUnknown2(0xffffffff)
         , mUnknown3(0)
         , mFilledIndicatorChange(false)
-        , mResourceId(0)
     {
         mSerial = "";
     }
@@ -238,7 +238,7 @@ public:
         return mSerial;
     }
     void	setSerial(BString s) {
-        mSerial= s;
+        mSerial = s;
     }
 
     uint32	getFilledAmount() {
@@ -296,7 +296,7 @@ public:
 
     virtual ~ExperimentationProperty() {}
 
-    BString						mExpAttributeName;
+    BString					mExpAttributeName;
     CraftWeights*			mWeights;
     CraftAttributes*	mAttributes;
     float							mBlueBarSize;
@@ -329,11 +329,11 @@ T	ManufacturingSchematic::getPPAttribute(BString key) const
         }
         catch(boost::bad_lexical_cast &)
         {
-            gLogger->log(LogManager::DEBUG,"ManufacturingSchematic::getPPAttribute: cast failed (%s)",key.getAnsi());
+            DLOG(INFO) << "ManufacturingSchematic::getPPAttribute: cast failed " << key.getAnsi();
         }
     }
     else
-        gLogger->log(LogManager::DEBUG,"ManufacturingSchematic::getPPAttribute: could not find %s",key.getAnsi());
+        DLOG(INFO) << "ManufacturingSchematic::getPPAttribute: could not find " << key.getAnsi();
 
     return(T());
 }
@@ -352,11 +352,11 @@ T	ManufacturingSchematic::getPPAttribute(uint32 keyCrc) const
         }
         catch(boost::bad_lexical_cast &)
         {
-            gLogger->log(LogManager::NOTICE,"ManufacturingSchematic::getPPAttribute: cast failed (%u)",dkeyCrc);
+            DLOG(INFO) << "ManufacturingSchematic::getPPAttribute: cast failed " << keyCrc;
         }
     }
     else
-        gLogger->log(LogManager::NOTICE,"ManufacturingSchematic::getPPAttribute: could not find %u",keyCrc);
+        DLOG(INFO) << "ManufacturingSchematic::getPPAttribute: could not find " << keyCrc;
 
     return(T());
 }

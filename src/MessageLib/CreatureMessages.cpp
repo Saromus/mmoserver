@@ -36,7 +36,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ZoneServer/WorldManager.h"
 #include "ZoneServer/ZoneOpcodes.h"
 
-#include "Common/LogManager.h"
+// Fix for issues with glog redefining this constant
+#ifdef ERROR
+#undef ERROR
+#endif
+
+#include <glog/logging.h>
 
 #include "NetworkManager/DispatchClient.h"
 #include "NetworkManager/Message.h"
@@ -216,7 +221,7 @@ bool MessageLib::sendBaselinesCREO_3(CreatureObject* creatureObject,PlayerObject
     //10 locomotion ??
     mMessageFactory->addUint8(1);
     //11 posture
-    mMessageFactory->addUint8(creatureObject->getPosture());
+    mMessageFactory->addUint8(creatureObject->states.getPosture());
     //12
     mMessageFactory->addUint8(creatureObject->getFactionRank());
     //13 owner id
@@ -237,7 +242,7 @@ bool MessageLib::sendBaselinesCREO_3(CreatureObject* creatureObject,PlayerObject
         mMessageFactory->addUint64(0);
         mMessageFactory->addFloat(creatureObject->getScale());
         mMessageFactory->addUint32(creatureHam->getBattleFatigue());
-        mMessageFactory->addUint64(creatureObject->getState());
+        mMessageFactory->addUint64(creatureObject->states.getAction());
     }
 
     // ham wounds
@@ -402,7 +407,7 @@ bool MessageLib::sendBaselinesCREO_6(CreatureObject* creatureObject,PlayerObject
         moodId = 74;
     }
 
-    BString			moodStr			= gWorldManager->getMood(moodId);
+    std::string			moodStr			= gWorldManager->getMood(moodId);
 
     ObjectList*		equippedObjects = creatureObject->getEquipManager()->getEquippedObjects();
     ObjectIDList*	defenders		= creatureObject->getDefenders();
@@ -618,7 +623,7 @@ bool MessageLib::sendPostureMessage(CreatureObject* creatureObject,PlayerObject*
 
     mMessageFactory->StartMessage();
     mMessageFactory->addUint32(opUpdatePostureMessage);
-    mMessageFactory->addUint8(creatureObject->getPosture());
+    mMessageFactory->addUint8(creatureObject->states.getPosture());
     mMessageFactory->addUint64(creatureObject->getId());
 
     message = mMessageFactory->EndMessage();
@@ -665,7 +670,7 @@ void MessageLib::sendDefenderUpdate(CreatureObject* creatureObject,uint8 updateT
     {
         // Reset all
         // Not suported yet
-        gLogger->log(LogManager::DEBUG,"MessageLib::sendDefenderUpdate Invalid option = %u",updateType);
+        DLOG(INFO) << "MessageLib::sendDefenderUpdate Invalid option = " << updateType;
         return;
     }
 
@@ -892,7 +897,7 @@ bool MessageLib::sendEquippedItemUpdate_InRange(CreatureObject* creatureObject, 
 
     if(!found)
     {
-        gLogger->log(LogManager::DEBUG,"MessageLib::sendEquippedItemUpdate_InRange : Item not found : %I64u",itemId);
+        DLOG(INFO) << "MessageLib::sendEquippedItemUpdate_InRange : Item not found : " << itemId;
         return false;
     }
 
@@ -1026,7 +1031,7 @@ void MessageLib::sendPostureUpdate(CreatureObject* creatureObject)
     mMessageFactory->addUint32(5);
     mMessageFactory->addUint16(1);
     mMessageFactory->addUint16(11);
-    mMessageFactory->addUint8(creatureObject->getPosture());
+    mMessageFactory->addUint8(creatureObject->states.getPosture());
 
     _sendToInRange(mMessageFactory->EndMessage(),creatureObject,5,true);
 }
@@ -1050,9 +1055,9 @@ void MessageLib::sendPostureAndStateUpdate(CreatureObject* creatureObject)
         mMessageFactory->addUint32(15);
         mMessageFactory->addUint16(2);
         mMessageFactory->addUint16(11);
-        mMessageFactory->addUint8(creatureObject->getPosture());
+        mMessageFactory->addUint8(creatureObject->states.getPosture());
         mMessageFactory->addUint16(16);
-        mMessageFactory->addUint64(creatureObject->getState());
+        mMessageFactory->addUint64(creatureObject->states.getAction());
 
         _sendToInRange(mMessageFactory->EndMessage(),creatureObject,5);
     }
@@ -1077,7 +1082,7 @@ void MessageLib::sendStateUpdate(CreatureObject* creatureObject)
         mMessageFactory->addUint32(12);
         mMessageFactory->addUint16(1);
         mMessageFactory->addUint16(16);
-        mMessageFactory->addUint64(creatureObject->getState());
+        mMessageFactory->addUint64(creatureObject->states.getAction());
 
         _sendToInRange(mMessageFactory->EndMessage(),creatureObject,5);
     }

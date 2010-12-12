@@ -24,15 +24,19 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
-#include <list>
+
 #include "CampRegion.h"
+
+#include <list>
+
+#include "MessageLib/MessageLib.h"
+
 #include "Camp.h"
 #include "PlayerObject.h"
 #include "QTRegion.h"
 #include "QuadTree.h"
 #include "WorldManager.h"
 #include "ZoneTree.h"
-#include "MessageLib/MessageLib.h"
 
 //=============================================================================
 struct CampRegion::campLink
@@ -93,7 +97,7 @@ void CampRegion::update()
         return;
     }
 
-    if(owner->checkState(CreatureState_Combat))
+    if(owner->states.checkState(CreatureState_Combat))
     {
         //abandon
         mAbandoned	= true;
@@ -325,7 +329,7 @@ void	CampRegion::despawnCamp()
     gMessageLib->sendDestroyObject_InRangeofObject(camp);
     gWorldManager->destroyObject(camp);
 
-    gWorldManager->addRemoveRegion(this);
+    gWorldManager->addRemoveRegion(getSharedFromThis());
 
     //now grant xp
     applyXp();

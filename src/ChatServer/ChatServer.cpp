@@ -25,10 +25,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
 
+#include "ChatServer.h"
 
+#include <glog/logging.h>
 // External references
 #include "ChatManager.h"
-#include "ChatServer.h"
 #include "CSRManager.h"
 #include "GroupManager.h"
 #include "TradeManagerChat.h"
@@ -38,8 +39,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "NetworkManager/NetworkManager.h"
 #include "NetworkManager/Service.h"
-
-#include "Common/LogManager.h"
 
 #include "DatabaseManager/DataBinding.h"
 #include "DatabaseManager/Database.h"
@@ -54,10 +53,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Utils/utils.h"
 #include "Utils/clock.h"
 
-#if !defined(_DEBUG) && defined(_WIN32)
-#include "Utils/mdump.h"
-#endif
-
 #include <boost/thread/thread.hpp>
 #include <cstring>
 
@@ -71,7 +66,7 @@ ChatServer::ChatServer() : mNetworkManager(0),mDatabaseManager(0),mRouterService
 {
     Anh_Utils::Clock::Init();
     //gLogger->printSmallLogo();
-    gLogger->log(LogManager::CRITICAL,"Chat Server Startup");
+    LOG(WARNING) << "Chat Server Startup";
 
     // Create and startup our core services.
     mDatabaseManager = new DatabaseManager();
@@ -79,15 +74,14 @@ ChatServer::ChatServer() : mNetworkManager(0),mDatabaseManager(0),mRouterService
     mNetworkManager = new NetworkManager();
 
     // Connect to the DB and start listening for the RouterServer.
-    mDatabase = mDatabaseManager->Connect(DBTYPE_MYSQL,
+    mDatabase = mDatabaseManager->connect(DBTYPE_MYSQL,
                                           (char*)(gConfig->read<std::string>("DBServer")).c_str(),
                                           gConfig->read<int>("DBPort"),
                                           (char*)(gConfig->read<std::string>("DBUser")).c_str(),
                                           (char*)(gConfig->read<std::string>("DBPass")).c_str(),
                                           (char*)(gConfig->read<std::string>("DBName")).c_str());
 
-    mDatabase->ExecuteProcedureAsync(0, 0, "CALL sp_ServerStatusUpdate('chat', NULL, NULL, NULL);");
-    gLogger->log(LogManager::DEBUG, "CALL sp_ServerStatusUpdate('chat', NULL, NULL, NULL);"); // SQL Debug Log
+    mDatabase->executeProcedureAsync(0, 0, "CALL sp_ServerStatusUpdate('chat', NULL, NULL, NULL);");
 
     mRouterService = mNetworkManager->GenerateService((char*)gConfig->read<std::string>("BindAddress").c_str(), gConfig->read<uint16>("BindPort"),gConfig->read<uint32>("ServiceMessageHeap")*1024,true);
 
@@ -123,19 +117,19 @@ ChatServer::ChatServer() : mNetworkManager(0),mDatabaseManager(0),mRouterService
     // We're done initializing.
     _updateDBServerList(2);
 
-    gLogger->log(LogManager::CRITICAL,"Chat Server startup complete");
+    LOG(WARNING) << "Chat Server startup complete";
     //gLogger->printLogo();
     // std::string BuildString(GetBuildString());
 
-    gLogger->log(LogManager::INFORMATION,"Chat Server - Build %s",ConfigManager::getBuildString().c_str());
-    gLogger->log(LogManager::CRITICAL,"Welcome to your SWGANH Experience!");
+    LOG(WARNING) << "Chat Server - Build " << ConfigManager::getBuildString().c_str();
+    LOG(WARNING) << "Welcome to your SWGANH Experience!";
 }
 
 //======================================================================================================================
 
 ChatServer::~ChatServer()
 {
-    gLogger->log(LogManager::CRITICAL,"ChatServer shutting down...");
+    LOG(WARNING) << "ChatServer shutting down...";
 
     // We're shutting down, so update the DB again.
     _updateDBServerList(0);
@@ -160,7 +154,7 @@ ChatServer::~ChatServer()
 
     delete mDatabaseManager;
 
-    gLogger->log(LogManager::CRITICAL,"ChatServer Shutdown Complete");
+    LOG(WARNING) << "ChatServer Shutdown Complete";
 }
 
 //======================================================================================================================
@@ -172,7 +166,7 @@ void ChatServer::Process()
     gMessageFactory->Process();
 
     //  Process our core services
-    mDatabaseManager->Process();
+    mDatabaseManager->process();
     mNetworkManager->Process();
     mCharacterAdminHandler->Process();
     mPlanetMapHandler->Process();
@@ -184,7 +178,7 @@ void ChatServer::Process()
     if (Anh_Utils::Clock::getSingleton()->getLocalTime() - mLastHeartbeat > 180000)//main loop every 10ms
     {
         mLastHeartbeat = static_cast<uint32>(Anh_Utils::Clock::getSingleton()->getLocalTime());
-        gLogger->log(LogManager::NOTICE,"ChatServer Heartbeat.");
+        DLOG(INFO) << "ChatServer Heartbeat.";
     }
 }
 
@@ -194,7 +188,7 @@ void ChatServer::Process()
 void ChatServer::_updateDBServerList(uint32 status)
 {
     // Update the DB with our status.  This must be synchronous as the connection server relies on this data.
-    mDatabase->ExecuteProcedureAsync(0, 0, "CALL sp_ServerStatusUpdate('chat', %u, '%s', %u);", status, mRouterService->getLocalAddress(), mRouterService->getLocalPort()); // SQL - Update server status
+    mDatabase->executeProcedureAsync(0, 0, "CALL sp_ServerStatusUpdate('chat', %u, '%s', %u);", status, mRouterService->getLocalAddress(), mRouterService->getLocalPort()); // SQL - Update server status
  
 }
 
@@ -207,15 +201,15 @@ void ChatServer::_connectToConnectionServer()
 
     // Query the DB to find out who this is.
     // setup our databinding parameters.
-    DataBinding* binding = mDatabase->CreateDataBinding(5);
+    DataBinding* binding = mDatabase->createDataBinding(5);
     binding->addField(DFT_uint32, offsetof(ProcessAddress, mType), 4);
-    binding->addField(DFT_string, offsetof(ProcessAddress, mAddress), 1);
+    binding->addField(DFT_bstring, offsetof(ProcessAddress, mAddress), 16);
     binding->addField(DFT_uint16, offsetof(ProcessAddress, mPort), 2);
     binding->addField(DFT_uint32, offsetof(ProcessAddress, mStatus), 4);
     binding->addField(DFT_uint32, offsetof(ProcessAddress, mActive), 4);
 
     // Setup our statement
-    DatabaseResult* result = mDatabase->ExecuteSynchSql("SELECT id, address, port, status, active FROM config_process_list WHERE name='connection';");
+    DatabaseResult* result = mDatabase->executeSynchSql("SELECT id, address, port, status, active FROM config_process_list WHERE name='connection';");
     
     uint64 count = result->getRowCount();
 
@@ -223,16 +217,18 @@ void ChatServer::_connectToConnectionServer()
     if (count == 1)
     {
         // Retrieve our routes and add them to the map.
-        result->GetNextRow(binding, &processAddress);
+        result->getNextRow(binding, &processAddress);
     }
 
     // Delete our DB objects.
-    mDatabase->DestroyDataBinding(binding);
-    mDatabase->DestroyResult(result);
+    mDatabase->destroyDataBinding(binding);
+    mDatabase->destroyResult(result);
 
     // Now connect to the ConnectionServer
     mClient = new DispatchClient();
-    mRouterService->Connect(mClient, processAddress.mAddress, processAddress.mPort);
+
+	LOG(INFO) << "New connection to " << processAddress.mAddress.getAnsi() << " on port " << processAddress.mPort;
+    mRouterService->Connect(mClient, processAddress.mAddress.getAnsi(), processAddress.mPort);
 }
 
 //======================================================================================================================
@@ -246,20 +242,20 @@ void handleExit()
 
 int main(int argc, char* argv[])
 {
+    // Initialize the google logging.
+    google::InitGoogleLogging(argv[0]);
+
+#ifndef _WIN32
+    google::InstallFailureSignalHandler();
+#endif
+
+    FLAGS_log_dir = "./logs";
+    FLAGS_stderrthreshold = 1;
+
     try {
         ConfigManager::Init("ChatServer.cfg");
     } catch (file_not_found) {
         std::cout << "Unable to find configuration file: " << CONFIG_DIR << "ChatServer.cfg" << std::endl;
-        exit(-1);
-    }
-
-    try {
-        LogManager::Init(
-            static_cast<LogManager::LOG_PRIORITY>(gConfig->read<int>("ConsoleLog_MinPriority", 6)),
-            static_cast<LogManager::LOG_PRIORITY>(gConfig->read<int>("FileLog_MinPriority", 6)),
-            gConfig->read<std::string>("FileLog_Name", "chat_server.log"));
-    } catch (...) {
-        std::cout << "Unable to open log file for writing" << std::endl;
         exit(-1);
     }
 

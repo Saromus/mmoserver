@@ -26,6 +26,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "DatapadFactory.h"
+
+#ifdef _WIN32
+#undef ERROR
+#endif
+#include <glog/logging.h>
+
 #include "Datapad.h"
 #include "IntangibleObject.h"
 #include "PlayerObject.h"
@@ -38,7 +44,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "WaypointObject.h"
 #include "WorldManager.h"
 
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -98,7 +103,7 @@ void DatapadFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         QueryContainerBase* asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(asyncContainer->mOfCallback,DPFQuery_ObjectCount,asyncContainer->mClient);
         asContainer->mObject = datapad;
 
-        mDatabase->ExecuteSqlAsync(this,asContainer,"SELECT sf_getDatapadObjectCount(%"PRIu64")",datapad->getId());
+        mDatabase->executeSqlAsync(this,asContainer,"SELECT sf_getDatapadObjectCount(%"PRIu64")",datapad->getId());
        
     }
     break;
@@ -108,10 +113,10 @@ void DatapadFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         Datapad* datapad = dynamic_cast<Datapad*>(asyncContainer->mObject);
 
         uint32 objectCount;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
 
         binding->addField(DFT_uint32,0,4);
-        result->GetNextRow(binding,&objectCount);
+        result->getNextRow(binding,&objectCount);
 
         datapad->setObjectLoadCounter(objectCount);
 
@@ -125,7 +130,7 @@ void DatapadFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
             QueryContainerBase* asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(asyncContainer->mOfCallback,DPFQuery_Objects,asyncContainer->mClient);
             asContainer->mObject = datapad;
 
-            mDatabase->ExecuteSqlAsync(this,asContainer,
+            mDatabase->executeSqlAsync(this,asContainer,
                                        "(SELECT \'waypoints\',waypoints.waypoint_id FROM waypoints WHERE owner_id = %"PRIu64")"
                                        " UNION (SELECT \'manschematics\',items.id FROM items WHERE (parent_id=%"PRIu64"))"
                                        " UNION (SELECT \'vehicles\',vehicles.id FROM vehicles WHERE (parent=%"PRIu64"))"
@@ -139,36 +144,36 @@ void DatapadFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
             asyncContainer->mOfCallback->handleObjectReady(datapad,asyncContainer->mClient);
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
     case DPFQuery_ItemId:
     {
         uint64 id;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
 
         binding->addField(DFT_uint64,0,8);
-        result->GetNextRow(binding,&id);
+        result->getNextRow(binding,&id);
 
         gTangibleFactory->requestObject(this,id,TanGroup_Item,0,asyncContainer->mClient);
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
     case DPFQuery_MSParent:
     {
         uint64 id;
-        DataBinding* binding = mDatabase->CreateDataBinding(1);
+        DataBinding* binding = mDatabase->createDataBinding(1);
 
         binding->addField(DFT_uint64,0,8);
-        result->GetNextRow(binding,&id);
+        result->getNextRow(binding,&id);
 
         PlayerObject* player = dynamic_cast<PlayerObject*>(gWorldManager->getObjectById(id-3));
         if(!player)
         {
             //factoryPanic!!!!!!!!
-            gLogger->log(LogManager::DEBUG,"DatapadFactory: Failed getting player to create MS");
+        	LOG(WARNING) << "Failed getting player to create MS";
             return;
         }
 
@@ -177,7 +182,7 @@ void DatapadFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
         if(!datapad)
         {
             //factoryPanic!!!!!!!!
-            gLogger->log(LogManager::DEBUG,"DatapadFactory: Failed getting datapad to create MS");
+        	LOG(ERROR) << "Failed getting datapad to create MS";
             return;
         }
         mObjectLoadMap.insert(std::make_pair(datapad->getId(),new(mILCPool.ordered_malloc()) InLoadingContainer(datapad,datapad,NULL,1)));
@@ -194,7 +199,7 @@ void DatapadFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         Type1_QueryContainer queryContainer;
 
-        DataBinding*	binding = mDatabase->CreateDataBinding(2);
+        DataBinding*	binding = mDatabase->createDataBinding(2);
         binding->addField(DFT_bstring,offsetof(Type1_QueryContainer,mString),64,0);
         binding->addField(DFT_uint64,offsetof(Type1_QueryContainer,mId),8,1);
 
@@ -207,7 +212,7 @@ void DatapadFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         for(uint32 i = 0; i < count; i++)
         {
-            result->GetNextRow(binding,&queryContainer);
+            result->getNextRow(binding,&queryContainer);
 
             if(strcmp(queryContainer.mString.getAnsi(),"waypoints") == 0)
             {
@@ -230,7 +235,7 @@ void DatapadFactory::handleDatabaseJobComplete(void* ref,DatabaseResult* result)
 
         }
 
-        mDatabase->DestroyDataBinding(binding);
+        mDatabase->destroyDataBinding(binding);
     }
     break;
 
@@ -251,7 +256,7 @@ void DatapadFactory::requestManufacturingSchematic(ObjectFactoryCallback* ofCall
     QueryContainerBase* asContainer = new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,DPFQuery_MSParent,NULL);
     asContainer->mId = id;
 
-    mDatabase->ExecuteSqlAsync(this, asContainer, "SELECT items.parent_id FROM items WHERE (id=%"PRIu64")", id);
+    mDatabase->executeSqlAsync(this, asContainer, "SELECT items.parent_id FROM items WHERE (id=%"PRIu64")", id);
     
 
     //mObjectLoadMap.insert(std::make_pair(datapad->getId(),new(mILCPool.ordered_malloc()) InLoadingContainer(datapad,datapad,NULL,1)));
@@ -264,7 +269,7 @@ void DatapadFactory::requestManufacturingSchematic(ObjectFactoryCallback* ofCall
 //
 void DatapadFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,uint16 subGroup,uint16 subType,DispatchClient* client)
 {
-    mDatabase->ExecuteSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,DPFQuery_MainDatapadData,client),
+    mDatabase->executeSqlAsync(this,new(mQueryContainerPool.ordered_malloc()) QueryContainerBase(ofCallback,DPFQuery_MainDatapadData,client),
                                "SELECT datapads.id,datapad_types.object_string,datapad_types.name,datapad_types.file"
                                " FROM datapads INNER JOIN datapad_types ON (datapads.datapad_type = datapad_types.id)"
                                " WHERE (datapads.id = %"PRIu64")", id);
@@ -275,12 +280,14 @@ void DatapadFactory::requestObject(ObjectFactoryCallback* ofCallback,uint64 id,u
 
 Datapad* DatapadFactory::_createDatapad(DatabaseResult* result)
 {
+    if (!result->getRowCount()) {
+    	return nullptr;
+    }
+
     Datapad* datapad = new Datapad();
 
-    uint64 count = result->getRowCount();
-
     // get our results
-    result->GetNextRow(mDatapadBinding,(void*)datapad);
+    result->getNextRow(mDatapadBinding,(void*)datapad);
     datapad->setParentId(datapad->mId - 3);
 
     return datapad;
@@ -291,7 +298,7 @@ Datapad* DatapadFactory::_createDatapad(DatabaseResult* result)
 void DatapadFactory::_setupDatabindings()
 {
     // datapad binding
-    mDatapadBinding = mDatabase->CreateDataBinding(4);
+    mDatapadBinding = mDatabase->createDataBinding(4);
     mDatapadBinding->addField(DFT_uint64,offsetof(Datapad,mId),8,0);
     mDatapadBinding->addField(DFT_bstring,offsetof(Datapad,mModel),256,1);
     mDatapadBinding->addField(DFT_bstring,offsetof(Datapad,mName),64,2);
@@ -302,7 +309,7 @@ void DatapadFactory::_setupDatabindings()
 
 void DatapadFactory::_destroyDatabindings()
 {
-    mDatabase->DestroyDataBinding(mDatapadBinding);
+    mDatabase->destroyDataBinding(mDatapadBinding);
 }
 
 //=============================================================================
@@ -338,7 +345,7 @@ void DatapadFactory::handleObjectReady(Object* object,DispatchClient* client)
 
             if(!mIlc)
             {
-                gLogger->log(LogManager::DEBUG,"DatapadFactory::handleObjectReady: Failed getting ilc during ObjType_Tangible where ItemType_ManSchematic");
+            	LOG(WARNING) << "Failed getting ilc during ObjType_Tangible where ItemType_ManSchematic";
                 return;
             }
 
@@ -355,7 +362,7 @@ void DatapadFactory::handleObjectReady(Object* object,DispatchClient* client)
             asContainer->mId = item->getId();//queryContainer.mId;
             int8 sql[256];
             sprintf(sql,"SELECT items.id FROM items WHERE (parent_id=%"PRIu64")",item->getId());
-            mDatabase->ExecuteSqlAsync(this,asContainer,sql);
+            mDatabase->executeSqlAsync(this,asContainer,sql);
 
             mObjectLoadMap.insert(std::make_pair(item->getId(),new(mILCPool.ordered_malloc()) InLoadingContainer(datapad,0,0,1)));
 
@@ -370,7 +377,7 @@ void DatapadFactory::handleObjectReady(Object* object,DispatchClient* client)
             InLoadingContainer*mIlcDPad		= _getObject(id);
             if(!mIlcDPad)
             {
-                gLogger->log(LogManager::DEBUG,"DatapadFactory::handleObjectReady: Failed getting mIlcDPad during ObjType_Tangible");
+            	LOG(WARNING) << "Failed getting mIlcDPad during ObjType_Tangible";
                 return;
             }
             datapad							= dynamic_cast<Datapad*>(mIlcDPad->mObject);
@@ -383,7 +390,7 @@ void DatapadFactory::handleObjectReady(Object* object,DispatchClient* client)
 
             if(!mIlc)
             {
-                gLogger->log(LogManager::DEBUG,"DatapadFactory::handleObjectReady: Failed getting ilc during ObjType_Tangible");
+            	LOG(WARNING) << "Failed getting ilc during ObjType_Tangible";
                 return;
             }
 
@@ -405,7 +412,7 @@ void DatapadFactory::handleObjectReady(Object* object,DispatchClient* client)
         mIlc	= _getObject(theID);
         if(!mIlc)//sanity
         {
-            gLogger->log(LogManager::DEBUG,"DatapadFactory::handleObjectReady: Failed getting ilc during ObjType_Intangible");
+            LOG(WARNING) << "Failed getting ilc during ObjType_Intangible";
             return;
         }
 
@@ -424,7 +431,7 @@ void DatapadFactory::handleObjectReady(Object* object,DispatchClient* client)
                 }
                 else
                 {
-                    gLogger->log(LogManager::DEBUG,"DatapadFactory: Datapad at max Capacity!!!");
+                	LOG(WARNING) << "Datapad at max Capacity";
                     delete(object);
                 }
             }
@@ -442,7 +449,7 @@ void DatapadFactory::handleObjectReady(Object* object,DispatchClient* client)
     if(!(mIlc->mLoadCounter))
     {
         if(!(_removeFromObjectLoadMap(theID)))
-            gLogger->log(LogManager::DEBUG,"DatapadFactory: Failed removing object from loadmap");
+        	LOG(WARNING) << "Failed removing object from loadmap";
 
         mIlc->mOfCallback->handleObjectReady(datapad,mIlc->mClient);
 

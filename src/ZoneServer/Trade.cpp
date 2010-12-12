@@ -151,7 +151,7 @@ void Trade::cancelTradeSession()
 {
     gMessageLib->sendAbortTradeMessage(getPlayerObject());
     TradeListDelete();
-    getPlayerObject()->setTradePartner(NULL);
+    getPlayerObject()->setTradePartner(0);
     getPlayerObject()->setTradeStatus(false);
     ItemTradeList::iterator it = mItemTradeList.begin();
     while(it != mItemTradeList.end())
@@ -192,7 +192,7 @@ void Trade::endTradeSession()
 {
     gMessageLib->sendTradeCompleteMessage(getPlayerObject());
     TradeListDelete();
-    getPlayerObject()->setTradePartner(NULL);
+    getPlayerObject()->setTradePartner(0);
     getPlayerObject()->setTradeStatus(false);
     mMoney = 0;
     mTradingFin = false;
@@ -203,12 +203,11 @@ void Trade::endTradeSession()
 
 bool Trade::checkTradeListtoInventory()
 {
-    ItemTradeList::iterator it			= mItemTradeList.begin();
     Inventory*				inventory	= dynamic_cast<Inventory*>(getPlayerObject()->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
 
     if(!inventory)
     {
-        gLogger->log(LogManager::DEBUG,"Trade::checkTradeListtoInventory():: No inventory for %I64u",getPlayerObject()->getId());
+        DLOG(INFO) << "Trade::checkTradeListtoInventory():: No inventory for " << getPlayerObject()->getId();
         return(false);
     }
 
@@ -285,7 +284,6 @@ void  Trade::processTradeListPostTransaction()
     //The transaction has now been approved so we can do all the other stuff
 
     ItemTradeList::iterator it					= mItemTradeList.begin();
-    Inventory*				inventory			= dynamic_cast<Inventory*>(getPlayerObject()->getEquipManager()->getEquippedObject(CreatureEquipSlot_Inventory));
 
     //Tradepartners Inventory
     PlayerObject*			TradePartner		= dynamic_cast<PlayerObject*>(gWorldManager->getObjectById(getPlayerObject()->getTradePartner()));
@@ -347,7 +345,7 @@ bool Trade::ItemTradeCheck(uint64 ItemId)
     {
         if ((*it)->getObject()->getId() == ItemId)
         {
-            gLogger->log(LogManager::DEBUG,"PlayerObject: Item already on the tradeList");
+            DLOG(INFO) << "PlayerObject: Item already on the tradeList";
             return(true);
         }
 

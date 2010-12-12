@@ -42,12 +42,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "DatabaseManager/Database.h"
 #include "Utils/clock.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
+
 #include "Common/OutOfBand.h"
 #include "NetworkManager/Message.h"
 #include "NetworkManager/MessageFactory.h"
 
-#include "utils/rand.h"
+#include "Utils/rand.h"
 
 #include <algorithm>
 
@@ -89,15 +89,11 @@ void PlayerObject::onLogout(const LogOutEvent* event)
 // CAVE we only remove it out of the inventory / objectmap
 void PlayerObject::onItemDeleteEvent(const ItemDeleteEvent* event)
 {
-
-    uint64 now = Anh_Utils::Clock::getSingleton()->getLocalTime();
-
     //do we have to remove the cooldown?
 
     Item* item = dynamic_cast<Item*>(gWorldManager->getObjectById(event->getItem()));
     if(!item)
     {
-        gLogger->log(LogManager::DEBUG,"PlayerObject::onItemDeleteEvent: Item %I64u not found",event->getItem());
         return;
     }
 
@@ -184,11 +180,11 @@ void PlayerObject::onForceRun(const ForceRunEvent* event)
             gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "forcerun_stop_single"), this);
             //I don't really remember if there was even any combat spam that was seen by other players for this.
             //Combat Spam
-            int8 s[256];
+            /*int8 s[256];
             sprintf(s, "%s %s slows down.", this->getFirstName().getAnsi(), this->getLastName().getAnsi());
             BString bs(s);
             bs.convert(BSTRType_Unicode16);
-            gMessageLib->sendCombatSpam(this, this, 0, "", "", 0, 0, bs.getUnicode16());
+            gMessageLib->sendCombatSpam(this, this, 0, "", "", 0, 0, bs.getUnicode16());*/
 
             this->togglePlayerCustomFlagOff(PlayerCustomFlag_ForceRun);
 
@@ -197,9 +193,8 @@ void PlayerObject::onForceRun(const ForceRunEvent* event)
             this->setCurrentAcceleration(this->getBaseAcceleration());
             gMessageLib->sendUpdateMovementProperties(this);
 
-            this->setLocomotion(kLocomotionStanding);
-
-            //this->setUpright();
+            //this->states.setLocomotion(CreatureLocomotion_Standing);
+            this->states.setLocomotion(CreatureLocomotion_Walking);
         }
     }
     //have to call once more so we can get back here...
@@ -221,7 +216,7 @@ void PlayerObject::onForceMeditate(const ForceMeditateEvent* event)
     //do we need to play the effect again??
     if (now > t)
     {
-        if (this->isMeditating())
+        if (this->isForceMeditating())
         {
             gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/pl_force_meditate_self.cef", "", this);
 

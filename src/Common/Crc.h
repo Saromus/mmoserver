@@ -25,13 +25,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
 
-#ifndef SRC_COMMON_EVENT_H_
-#define SRC_COMMON_EVENT_H_
+#ifndef SRC_COMMON_CRC_H_
+#define SRC_COMMON_CRC_H_
 
 #include <cstdint>
 #include <string>
-
-#include "Common/declspec.h"
 
 /*! \brief Common is a catch-all library containing primarily base classes and
  * classes used for maintaining application lifetimes.
@@ -49,7 +47,7 @@ namespace common {
  * \param length The length of the source_string.
  * \returns A 32-bit checksum of the string.
  */
-COMMON_API uint32_t memcrc(char const * const source_string, uint32_t length);
+uint32_t memcrc(char const * const source_string, uint32_t length);
 
 /**
  * Calculates a 32-bit checksum of a std::string.
@@ -61,8 +59,8 @@ COMMON_API uint32_t memcrc(char const * const source_string, uint32_t length);
  * \param source_string The string to use as the basis for generating the checksum.
  * \returns A 32-bit checksum of the string.
  */
-COMMON_API uint32_t memcrc(const std::string& source_string);
+uint32_t memcrc(const std::string& source_string);
 
 }  // namespace common
 
-#endif  // SRC_COMMON_EVENT_H_
+#endif  // SRC_COMMON_CRC_H_

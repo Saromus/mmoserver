@@ -31,9 +31,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "UIManager.h"
 #include "ZoneServer/WorldManager.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
-
-
 
 
 //=============================================================================
@@ -53,12 +50,12 @@ CampTerminal::~CampTerminal()
 
 void CampTerminal::handleObjectMenuSelect(uint8 messageType,Object* srcObject)
 {
-    PlayerObject* playerObject = dynamic_cast<PlayerObject*>(srcObject);
+	PlayerObject* playerObject = dynamic_cast<PlayerObject*>(srcObject);
 
-    if(!playerObject || !playerObject->isConnected() || playerObject->getSamplingState() || playerObject->isIncapacitated() || playerObject->isDead()|| playerObject->checkState(CreatureState_Combat))
-    {
-        return;
-    }
+	if(!playerObject || !playerObject->isConnected() || playerObject->getSamplingState() || playerObject->isIncapacitated() || playerObject->isDead()|| playerObject->states.checkState(CreatureState_Combat))
+	{
+		return;
+	}
 
     if(messageType == radId_serverTerminalManagementDestroy)
     {
@@ -103,8 +100,6 @@ void CampTerminal::handleObjectMenuSelect(uint8 messageType,Object* srcObject)
 
         return;
     }
-
-    gLogger->log(LogManager::NOTICE,"CampTerminal: Unhandled MenuSelect: %u",messageType);
 
 }
 

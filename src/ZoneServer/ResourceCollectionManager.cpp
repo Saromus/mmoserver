@@ -25,8 +25,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
 
-#include "PlayerObject.h"
 #include "ResourceCollectionManager.h"
+#include "PlayerObject.h"
 #include "ResourceCollectionCommand.h"
 #include "UIManager.h"
 #include "WaypointObject.h"
@@ -34,7 +34,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Datapad.h"
 #include "WorldManager.h"
 #include "MessageLib/MessageLib.h"
-#include "Common/LogManager.h"
 #include "DatabaseManager/Database.h"
 #include "DatabaseManager/DatabaseResult.h"
 #include "DatabaseManager/DataBinding.h"
@@ -53,13 +52,10 @@ ResourceCollectionManager::ResourceCollectionManager(Database* database) :
     _setupDatabindings();
 
     // load sample costs
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) RCMAsyncContainer(RCMQuery_SampleCosts),
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) RCMAsyncContainer(RCMQuery_SampleCosts),
                                "select id, commandname, healthcost, actioncost, mindcost, damage_multiplier from command_table where commandname in ('dosample');");
-    gLogger->log(LogManager::DEBUG, "SQL :: select id, commandname, healthcost, actioncost, mindcost, damage_multiplier from command_table where commandname in ('dosample');"); // SQL Debug Log
-
-    mDatabase->ExecuteSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) RCMAsyncContainer(RCMQuery_SurveyCosts),
+    mDatabase->executeSqlAsync(this,new(mDBAsyncPool.ordered_malloc()) RCMAsyncContainer(RCMQuery_SurveyCosts),
                                "select id, commandname, healthcost, actioncost, mindcost, damage_multiplier from command_table where commandname in ('requestSurvey');");
-    gLogger->log(LogManager::DEBUG, "SQL :: select id, commandname, healthcost, actioncost, mindcost, damage_multiplier from command_table where commandname in ('requestSurvey');"); // SQL Debug Log
 }
 
 //======================================================================================================================
@@ -88,7 +84,7 @@ ResourceCollectionManager::~ResourceCollectionManager()
 
 void ResourceCollectionManager::_setupDatabindings()
 {
-    mCommandCostBinding = mDatabase->CreateDataBinding(6);
+    mCommandCostBinding = mDatabase->createDataBinding(6);
     mCommandCostBinding->addField(DFT_uint32,offsetof(ResourceCollectionCommand,mId),4,0);
     mCommandCostBinding->addField(DFT_bstring,offsetof(ResourceCollectionCommand,mCommandName),255,1);
     mCommandCostBinding->addField(DFT_int32,offsetof(ResourceCollectionCommand,mHealthCost),4,2);
@@ -101,7 +97,7 @@ void ResourceCollectionManager::_setupDatabindings()
 
 void ResourceCollectionManager::_destroyDatabindings()
 {
-    mDatabase->DestroyDataBinding(mCommandCostBinding);
+    mDatabase->destroyDataBinding(mCommandCostBinding);
 }
 
 //======================================================================================================================
@@ -117,17 +113,13 @@ void ResourceCollectionManager::handleDatabaseJobComplete(void* ref,DatabaseResu
 
         if (result->getRowCount())
         {
-            result->GetNextRow(mCommandCostBinding, cCommand);
+            result->getNextRow(mCommandCostBinding, cCommand);
             this->sampleActionCost = cCommand->getActionCost();
             this->sampleHealthCost = cCommand->getHealthCost();
             this->sampleMindCost = cCommand->getMindCost();
             this->sampleRadioactiveDamageModifier = cCommand->getDamageModifier();
 
         }
-
-        if(result->getRowCount())
-            gLogger->log(LogManager::NOTICE,"Loaded sample costs.");
-
     }
     break;
 
@@ -137,7 +129,7 @@ void ResourceCollectionManager::handleDatabaseJobComplete(void* ref,DatabaseResu
         if (result->getRowCount())
         {
 
-            result->GetNextRow(mCommandCostBinding, cCommand);
+            result->getNextRow(mCommandCostBinding, cCommand);
 
 
             this->surveyActionCost = cCommand->getActionCost();
@@ -145,10 +137,6 @@ void ResourceCollectionManager::handleDatabaseJobComplete(void* ref,DatabaseResu
             this->surveyMindCost = cCommand->getMindCost();
 
         }
-
-        if(result->getRowCount())
-            gLogger->log(LogManager::NOTICE,"Loaded survey costs.");
-
     }
     break;
 

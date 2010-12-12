@@ -32,9 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <memory>
 
 #include <boost/thread.hpp>
-
-#include "Utils/ConcurrentQueue.h"
-#include "Utils/declspec.h"
+#include <tbb/concurrent_queue.h>
 
 /// The utils namespace hosts a number of useful utility classes intended to
 /// be used and reused in domain specific classes.
@@ -53,7 +51,7 @@ namespace utils {
  *
  * @see http://www.drdobbs.com/go-parallel/article/showArticle.jhtml?articleID=225700095
  */
-class UTILS_API ActiveObject {
+class ActiveObject {
 public:
     /// Messages are implemented as std::function to allow maximum flexibility for
     /// how a message can be created with support for functions, functors, class members,
@@ -78,20 +76,12 @@ private:
     /// Runs the ActiveObject's message loop until an end message is received.
     void Run();
 
-    // Win32 complains about stl during linkage, disable the warning.
-#ifdef _WIN32
-#pragma warning (disable : 4251)
-#endif
-    utils::ConcurrentQueue<Message> message_queue_;
+    tbb::concurrent_queue<Message> message_queue_;
+
     boost::thread thread_;
     boost::condition_variable condition_;
     boost::mutex mutex_;
-
-    // Re-enable the warning.
-#ifdef _WIN32
-#pragma warning (default : 4251)
-#endif
-
+    
     bool done_;
 };
 
