@@ -533,6 +533,9 @@ bool SkillManager::learnSkill(uint32 skillId,CreatureObject* creatureObject,bool
         gMessageLib->sendSchematicDeltasPLAY_9(player);
         //gMessageLib->sendSchematicDeltasAddPLAY_9(player);
 
+        // Update max force each time a player adds a skill.
+        gMessageLib->sendUpdateMaxForce(player);
+
         gMessageLib->SendSystemMessage(::common::OutOfBand("skill_teacher", "prose_skill_learned", "", "", "", "", "skl_n", skill->mName.getAnsi()), player);
 
         // Update cap for this type of xp as long as it isn't of type none.
@@ -852,6 +855,9 @@ void SkillManager::dropSkill(uint32 skillId,CreatureObject* creatureObject, bool
         gMessageLib->sendBaselinesCREO_4(player);
         gMessageLib->sendSkillCmdDeltasPLAY_9(player);
         gMessageLib->sendSchematicDeltasPLAY_9(player);
+
+        // Update max force each time a player drops a skill.
+        gMessageLib->sendUpdateMaxForce(player);
 
         if(showMessage)
             gMessageLib->SendSystemMessage(L"Skill surrendered.", player);

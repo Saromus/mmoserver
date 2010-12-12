@@ -25,22 +25,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---------------------------------------------------------------------------------------
 */
 
+#define NOMINMAX
+#include <algorithm>
+
 #include "JediSkillManager.h"
 #include "ObjectControllerCommandMap.h"
 #include "ObjectControllerOpcodes.h"
 #include "PlayerObject.h"
+#include "StateManager.h"
 #include "Buff.h"
 #include "WorldConfig.h"
 #include "Common/OutOfBand.h"
 
 #include "MessageLib/MessageLib.h"
-
-#ifndef min
-#define min(a, b) (((a) < (b)) ? (a) : (b))
-#endif
-#ifndef max
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-#endif
 
 using ::common::OutOfBand;
 
@@ -104,16 +101,16 @@ bool JediSkillManager::ForceHealSelfDamage(PlayerObject* Jedi, ObjectControllerC
     int H = Health - MaxHealth;
     int A = Action - MaxAction;
     int M = Mind - MaxMind;
-    int cost1 = min((H + A + M / 3), 340); //int cost1 = min(((H + A + M) / 3), 340);
-    int cost2 = min((H + A + M / 3), 470); //int cost2 = min(((H + A + M) / 3), 470);
+    int cost1 = std::min((H + A + M / 3), 340); //int cost1 = min(((H + A + M) / 3), 340);
+    int cost2 = std::min((H + A + M / 3), 470); //int cost2 = min(((H + A + M) / 3), 470);
 
     //Individual pool type heal ints
-    int costH1 = min(H, 65);
-    int costH2 = min(H, 100);
-    int costA1 = min(A, 65);
-    int costA2 = min(A, 100);
-    int costM1 = min(M, 65);
-    int costM2 = min(M, 100);
+    int costH1 = std::min(H, 65);
+    int costH2 = std::min(H, 100);
+    int costA1 = std::min(A, 65);
+    int costA2 = std::min(A, 100);
+    int costM1 = std::min(M, 65);
+    int costM2 = std::min(M, 100);
 
     switch (HealType)
     {
@@ -171,7 +168,7 @@ bool JediSkillManager::ForceHealSelfDamage(PlayerObject* Jedi, ObjectControllerC
 
     //Client Effect
     //gMessageLib->sendPlayClientEffectLocMessage("clienteffect/pl_force_heal_self.cef", Jedi->mPosition, Jedi);
-    gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/pl_force_healing.cef", "", Jedi);
+    gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/pl_force_heal_self.cef", "", Jedi);
     return true;
 }
 
@@ -204,14 +201,14 @@ bool JediSkillManager::ForceHealSelfWound(PlayerObject* Jedi, ObjectControllerCm
     }
 
     //TODO: The force cost of these abilities increases based on the number of wounds healed.
-    int costHW1 = min(HealthWounds, 15);
-    int costHW2 = min(HealthWounds, 25);
-    int costAW1 = min(ActionWounds, 15);
-    int costAW2 = min(ActionWounds, 25);
-    int costMW1 = min(MindWounds, 15);
-    int costMW2 = min(MindWounds, 25);
-    int costBF1 = min(BattleFatigue, 75);
-    int costBF2 = min(BattleFatigue, 150);
+    int costHW1 = std::min(HealthWounds, 15);
+    int costHW2 = std::min(HealthWounds, 25);
+    int costAW1 = std::min(ActionWounds, 15);
+    int costAW2 = std::min(ActionWounds, 25);
+    int costMW1 = std::min(MindWounds, 15);
+    int costMW2 = std::min(MindWounds, 25);
+    int costBF1 = std::min(BattleFatigue, 75);
+    int costBF2 = std::min(BattleFatigue, 150);
 
     switch (HealType)
     {
@@ -268,7 +265,7 @@ bool JediSkillManager::ForceHealSelfWound(PlayerObject* Jedi, ObjectControllerCm
 bool JediSkillManager::ForceHealSelfState(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties)
 {
     int forceCost = 50;
-    int NumberOfStatesCured = 0;
+    int numberOfStatesCured = 0;
 
     //Perform Checks
     if (Jedi->checkIfMounted())
@@ -277,13 +274,13 @@ bool JediSkillManager::ForceHealSelfState(PlayerObject* Jedi, ObjectControllerCm
         return false;
     }
 
-    if (!Jedi->checkState(CreatureState_Stunned))
+    if (!Jedi->states.checkState(CreatureState_Stunned))
     {
-        if (!Jedi->checkState(CreatureState_Blinded))
+        if (!Jedi->states.checkState(CreatureState_Blinded))
         {
-            if (!Jedi->checkState(CreatureState_Dizzy))
+            if (!Jedi->states.checkState(CreatureState_Dizzy))
             {
-                if (!Jedi->checkState(CreatureState_Intimidated))
+                if (!Jedi->states.checkState(CreatureState_Intimidated))
                 {
                     gMessageLib->SendSystemMessage(L"You have no states of that type to heal.", Jedi);
                     return false;
@@ -299,42 +296,42 @@ bool JediSkillManager::ForceHealSelfState(PlayerObject* Jedi, ObjectControllerCm
     }
 
     //If player has the state, then clear it.
-    if (Jedi->checkState(CreatureState_Stunned))
+    if (Jedi->states.checkState(CreatureState_Stunned))
     {
-        Jedi->toggleStateOff(CreatureState_Stunned);
-        gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_stunned_single"), Jedi);
-        gMessageLib->sendFlyText(Jedi, "combat_effects", "no_stunned", 255, 0, 0);
-        NumberOfStatesCured++;
+        gStateManager.removeActionState(Jedi, CreatureState_Stunned);
+        //gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_stunned_single"), Jedi);
+        //gMessageLib->sendFlyText(Jedi, "combat_effects", "no_stunned", 255, 0, 0);
+        numberOfStatesCured++;
     }
-    if (Jedi->checkState(CreatureState_Blinded))
+    if (Jedi->states.checkState(CreatureState_Blinded))
     {
-        Jedi->toggleStateOff(CreatureState_Blinded);
-        gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_blind_single"), Jedi);
-        gMessageLib->sendFlyText(Jedi, "combat_effects", "no_blind", 255, 0, 0);
-        NumberOfStatesCured++;
+        gStateManager.removeActionState(Jedi, CreatureState_Blinded);
+        //gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_blind_single"), Jedi);
+        //gMessageLib->sendFlyText(Jedi, "combat_effects", "no_blind", 255, 0, 0);
+        numberOfStatesCured++;
     }
-    if (Jedi->checkState(CreatureState_Dizzy))
+    if (Jedi->states.checkState(CreatureState_Dizzy))
     {
-        Jedi->toggleStateOff(CreatureState_Dizzy);
+        gStateManager.removeActionState(Jedi, CreatureState_Dizzy);
         gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_dizzy_single"), Jedi);
-        gMessageLib->sendFlyText(Jedi, "combat_effects", "no_dizzy", 255, 0, 0);
-        NumberOfStatesCured++;
+        //gMessageLib->sendFlyText(Jedi, "combat_effects", "no_dizzy", 255, 0, 0);
+        numberOfStatesCured++;
     }
-    if (Jedi->checkState(CreatureState_Intimidated))
+    if (Jedi->states.checkState(CreatureState_Intimidated))
     {
-        Jedi->toggleStateOff(CreatureState_Intimidated);
-        gMessageLib->sendFlyText(Jedi, "combat_effects", "no_intimidated", 255, 0, 0);
-        NumberOfStatesCured++;
+        gStateManager.removeActionState(Jedi, CreatureState_Intimidated);
+        //gMessageLib->sendFlyText(Jedi, "combat_effects", "no_intimidated", 255, 0, 0);
+        numberOfStatesCured++;
     }
 
     //Send Update
-    gMessageLib->sendStateUpdate(Jedi);
+    //gMessageLib->sendStateUpdate(Jedi);
 
     //The base force cost (50) of this ability is multiplied by the number of states that are healed.
     //In this case, it is 50 base force times the number of states on the player.
     //[Equation (when force cost = 50)]: ModifiedForceCost = ForceCost x NumberOfStatesCured
-    int ModifiedForceCost = forceCost * NumberOfStatesCured;
-    Jedi->getHam()->updateCurrentForce(-ModifiedForceCost);
+    int modifiedForceCost = forceCost * numberOfStatesCured;
+    Jedi->getHam()->updateCurrentForce(-modifiedForceCost);
 
     gMessageLib->SendSystemMessage(L"You cure all negative states on yourself.", Jedi);
     return true;
@@ -372,13 +369,13 @@ bool JediSkillManager::ForceHealSelfTotal(PlayerObject* Jedi, ObjectControllerCm
 
     //Perform Checks - (this is a very long check...but for now this is the only thing that works -_-)
     //TODO: find a cleaner way to do this.
-    if (!Jedi->checkState(CreatureState_Poisoned))
+    if (!Jedi->states.checkState(CreatureState_Poisoned))
     {
-        if (!Jedi->checkState(CreatureState_Diseased))
+        if (!Jedi->states.checkState(CreatureState_Diseased))
         {
-            if (!Jedi->checkState(CreatureState_OnFire))
+            if (!Jedi->states.checkState(CreatureState_OnFire))
             {
-                if (!Jedi->checkState(CreatureState_Bleeding))
+                if (!Jedi->states.checkState(CreatureState_Bleeding))
                 {
                     //gMessageLib->SendSystemMessage(L"You have no states of that type to heal.", Jedi);
                     if (HealthWounds <= 0)
@@ -416,34 +413,34 @@ bool JediSkillManager::ForceHealSelfTotal(PlayerObject* Jedi, ObjectControllerCm
     //Action has no wounds, and mind has no wounds. I'm low on all 3 bars. So I use Total Heal Self. Because
     //of the Health Wounds, when it goes to heal health, it will heal your health, for the amount of wounds there
     //are, and obviously healing your health with wounds does nothing...So therefore, your wounds need to be healed/cleared
-    //before your HAM is healed, incase you have any wounds. When I was talking to Shotter about this, he said it would also be,
-    //a great idea to heal states first, then heal wounds and HAM. When the affects of States are implemented, then it will be
-    //more important to heal states first.
+    //before your HAM is healed, incase you have any wounds. When I was talking to Shotter about this, he said it would be
+    //a good idea to heal states first, then heal wounds, then HAM. When the affects of States are implemented, then it will
+    //be more important to heal states first.
 
     //Heal negative states
-    if (Jedi->checkState(CreatureState_Poisoned))
+    if (Jedi->states.checkState(CreatureState_Poisoned))
     {
-        Jedi->toggleStateOff(CreatureState_Poisoned);
-        gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_poisoned"), Jedi);
-        gMessageLib->sendStateUpdate(Jedi);
+        gStateManager.removeActionState(Jedi, CreatureState_Poisoned);
+        //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_poisoned"), Jedi);
+        //gMessageLib->sendStateUpdate(Jedi);
     }
-    if (Jedi->checkState(CreatureState_Diseased))
+    if (Jedi->states.checkState(CreatureState_Diseased))
     {
-        Jedi->toggleStateOff(CreatureState_Diseased);
-        gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_diseased"), Jedi);
-        gMessageLib->sendStateUpdate(Jedi);
+        gStateManager.removeActionState(Jedi, CreatureState_Diseased);
+        //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_diseased"), Jedi);
+        //gMessageLib->sendStateUpdate(Jedi);
     }
-    if (Jedi->checkState(CreatureState_OnFire))
+    if (Jedi->states.checkState(CreatureState_OnFire))
     {
-        Jedi->toggleStateOff(CreatureState_OnFire);
-        gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_fire"), Jedi);
-        gMessageLib->sendStateUpdate(Jedi);
+        gStateManager.removeActionState(Jedi, CreatureState_OnFire);
+        //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_fire"), Jedi);
+        //gMessageLib->sendStateUpdate(Jedi);
     }
-    if (Jedi->checkState(CreatureState_Bleeding))
+    if (Jedi->states.checkState(CreatureState_Bleeding))
     {
-        Jedi->toggleStateOff(CreatureState_Bleeding);
-        gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_bleeding"), Jedi);
-        gMessageLib->sendStateUpdate(Jedi);
+        gStateManager.removeActionState(Jedi, CreatureState_Bleeding);
+        //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_bleeding"), Jedi);
+        //gMessageLib->sendStateUpdate(Jedi);
     }
 
     //Heals all wounds completely.
@@ -548,8 +545,8 @@ bool JediSkillManager::ForceHealTargetDamage(PlayerObject* Jedi, PlayerObject* T
     int A = TargetAction - TargetMaxAction;
     int M = TargetMind - TargetMaxMind;
 
-    int cost1 = min((H + A + M / 3), 680);
-    int cost2 = min((H + A + M / 3), 940);
+    int cost1 = std::min((H + A + M / 3), 680);
+    int cost2 = std::min((H + A + M / 3), 940);
 
     switch (HealType)
     {
@@ -644,14 +641,14 @@ bool JediSkillManager::ForceHealTargetWound(PlayerObject* Jedi, PlayerObject* Ta
     }
 
     //TODO: The force cost of these abilities increases based on the number of wounds healed.
-    int costHW1 = min(TargetHealthWounds, 25);
-    int costHW2 = min(TargetHealthWounds, 75);
-    int costAW1 = min(TargetActionWounds, 25);
-    int costAW2 = min(TargetActionWounds, 75);
-    int costMW1 = min(TargetMindWounds, 25);
-    int costMW2 = min(TargetMindWounds, 75);
-    int costBF1 = min(TargetBattleFatigue, 150);
-    int costBF2 = min(TargetBattleFatigue, 300);
+    int costHW1 = std::min(TargetHealthWounds, 25);
+    int costHW2 = std::min(TargetHealthWounds, 75);
+    int costAW1 = std::min(TargetActionWounds, 25);
+    int costAW2 = std::min(TargetActionWounds, 75);
+    int costMW1 = std::min(TargetMindWounds, 25);
+    int costMW2 = std::min(TargetMindWounds, 75);
+    int costBF1 = std::min(TargetBattleFatigue, 150);
+    int costBF2 = std::min(TargetBattleFatigue, 300);
 
     switch (HealType)
     {
@@ -716,7 +713,7 @@ bool JediSkillManager::ForceHealTargetWound(PlayerObject* Jedi, PlayerObject* Ta
 bool JediSkillManager::ForceHealTargetState(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties)
 {
     int forceCost = 50;
-    int NumberOfStatesCured = 0;
+    int numberOfStatesCured = 0;
 
     //Perform Checks
     if (Jedi->checkIfMounted())
@@ -747,13 +744,13 @@ bool JediSkillManager::ForceHealTargetState(PlayerObject* Jedi, PlayerObject* Ta
         return false;
     }
 
-    if (!Target->checkState(CreatureState_Stunned))
+    if (!Target->states.checkState(CreatureState_Stunned))
     {
-        if (!Target->checkState(CreatureState_Blinded))
+        if (!Target->states.checkState(CreatureState_Blinded))
         {
-            if (!Target->checkState(CreatureState_Dizzy))
+            if (!Target->states.checkState(CreatureState_Dizzy))
             {
-                if (!Target->checkState(CreatureState_Intimidated))
+                if (!Target->states.checkState(CreatureState_Intimidated))
                 {
                     gMessageLib->SendSystemMessage(L"Your target has no states of that type to heal.", Jedi);
                     return false;
@@ -763,42 +760,42 @@ bool JediSkillManager::ForceHealTargetState(PlayerObject* Jedi, PlayerObject* Ta
     }
 
     //If player has the state, then clear it.
-    if (Target->checkState(CreatureState_Stunned))
+    if (Target->states.checkState(CreatureState_Stunned))
     {
-		Target->toggleStateOff(CreatureState_Stunned);
-		gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_stunned_single"), Target);
-		gMessageLib->sendFlyText(Target, "combat_effects", "no_stunned", 255, 0, 0);
-		NumberOfStatesCured++;
+		gStateManager.removeActionState(Target, CreatureState_Stunned);
+		//gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_stunned_single"), Target);
+		//gMessageLib->sendFlyText(Target, "combat_effects", "no_stunned", 255, 0, 0);
+		numberOfStatesCured++;
     }
-    if (Target->checkState(CreatureState_Blinded))
+    if (Target->states.checkState(CreatureState_Blinded))
     {
-		Target->toggleStateOff(CreatureState_Blinded);
-		gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_blind_single"), Target);
-		gMessageLib->sendFlyText(Target, "combat_effects", "no_blind", 255, 0, 0);
-		NumberOfStatesCured++;
+		gStateManager.removeActionState(Target, CreatureState_Blinded);
+		//gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_blind_single"), Target);
+		//gMessageLib->sendFlyText(Target, "combat_effects", "no_blind", 255, 0, 0);
+		numberOfStatesCured++;
     }
-    if (Target->checkState(CreatureState_Dizzy))
+    if (Target->states.checkState(CreatureState_Dizzy))
     {
-		Target->toggleStateOff(CreatureState_Dizzy);
-		gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_dizzy_single"), Target);
-		gMessageLib->sendFlyText(Target, "combat_effects", "no_dizzy", 255, 0, 0);
-		NumberOfStatesCured++;
+		gStateManager.removeActionState(Target, CreatureState_Dizzy);
+		//gMessageLib->SendSystemMessage(OutOfBand("cbt_spam", "no_dizzy_single"), Target);
+		//gMessageLib->sendFlyText(Target, "combat_effects", "no_dizzy", 255, 0, 0);
+		numberOfStatesCured++;
     }
-    if (Target->checkState(CreatureState_Intimidated))
+    if (Target->states.checkState(CreatureState_Intimidated))
     {
-		Target->toggleStateOff(CreatureState_Intimidated);
-		gMessageLib->sendFlyText(Target, "combat_effects", "no_intimidated", 255, 0, 0);
-		NumberOfStatesCured++;
+		gStateManager.removeActionState(Target, CreatureState_Intimidated);
+		//gMessageLib->sendFlyText(Target, "combat_effects", "no_intimidated", 255, 0, 0);
+		numberOfStatesCured++;
     }
 
     //Send Update
-    gMessageLib->sendStateUpdate(Target);
+    //gMessageLib->sendStateUpdate(Target);
 
     //The base force cost (50) of this ability is multiplied by the number of states that are healed.
     //In this case, it is 50 base force times the number of states on the player's target.
     //[Equation (when force cost = 50)]: ModifiedForceCost = ForceCost x NumberOfStatesCured
-    int ModifiedForceCost = forceCost * NumberOfStatesCured;
-    Jedi->getHam()->updateCurrentForce(-ModifiedForceCost);
+    int modifiedForceCost = forceCost * numberOfStatesCured;
+    Jedi->getHam()->updateCurrentForce(-modifiedForceCost);
 
     //Animation
     gMessageLib->sendCreatureAnimation(Jedi, BString("force_healing_1"));
@@ -844,47 +841,47 @@ bool JediSkillManager::ForceCureTarget(PlayerObject* Jedi, PlayerObject* Target,
     switch (HealType)
     {
     case 1: //Force Cure Disease
-        if (!Target->checkState(CreatureState_Diseased))
+        if (!Target->states.checkState(CreatureState_Diseased))
         {
             gMessageLib->SendSystemMessage(L"Your target is not diseased.", Jedi);
             return false;
         }
         else
         {
-            Target->toggleStateOff(CreatureState_Diseased);
-            gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_diseased"), Target);
-            gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_disease_other", 0, Target->getId(), 0), Jedi);
-            gMessageLib->sendStateUpdate(Target);
+            gStateManager.removeActionState(Target, CreatureState_Diseased);
+            //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_diseased"), Target);
+            //gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_disease_other", 0, Target->getId(), 0), Jedi);
+            //gMessageLib->sendStateUpdate(Target);
             Jedi->getHam()->updateCurrentForce(-forceCost);
         }
         break;
     case 2: //Force Cure Poison
-        if (!Target->checkState(CreatureState_Poisoned))
+        if (!Target->states.checkState(CreatureState_Poisoned))
         {
             gMessageLib->SendSystemMessage(L"Your target is not poisoned.", Jedi);
             return false;
         }
         else
 		{
-            Target->toggleStateOff(CreatureState_Poisoned);
-            gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_poisoned"), Target);
-            gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_poison_other", 0, Target->getId(), 0), Jedi);
-            gMessageLib->sendStateUpdate(Target);
+            gStateManager.removeActionState(Target, CreatureState_Poisoned);
+            //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_poisoned"), Target);
+            //gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_poison_other", 0, Target->getId(), 0), Jedi);
+            //gMessageLib->sendStateUpdate(Target);
             Jedi->getHam()->updateCurrentForce(-forceCost);
         }
         break;
     case 3: //Stop Bleeding
-        if (!Target->checkState(CreatureState_Bleeding))
+        if (!Target->states.checkState(CreatureState_Bleeding))
         {
             gMessageLib->SendSystemMessage(L"Your target is not bleeding.", Jedi);
             return false;
         }
         else
         {
-            Target->toggleStateOff(CreatureState_Bleeding);
-            gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_bleeding"), Target);
-            gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_bleeding_other", 0, Target->getId(), 0), Jedi);
-            gMessageLib->sendStateUpdate(Target);
+            gStateManager.removeActionState(Target, CreatureState_Bleeding);
+            //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_bleeding"), Target);
+            //gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_bleeding_other", 0, Target->getId(), 0), Jedi);
+            //gMessageLib->sendStateUpdate(Target);
             Jedi->getHam()->updateCurrentForce(-forceCost);
         }
         break;
@@ -949,13 +946,13 @@ bool JediSkillManager::ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Ta
 
     //Perform Checks - (this is a very long check...but for now this is the only thing that works -_-)
     //TODO: find a cleaner way to do this.
-    if (!Target->checkState(CreatureState_Poisoned))
+    if (!Target->states.checkState(CreatureState_Poisoned))
     {
-        if (!Target->checkState(CreatureState_Diseased))
+        if (!Target->states.checkState(CreatureState_Diseased))
         {
-            if (!Target->checkState(CreatureState_OnFire))
+            if (!Target->states.checkState(CreatureState_OnFire))
             {
-                if (!Target->checkState(CreatureState_Bleeding))
+                if (!Target->states.checkState(CreatureState_Bleeding))
                 {
                     //gMessageLib->SendSystemMessage(L"Your target has no states of that type to heal.", Jedi);
                     if (TargetHealthWounds <= 0)
@@ -997,32 +994,32 @@ bool JediSkillManager::ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Ta
     //a great idea to heal states first, then heal wounds and HAM. When the affects of States are implemented, then it will be
     //more important to heal states first.
 
-    if (Target->checkState(CreatureState_Poisoned))
+    if (Target->states.checkState(CreatureState_Poisoned))
     {
-        Target->toggleStateOff(CreatureState_Poisoned);
-        gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_poisoned"), Target);
-        gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_poison_other", 0, Target->getId(), 0), Jedi);
-        gMessageLib->sendStateUpdate(Target);
+        gStateManager.removeActionState(Target, CreatureState_Poisoned);
+        //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_poisoned"), Target);
+        //gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_poison_other", 0, Target->getId(), 0), Jedi);
+        //gMessageLib->sendStateUpdate(Target);
     }
-    if (Target->checkState(CreatureState_Diseased))
+    if (Target->states.checkState(CreatureState_Diseased))
     {
-        Target->toggleStateOff(CreatureState_Diseased);
-        gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_diseased"), Target);
-        gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_disease_other", 0, Target->getId(), 0), Jedi);
-        gMessageLib->sendStateUpdate(Target);
+        gStateManager.removeActionState(Target, CreatureState_Diseased);
+        //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_diseased"), Target);
+        //gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_disease_other", 0, Target->getId(), 0), Jedi);
+        //gMessageLib->sendStateUpdate(Target);
     }
-    if (Target->checkState(CreatureState_OnFire))
+    if (Target->states.checkState(CreatureState_OnFire))
     {
-        Target->toggleStateOff(CreatureState_OnFire);
-        gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_fire"), Target);
-        gMessageLib->sendStateUpdate(Target);
+        gStateManager.removeActionState(Target, CreatureState_OnFire);
+        //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_fire"), Target);
+        //gMessageLib->sendStateUpdate(Target);
     }
-    if (Target->checkState(CreatureState_Bleeding))
+    if (Target->states.checkState(CreatureState_Bleeding))
     {
-        Jedi->toggleStateOff(CreatureState_Bleeding);
-        gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_bleeding"), Target);
-        gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_bleeding_other", 0, Target->getId(), 0), Jedi);
-        gMessageLib->sendStateUpdate(Target);
+        gStateManager.removeActionState(Target, CreatureState_Bleeding);
+        //gMessageLib->SendSystemMessage(OutOfBand("dot_message", "stop_bleeding"), Target);
+        //gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "stop_bleeding_other", 0, Target->getId(), 0), Jedi);
+        //gMessageLib->sendStateUpdate(Target);
     }
 
     //Heals all wounds completely.
@@ -1087,7 +1084,7 @@ bool JediSkillManager::ForceHealTargetTotal(PlayerObject* Jedi, PlayerObject* Ta
 //The Regen Rate/modifier for forcemeditate is *3
 bool JediSkillManager::ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControllerCmdProperties* cmdProperties, int ForceRegen)
 {
-    if (Jedi->isMeditating())
+    if (Jedi->isMeditating() || Jedi->isForceMeditating())
     {
         gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "already_in_meditative_state"), Jedi);
         return false;
@@ -1095,6 +1092,7 @@ bool JediSkillManager::ForceMeditateSelfSkill(PlayerObject* Jedi, ObjectControll
 
     // Updates
     Jedi->modifySkillModValue(SMod_jedi_force_power_regen, +ForceRegen);
+    Jedi->togglePlayerCustomFlagOn(PlayerCustomFlag_ForceMeditate);
     Jedi->setMeditateState();
 
     // Schedule Execution
@@ -1117,7 +1115,7 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
     }
 
     //In Pre-CU, you couldn't force run while you were dizzy. (Thanks Shotter for reminding me about this.)
-    if (Jedi->checkState(CreatureState_Dizzy))
+    if (Jedi->states.checkState(CreatureState_Dizzy))
     {
         gMessageLib->SendSystemMessage(L"You are incapable of such speed right now.", Jedi);
         return false;
@@ -1181,7 +1179,7 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
     // Updates
     float new_speed = Jedi->getBaseRunSpeedLimit() + speed;
     float new_acceleration = Jedi->getBaseAcceleration() + acceleration;
-    Jedi->modifySkillModValue(SMod_slope_move, +slope); //terrain negotiation mod. Won't work until terrain negotation is implemented.
+    Jedi->modifySkillModValue(SMod_slope_move, +slope); //terrain negotiation mod. Won't work until terrain negotiation is implemented.
 
     // Implement Speed
     Jedi->setCurrentRunSpeedLimit(new_speed);
@@ -1202,7 +1200,7 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
     gMessageLib->sendPlayClientEffectObjectMessage("clienteffect/pl_force_run_self.cef", "", Jedi);
 
     // Update Locomotion
-    Jedi->setLocomotion(kLocomotionRunning);
+    Jedi->states.setLocomotion(CreatureLocomotion_Running);
 
     // Toggle the flag for Force Run.
     Jedi->togglePlayerCustomFlagOn(PlayerCustomFlag_ForceRun);
@@ -1215,7 +1213,7 @@ bool JediSkillManager::ForceRunSelfSkill(PlayerObject* Jedi, ObjectControllerCmd
 
 bool JediSkillManager::TransferForce(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties)
 {
-    int TransferredForce = 200;
+    int transferredForce = 200;
 
     // Perform Checks
     if (Jedi->checkIfMounted())
@@ -1224,7 +1222,7 @@ bool JediSkillManager::TransferForce(PlayerObject* Jedi, PlayerObject* Target, O
     return false;
     }
 
-    if (Jedi->getHam()->getCurrentForce() < TransferredForce)
+    if (Jedi->getHam()->getCurrentForce() < transferredForce)
     {
         gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "no_force_power"), Jedi);
         return false;
@@ -1236,7 +1234,7 @@ bool JediSkillManager::TransferForce(PlayerObject* Jedi, PlayerObject* Target, O
         return false;
     }
 
-    // You can't use transfer force on a non-jedi player.
+    // You cannot use transfer force on a non-jedi player.
     if (Target->getJediState() == 0)
     {
         //gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "not_this_target"), Jedi); //This command cannot be used on this target.
@@ -1257,20 +1255,20 @@ bool JediSkillManager::TransferForce(PlayerObject* Jedi, PlayerObject* Target, O
     //gMessageLib->sendCreatureAnimation(Jedi, BString("force_transfer_1"));
 
     // Deduct force power from player.
-    Jedi->getHam()->updateCurrentForce(-TransferredForce);
+    Jedi->getHam()->updateCurrentForce(-transferredForce);
 
     // Play Animation
     gMessageLib->sendCreatureAnimation(Jedi, BString("force_transfer_1"));
 
     // Transfer force power to friendly jedi.
-    Target->getHam()->updateCurrentForce(TransferredForce);
+    Target->getHam()->updateCurrentForce(transferredForce);
 
     return true;
 }
 
 bool JediSkillManager::DrainForce(PlayerObject* Jedi, PlayerObject* Target, ObjectControllerCmdProperties* cmdProperties)
 {
-    int ForceDrained = 100;
+    int forceDrained = 100;
 
     // Perform Checks
     if (Jedi->checkIfMounted())
@@ -1294,7 +1292,7 @@ bool JediSkillManager::DrainForce(PlayerObject* Jedi, PlayerObject* Target, Obje
     }
 
     // Check if target has enough force to be drained.
-    if (Target->getHam()->getCurrentForce() < ForceDrained)
+    if (Target->getHam()->getCurrentForce() < forceDrained)
     {
         gMessageLib->SendSystemMessage(OutOfBand("jedi_spam", "target_no_force"), Jedi);
         return false;
@@ -1311,13 +1309,13 @@ bool JediSkillManager::DrainForce(PlayerObject* Jedi, PlayerObject* Target, Obje
     }
 
     // Drain force from enemy jedi.
-    Target->getHam()->updateCurrentForce(-ForceDrained);
+    Target->getHam()->updateCurrentForce(-forceDrained);
 
     // Play Animation
     gMessageLib->sendCreatureAnimation(Jedi, BString("force_drain_1"));
 
     // Add drained force to player.
-    Jedi->getHam()->updateCurrentForce(ForceDrained);
+    Jedi->getHam()->updateCurrentForce(forceDrained);
 	
     return true;
 }

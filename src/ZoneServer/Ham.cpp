@@ -39,6 +39,7 @@ Ham::Ham()
     , mBattleFatigue(0)
     , mCurrentForce(0)
     , mMaxForce(0)
+    , mForceRegen(0)
     , mBaseHitpointsUpdateCounter(9)
     , mNextBaseHitpointsUpdateInterval(0)
     , mCurrentHitpointsUpdateCounter(0)
@@ -66,6 +67,7 @@ Ham::Ham(CreatureObject* parent,uint32 bf)
     , mBattleFatigue(bf)
     , mCurrentForce(0)
     , mMaxForce(0)
+    , mForceRegen(0)
     , mBaseHitpointsUpdateCounter(0)
     , mNextBaseHitpointsUpdateInterval(0)
     , mCurrentHitpointsUpdateCounter(0)
@@ -693,7 +695,8 @@ void Ham::updateRegenRates()
     mActionRegenRate	= (int32)((mStamina.getCurrentHitPoints() / gWorldConfig->mActionRegenDivider) * regenModifier);
     mMindRegenRate		= (int32)((mWillpower.getCurrentHitPoints() / gWorldConfig->mMindRegenDivider) * regenModifier);
     //mForceRegenRate		= (int32)(25.0f * regenModifier);
-    mForceRegenRate		= (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * regenModifier);
+    //mForceRegenRate		= (int32)(mParent->getSkillModValue(SMod_jedi_force_power_regen) * regenModifier);
+    mForceRegenRate		= (int32)((mForceRegen / 3.0) + .5);
 
     // Test for creatures
     if (this->getParent())
@@ -827,8 +830,14 @@ int32			Ham::getMindRegenRate()
     return mMindRegenRate;
 }
 
-int32			Ham::getForceRegenRate()
+int32			Ham::getForceRegen()
 {
-    mForceRegenRate = mParent->getSkillModValue(SMod_jedi_force_power_regen);
-    return mForceRegenRate;
+    mForceRegen = mParent->getSkillModValue(SMod_jedi_force_power_regen);
+    return mForceRegen;
+}
+
+int32			Ham::getMaxForce()
+{
+    mMaxForce = mParent->getSkillModValue(SMod_jedi_force_power_max);
+    return mMaxForce;
 }

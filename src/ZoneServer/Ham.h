@@ -73,37 +73,25 @@ public:
 
     ~Ham();
 
-    CreatureObject*	getParent() {
-        return mParent;
-    }
-    void			setParent(CreatureObject* parent) {
-        mParent = parent;
-    }
+    CreatureObject*	getParent() { return mParent; }
+    void			setParent(CreatureObject* parent) { mParent = parent; }
 
-    int32			getBattleFatigue() {
-        return mBattleFatigue;
-    }
+    int32			getBattleFatigue() { return mBattleFatigue; }
     void			setBattleFatigue(int32 bf);
     void			updateBattleFatigue(int32 bf, bool sendUpdate = true);
 
     void			updateSingleHam(int32 propertyDelta, bool damage);
 
-    int32			getCurrentForce() {
-        return mCurrentForce;
-    }
-    void			setCurrentForce(int32 amount) {
-        mCurrentForce = amount;
-    }
+    int32			getCurrentForce() { return mCurrentForce; }
+    void			setCurrentForce(int32 amount) { mCurrentForce = amount; }
     bool			updateCurrentForce(int32 forceDelta,bool sendUpdate = true);
 
-    int32			getMaxForce() {
-        mMaxForce = mParent->getSkillModValue(SMod_jedi_force_power_max);
-        return mMaxForce;
-    }
-    void			setMaxForce(int32 amount) {
-        mMaxForce = amount;
-    }
+    int32			getMaxForce(); //{ return mMaxForce }
+    void			setMaxForce(int32 amount) { mMaxForce = amount; }
     bool			updateMaxForce(int32 forceDelta,bool sendUpdate = true);
+
+    int32			getForceRegen();
+    int32			setForceRegen(int32 amount) { mForceRegen = amount; }
 
     uint32			getCurrentHitpointsUpdateCounter();
     void			advanceCurrentHitpointsUpdateCounter(uint32 amount = 1);
@@ -130,26 +118,17 @@ public:
     void			calcAllModifiedHitPoints();
 
     bool			regenerate(uint64 time,void*);
-    uint64			getLastRegenTick() {
-        return mLastRegenTick;
-    }
-    void			setLastRegenTick(uint64 time) {
-        mLastRegenTick = time;
-    }
+    uint64			getLastRegenTick() { return mLastRegenTick; }
+    void			setLastRegenTick(uint64 time) { mLastRegenTick = time; }
 
     void			updateRegenRates();
 
     int32			getHealthRegenRate();
     int32			getActionRegenRate();
     int32			getMindRegenRate();
-    int32			getForceRegenRate();
 
-    uint64			getTaskId() {
-        return mTaskId;
-    }
-    void			setTaskId(uint64 id) {
-        mTaskId = id;
-    }
+    uint64			getTaskId() { return mTaskId; }
+    void			setTaskId(uint64 id) { mTaskId = id; }
 
     /// Checks that the main pools are greater than the passed values.
     /**
@@ -202,8 +181,11 @@ private:
 
     //statmigration
     int32			mBattleFatigue;
+
+    //force
     int32			mCurrentForce;
     int32			mMaxForce;
+    int32			mForceRegen;
 
     int32			mHealthRegenRate;
     int32			mActionRegenRate;
