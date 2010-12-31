@@ -55,7 +55,8 @@ enum ItemFamily
     ItemFamily_Scout					= 25,
     ItemFamily_Hopper					= 29,
     ItemFamily_FactoryCrate				= 30,
-    ItemFamily_Holocron					= 31
+    ItemFamily_Terminal                 = 31,
+    ItemFamily_Holocron					= 32
 };
 
 //=============================================================================
@@ -83,6 +84,7 @@ enum ItemType
     ItemType_SpaceStationPublic			= 31,
     ItemType_SpaceStation				= 32,
 
+    ItemType_BlueFrog                   = 2789,
     ItemType_ManSchematic				= 1312,
 
     //====================================================
@@ -280,8 +282,8 @@ enum ItemType
     ItemType_Generic_ChanceCube			= 1739,
 
     // holocrons
-    ItemType_Holocron_Light				= 2789,
-    ItemType_Holocron_Dark				= 2790
+    ItemType_Holocron_Light				= 2790,
+    ItemType_Holocron_Dark				= 2791
 };
 
 //=============================================================================

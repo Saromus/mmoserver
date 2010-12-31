@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "CreatureObject.h"
 #include "EntertainerManager.h"
+#include "Inventory.h"
 #include "Stomach.h"
 #include "Trade.h"
 #include "MountObject.h"
@@ -104,12 +105,12 @@ public:
         * \returns pointer to uint32 holding seconds to timeout
         */
     uint32*				getDisconnectTime(){ return &mDConnTime; }
-        
+
     /*! sets the current player's time to timeout on disconnect as initialized by Worldmanager
-        *
-        * \sets timeout time in seconds
-        * @sets timeout time in seconds
-        */
+     *
+     * \sets timeout time in seconds
+     * @sets timeout time in seconds
+     */
     void				setDisconnectTime(uint32 time){ mDConnTime = time; }
 
     uint32				getClientTickCount(){ return mClientTickCount; }
@@ -122,24 +123,27 @@ public:
     void				setTitle(const BString title){ mTitle = title; }
 
     /*! Returns the current player's PlayerObjectId Not to confuse with the ObjectId
-        *
-        * \returns uint64 holding the PlayerObjectId
-        */
+     *
+     * \returns uint64 holding the PlayerObjectId
+     */
     uint64				getPlayerObjId(){ return mPlayerObjId; }
 
     /*! sets the current player's PlayerObjectId Not to confuse with the ObjectId
-        *
-        * \sets PlayerObjectID
-        */
+     *
+     * \sets PlayerObjectID
+     */
     void				setPlayerObjId(uint64 id){ mPlayerObjId = id; }
 
     void				setTravelPoint(TravelTerminal* tp){ mTravelPoint = tp; }
     TravelTerminal*		getTravelPoint(){ return mTravelPoint; }
+    
+    Inventory*          getInventory() { return mInventory; }
+    void                setInventory(Inventory* pad) {mInventory = pad; }
 
     /*! Returns the current player's Datapad
-        *
-        * \returns pointer to the Datapad
-        */
+     *
+     * \returns pointer to the Datapad
+     */
     Datapad*			getDataPad(){return mDataPad;}
         
     /*! sets the current player's Datapad
@@ -308,7 +312,7 @@ public:
     IDSession 			getImageDesignSession(){return mIDSession;}
     uint32				getHoloEmote(){ return mHoloEmote; }
     void				setHoloEmote(uint32 emote){ mHoloEmote = emote; }
-        
+
     uint8				getHoloCharge(){ return mHoloCharge; }
     void				setHoloCharge(uint8 charge){ mHoloCharge = charge; }
     bool				decHoloCharge(){ if(mHoloCharge == 0) return false; mHoloCharge--; return true; }
@@ -364,7 +368,7 @@ public:
     SchematicsIdList*	getSchematicsAddList(){ return &mSchematicAddList; }
 
     // groups
-    PlayerList			getInRangeGroupMembers(bool self = false) const;
+    PlayerList			getInRangeGroupMembers(bool self = false);
     uint64				getLastGroupMissionUpdateTime(){return mLastGroupMissionUpdateTime;}
     void				setLastGroupMissionUpdateTime(uint64 time){mLastGroupMissionUpdateTime = time;}
 
@@ -407,14 +411,13 @@ public:
     //Lots
     uint8				getLots(){ return mLots; }
     void				setLots(uint8 lots){ mLots = lots; }
-        
+
     bool				checkLots(uint8 check){int16 intCheck = mLots -check;return (intCheck>=0);}
     bool				useLots(uint8 usedLots);
     bool				regainLots(uint8 lots);
-        
+
     void				setStructurePermissionId(uint64 id){mPermissionId = id;}
     uint64				getStructurePermissionId(){return mPermissionId;}
-
 
     uint32				mXpUpdateCounter;
 
@@ -460,6 +463,7 @@ private:
     bool				mHasCamp;
 
     Datapad*			mDataPad;
+    Inventory*			mInventory;
     bool				mAcceptsBandFlourishes;
     AudienceList		mAudienceList;
     BadgesList			mBadgeList;
@@ -490,7 +494,7 @@ private:
     DispatchClient*		mClient;
     CraftingSession*	mCraftingSession;
     MountObject*		mMount;
-                            
+
     // Default cloningfacility if revive timer expires.
     BuildingObject*		mNearestCloningFacility; 
     Stomach*			mStomach;
