@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <algorithm>
 
 #include "JediSkillManager.h"
+#include "WorldManager.h"
 #include "ObjectControllerCommandMap.h"
 #include "ObjectControllerOpcodes.h"
 #include "PlayerObject.h"
